@@ -41,7 +41,7 @@ import { LedgerEntry, ExternalLookupQuery, ExternalLookupResult } from '../domai
 import { INITIAL_LEDGER_ENTRIES, INITIAL_INCOME_SYNC_ITEMS, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
 import { LEDGER_STORAGE_KEY, LocalStorageLedgerRepository } from '../services/ledgerRepository.ts';
 import { ledgerRepository } from '../services/ledgerRepository.ts';
-import { ExternalLookupService } from '../services/externalLookupService.ts';
+import { ExternalLookupService, getLocalReferenceExamples } from '../services/externalLookupService.ts';
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { IncomeSyncService } from '../services/incomeSyncService.ts';
 import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
@@ -1042,6 +1042,27 @@ describe('eLedger — Phase 5 Persistence and Reconciliation Integrity', () => {
 });
 
 describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
+  it('offers only the selected route’s fixture references in AIT and Payment lookup panels', async () => {
+    const routes = ['commercial-vehicle', 'car-ait', 'sec-154', 'sec-173', 'sec-171'] as const;
+    const service = new ExternalLookupService();
+    for (const routeId of routes) {
+      const examples = getLocalReferenceExamples(routeId);
+      assert.ok(examples.length > 0, `${routeId} is missing a local sample reference`);
+      for (const sample of examples) {
+        const found = await service.lookup({
+          routeId,
+          referenceNo: sample.referenceNo,
+          expectedTin: '123456789012',
+          assessmentYear: '2026-2027',
+        });
+        assert.equal(found.routeId, routeId);
+        assert.ok(['VALID', 'MISMATCH'].includes(found.status));
+      }
+    }
+    assert.deepEqual(getLocalReferenceExamples('sec-173').map((item) => item.referenceNo), ['ACHALLAN-2026-788102']);
+    assert.deepEqual(getLocalReferenceExamples('sec-171').map((item) => item.referenceNo), ['ACHALLAN-Q1-2026-5541']);
+    assert.deepEqual(getLocalReferenceExamples('salary-ibas'), []);
+  });
   it('keeps iBAS++ system entries read-only in the reusable ledger table', () => {
     const props = {
       entries: INITIAL_LEDGER_ENTRIES.filter((entry) => entry.routeId === 'salary-ibas'),

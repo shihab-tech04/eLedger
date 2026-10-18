@@ -8,7 +8,7 @@
  * - Validates expected TIN against external registry record.
  */
 
-import { ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
+import { ExternalLookupQuery, ExternalLookupResult, LedgerRouteId } from '../domain/models.ts';
 
 // Local reference fixtures. These are never authoritative verification results.
 const LOCAL_REFERENCE_RECORDS: Record<string, ExternalLookupResult> = {
@@ -109,6 +109,23 @@ const LOCAL_REFERENCE_RECORDS: Record<string, ExternalLookupResult> = {
     statusMessage: 'Matching auction reference found in local records. External verification is pending.',
   },
 };
+
+/** Samples presented by a lookup panel must belong to the selected route. */
+export function getLocalReferenceExamples(routeId: LedgerRouteId): Array<{ referenceNo: string; label: string }> {
+  const labels: Partial<Record<LedgerRouteId, string>> = {
+    'commercial-vehicle': 'Commercial',
+    'car-ait': 'Private Car',
+    'sec-154': 'Section 154',
+    'sec-173': 'Section 173',
+    'sec-171': 'Section 171',
+  };
+  return Object.values(LOCAL_REFERENCE_RECORDS)
+    .filter((record) => record.routeId === routeId)
+    .map((record) => ({
+      referenceNo: record.referenceNo,
+      label: record.status === 'MISMATCH' ? 'TIN Mismatch Test' : labels[routeId] || 'Reference',
+    }));
+}
 
 export interface IExternalLookupService {
   lookup(query: ExternalLookupQuery): Promise<ExternalLookupResult>;

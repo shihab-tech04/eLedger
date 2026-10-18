@@ -15,17 +15,23 @@
 | Local reference lookup | TIN, route, AY, reference and amount mismatch failures | PASS with fixtures |
 | Carry-forward | Prior AY context, classification restore, single-claim cardinality | PASS locally |
 | Browser storage | Corruption preserved, local verification flags ignored, same-instance write serialization | PASS locally |
-| Quality gates | 72 tests/subtests, TypeScript, build, diff check | PASS |
+| Route-specific lookup examples | AIT and Payment panels show only references matching their respective routes | PASS |
+| Quality gates | 73 tests/subtests, TypeScript, build, diff check | PASS |
 
 ## Browser Release Gate
 
-The prior Phase 3 full 18-route navigation/rendering smoke passed. During
-Phase 4 and Phase 5, the deployed pages were confirmed to serve the exact
-tested bundles. Phase 6 must repeat live checks after the final Pages deploy:
+The deployed Phase 6 checkpoint `a4438fc` passed all 18 route
+navigation/rendering checks, including source-tax tables, AIT/Payment lookup
+panels, adjustment claims and the reconciliation modal. The selected taxpayer
+and AY remained intact. The salary system route did not expose Edit/Delete.
+Mobile 375px and desktop 1440px viewport checks found no page-level horizontal
+overflow, and no console errors were observed. The deployed JS asset matched
+the tested `index-jqG4gfHd.js` bundle.
 
-- Page loads; dashboard, route heading navigation, and payment-status modal.
-- iBAS++ is read-only; a manual route retains its inline Edit/Delete.
-- Desktop and mobile viewport smoke and absence of runtime console errors.
+The follow-up example-reference correction requires its own final Pages check:
+
+- Payments Sec 171 and 173 show their respective A-Challan samples, not vehicle samples.
+- AIT commercial/private/154 panels show route-specific references.
 - The deployed JS asset hash matches the local production build.
 
 ## Important Acceptance Limits

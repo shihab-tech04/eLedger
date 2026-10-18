@@ -87,7 +87,7 @@ The app will be available at `http://localhost:3000`.
 ```bash
 npm run test
 ```
-Executes 72 native tests/subtests covering calculations, context isolation, duplicate prevention, verification boundaries, Income sync, all 16 writable route transaction contracts, storage integrity, and system-only route protections.
+Executes 73 native tests/subtests covering calculations, context isolation, duplicate prevention, verification boundaries, Income sync, all 16 writable route transaction contracts, storage integrity, route-specific lookup examples, and system-only route protections.
 
 ### Type Check & Build
 ```bash
