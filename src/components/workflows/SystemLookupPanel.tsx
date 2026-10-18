@@ -9,7 +9,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerRouteId, TaxCategory, ExternalLookupResult } from '../../domain/models.ts';
-import { externalLookupService } from '../../services/externalLookupService.ts';
+import { externalLookupService, getLocalReferenceExamples } from '../../services/externalLookupService.ts';
 import { validateExternalLookupMatch } from '../../domain/validation.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { Search, ShieldCheck, AlertOctagon, CheckCircle2 } from 'lucide-react';
@@ -38,6 +38,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   const [lookupContext, setLookupContext] = useState<string | null>(null);
   const requestSequence = useRef(0);
   const currentContext = `${taxpayer.tin}|${assessmentYear}|${routeId}`;
+  const sampleReferences = getLocalReferenceExamples(routeId);
 
   useEffect(() => {
     requestSequence.current += 1;
@@ -179,34 +180,25 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         </button>
       </form>
 
-      {/* Suggested Reference Badges for Testing Convenience */}
-      <div className="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
-        <span className="font-medium text-slate-600">Sample references:</span>
-        <button
-          type="button"
-          onClick={() => changeReference('DHAKA-METRO-JA-11-2044')}
-          className="underline hover:text-emerald-700 font-mono text-[11px]"
-        >
-          DHAKA-METRO-JA-11-2044 (Commercial)
-        </button>
-        <span>•</span>
-        <button
-          type="button"
-          onClick={() => changeReference('DHAKA-METRO-GA-34-9182')}
-          className="underline hover:text-emerald-700 font-mono text-[11px]"
-        >
-          DHAKA-METRO-GA-34-9182 (Private Car)
-        </button>
-        <span>•</span>
-        <button
-          type="button"
-          onClick={() => changeReference('DHAKA-METRO-KHA-55-1212')}
-          className="underline hover:text-rose-700 font-mono text-[11px]"
-          title="Tests TIN mismatch rejection"
-        >
-          DHAKA-METRO-KHA-55-1212 (TIN Mismatch Test)
-        </button>
-      </div>
+      {/* Route-specific local examples, not references from unrelated tax heads. */}
+      {sampleReferences.length > 0 && (
+        <div className="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
+          <span className="font-medium text-slate-600">Sample references:</span>
+          {sampleReferences.map((sample, index) => (
+            <React.Fragment key={sample.referenceNo}>
+              {index > 0 && <span>•</span>}
+              <button
+                type="button"
+                onClick={() => changeReference(sample.referenceNo)}
+                className={`underline font-mono text-[11px] ${sample.label === 'TIN Mismatch Test' ? 'hover:text-rose-700' : 'hover:text-emerald-700'}`}
+                title={sample.label === 'TIN Mismatch Test' ? 'Tests TIN mismatch rejection' : undefined}
+              >
+                {sample.referenceNo} ({sample.label})
+              </button>
+            </React.Fragment>
+          ))}
+        </div>
+      )}
 
       {/* Success Notification */}
       {saveSuccess && (

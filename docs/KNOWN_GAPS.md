@@ -40,7 +40,8 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Phase 5: A same-taxpayer, same-year treasury reference cannot be duplicated across payment sections
 - [x] Phase 5: Mutations are serialized within one repository instance; missing lookup context fails closed
 - [x] Phase 6: iBAS++ system entries have no inline edit/delete and reject local mutation attempts
-- [x] Phase 6: Repeated clean source-level and local route acceptance regression (72 tests/subtests)
+- [x] Phase 6: Repeated clean source-level and local route acceptance regression (73 tests/subtests)
+- [x] Phase 6: Route-specific local lookup samples for AIT and Payment panels replace unrelated vehicle examples
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.

@@ -2,11 +2,11 @@
 
 **Starting point:** Phase 5 deployed `main` at `a96f31e`.
 
-- `npm test`: **72/72 passed**, including readonly iBAS++ UI markup and repository mutation guards.
+- `npm test`: **73/73 passed**, including readonly iBAS++ UI markup, repository mutation guards and route-specific lookup examples.
 - `npm run lint`: PASS.
-- `npm run build`: PASS, output `index-jqG4gfHd.js`.
+- `npm run build`: PASS, output `index-0GMF8Mmq.js`.
 - `git diff --check`: PASS.
-- No changes to CSS, top navigation or page-shell layout.
+- No changes to CSS, top navigation or page-shell layout. The first Phase 6 deployed build `a4438fc` passed all 18 route-rendering checks and 375px/1440px responsive checks; see final acceptance document for boundaries.
 - See [`PHASE6_FINAL_ACCEPTANCE.md`](PHASE6_FINAL_ACCEPTANCE.md).
 
 Final PR CI, Pages deployment and live browser checks are release gates.
