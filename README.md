@@ -1,4 +1,4 @@
-# NBR eReturn Ledger (eLedger) — Phase 1 Recovery Checkpoint
+# NBR eReturn Ledger (eLedger) — Phase 6 Recovery Checkpoint
 
 Reconstructed foundation for the **Bangladesh National Board of Revenue (NBR) eReturn Ledger (eLedger)** web application.
 
@@ -87,7 +87,7 @@ The app will be available at `http://localhost:3000`.
 ```bash
 npm run test
 ```
-Executes 23 unit tests covering calculations, context isolation, duplicate prevention, verification boundaries, Income sync, and CRUD operations.
+Executes 72 native tests/subtests covering calculations, context isolation, duplicate prevention, verification boundaries, Income sync, all 16 writable route transaction contracts, storage integrity, and system-only route protections.
 
 ### Type Check & Build
 ```bash
@@ -112,4 +112,7 @@ considering the site live.
 - [`docs/RECOVERY_BASELINE.md`](docs/RECOVERY_BASELINE.md) — Historical context, recovery decisions, and boundaries.
 - [`docs/ROUTE_MATRIX.md`](docs/ROUTE_MATRIX.md) — Full 18-route registry, statutory sections, and workflow patterns.
 - [`docs/KNOWN_GAPS.md`](docs/KNOWN_GAPS.md) — Missing evidence and unimplemented requirements.
-- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Phase 1 executed verification results (23/23 passing).
+- [`docs/PHASE4_WORKFLOW_ACCEPTANCE.md`](docs/PHASE4_WORKFLOW_ACCEPTANCE.md) — Per-route local transaction acceptance.
+- [`docs/PHASE5_DATA_RECONCILIATION.md`](docs/PHASE5_DATA_RECONCILIATION.md) — Data integrity and external integration boundaries.
+- [`docs/PHASE6_FINAL_ACCEPTANCE.md`](docs/PHASE6_FINAL_ACCEPTANCE.md) — Final recovery acceptance checklist and remaining independent dependencies.
+- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Executed verification and deployment results across recovery checkpoints.

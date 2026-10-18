@@ -229,6 +229,7 @@ export const SourceTaxView: React.FC = () => {
         onUpdateEntry={handleUpdateEntry}
         onDeleteEntry={handleDeleteEntry}
         allowAdd={currentRoute.supportsManualEntry}
+        allowEditDelete={currentRoute.supportsManualEntry}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–5)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–6)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -39,6 +39,8 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Phase 5: Malformed saved financial rows fail closed without modifying original browser data
 - [x] Phase 5: A same-taxpayer, same-year treasury reference cannot be duplicated across payment sections
 - [x] Phase 5: Mutations are serialized within one repository instance; missing lookup context fails closed
+- [x] Phase 6: iBAS++ system entries have no inline edit/delete and reject local mutation attempts
+- [x] Phase 6: Repeated clean source-level and local route acceptance regression (72 tests/subtests)
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
