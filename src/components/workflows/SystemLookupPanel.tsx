@@ -6,7 +6,7 @@
  * - Confirmed external lookup records take precedence.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerRouteId, TaxCategory, ExternalLookupResult } from '../../domain/models.ts';
 import { externalLookupService } from '../../services/externalLookupService.ts';
@@ -35,6 +35,15 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   const [lookupResult, setLookupResult] = useState<ExternalLookupResult | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [lookupContext, setLookupContext] = useState<string | null>(null);
+  const currentContext = `${taxpayer.tin}|${assessmentYear}|${routeId}`;
+
+  useEffect(() => {
+    setLookupResult(null);
+    setLookupContext(null);
+    setValidationError(null);
+    setSaveSuccess(null);
+  }, [currentContext]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +51,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
     setIsSearching(true);
     setLookupResult(null);
+    setLookupContext(null);
     setValidationError(null);
     setSaveSuccess(null);
 
@@ -53,7 +63,9 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         assessmentYear,
       });
 
+      // Do not reuse a previously found reference under a different context.
       setLookupResult(result);
+      setLookupContext(currentContext);
 
       // Validate according to fail-closed rules
       const validation = validateExternalLookupMatch(
@@ -78,6 +90,15 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
   const handleSaveToLedger = async () => {
     if (!lookupResult || !lookupResult.found) return;
+    if (lookupContext !== currentContext || !validateExternalLookupMatch({
+      routeId,
+      referenceNo: lookupResult.referenceNo,
+      expectedTin: taxpayer.tin,
+      assessmentYear,
+    }, lookupResult).canSave) {
+      setValidationError('Reference context changed. Run the lookup again.');
+      return;
+    }
 
     const res = await addEntry({
       taxpayerTin: taxpayer.tin,
@@ -90,15 +111,15 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       grossAmount: lookupResult.grossAmount,
       taxDeducted: lookupResult.taxAmount,
       date: lookupResult.paymentDate || new Date().toISOString().split('T')[0],
-      status: 'VERIFIED',
+      status: lookupResult.authoritative ? 'VERIFIED' : 'PENDING_VERIFICATION',
       workflow: 'SYSTEM_LOOKUP',
       isManual: false,
-      externalVerified: true,
-      remarks: `Verified via ${lookupResult.verificationSource} Token: ${lookupResult.challanOrTokenNo}`,
+      externalVerified: lookupResult.authoritative === true,
+      remarks: `Reference via ${lookupResult.verificationSource} Token: ${lookupResult.challanOrTokenNo}`,
     });
 
     if (res.success) {
-      setSaveSuccess(`Verified record '${lookupResult.referenceNo}' successfully added to ledger.`);
+      setSaveSuccess(`Reference '${lookupResult.referenceNo}' added to ledger for verification.`);
       setLookupResult(null);
       setReferenceQuery('');
     } else {
@@ -111,7 +132,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       <div className="pb-3 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-            Official System Registry Lookup & Verification
+            System Reference Lookup
           </h4>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
             Workflow: System Lookup
@@ -189,14 +210,14 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       )}
 
       {/* Verified Record Preview */}
-      {lookupResult && lookupResult.found && !validationError && (
+      {lookupResult && lookupContext === currentContext && lookupResult.found && !validationError && (
         <div className="mt-3 p-4 rounded-lg bg-emerald-50/60 border border-emerald-300 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs font-bold text-emerald-950">
-                  Government Registry Record Verified
+                  {lookupResult.authoritative ? 'Registry Record Verified' : 'Matching Reference Found'}
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 font-mono">
                   {lookupResult.verificationSource}
@@ -215,7 +236,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
             <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-emerald-200">
               <div className="text-right">
-                <span className="text-[10px] text-slate-500 block uppercase">Verified Tax</span>
+                <span className="text-[10px] text-slate-500 block uppercase">Recorded Tax</span>
                 <span className="text-sm font-bold font-mono text-emerald-900">
                   {formatCurrencyBDT(lookupResult.taxAmount)}
                 </span>
@@ -225,7 +246,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
                 onClick={handleSaveToLedger}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
               >
-                Add Verified Record to Ledger
+                Add Reference to Ledger
               </button>
             </div>
           </div>

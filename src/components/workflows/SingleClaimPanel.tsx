@@ -68,7 +68,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         grossAmount: amount,
         taxDeducted: amount,
         date: new Date().toISOString().split('T')[0],
-        status: 'VERIFIED',
+        status: 'PENDING_VERIFICATION',
         workflow: 'SINGLE_CLAIM',
         isManual: true,
         externalVerified: false,

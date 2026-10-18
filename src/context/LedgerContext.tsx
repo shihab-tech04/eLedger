@@ -132,7 +132,12 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const syncIncomeItem = async (itemId: string, sectionCode: string) => {
-    const res = await incomeSyncService.syncItemToLedger(itemId, sectionCode);
+    const res = await incomeSyncService.syncItemToLedger(
+      itemId,
+      sectionCode,
+      taxpayer.tin,
+      assessmentYear
+    );
     if (res.success) {
       await loadEntries();
     }

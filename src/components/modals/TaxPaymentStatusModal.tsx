@@ -322,10 +322,10 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
               <div>
                 <span className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-300">
-                  Total Claimable Tax Credit / Payment:
+                  Verified Tax Payments & Deductions:
                 </span>
                 <span className="hidden sm:inline-block text-[11px] text-slate-400 ml-2">
-                  (Ready for eReturn schedule sync)
+                  (Pending claims excluded)
                 </span>
               </div>
             </div>

@@ -42,17 +42,27 @@ export class IncomeSyncService {
     routeId: string
   ): Promise<IncomeSyncItem[]> {
     const items = this.loadItems();
+    const ledgerEntries = await ledgerRepository.getEntries(taxpayerTin, assessmentYear);
     return items.filter(
       (item) =>
         item.taxpayerTin === taxpayerTin &&
         item.assessmentYear === assessmentYear &&
         item.routeId === routeId
-    );
+    ).map((item) => ({
+      ...item,
+      // The ledger is the source of truth after a row has been deleted.
+      isSyncedToLedger: ledgerEntries.some(
+        (entry) => entry.routeId === item.routeId &&
+          entry.referenceNo === item.accountOrCertificateNo
+      ),
+    }));
   }
 
   async syncItemToLedger(
     itemId: string,
-    sectionCode: string
+    sectionCode: string,
+    expectedTin: string,
+    expectedAssessmentYear: AssessmentYear
   ): Promise<{ success: boolean; entry?: LedgerEntry; error?: string }> {
     const items = this.loadItems();
     const itemIndex = items.findIndex((i) => i.id === itemId);
@@ -61,7 +71,14 @@ export class IncomeSyncService {
     }
 
     const item = items[itemIndex];
-    if (item.isSyncedToLedger) {
+    if (item.taxpayerTin !== expectedTin || item.assessmentYear !== expectedAssessmentYear) {
+      return { success: false, error: 'Taxpayer or assessment year does not match the selected context.' };
+    }
+
+    const existing = await ledgerRepository.getEntries(expectedTin, expectedAssessmentYear);
+    if (existing.some((entry) =>
+      entry.routeId === item.routeId && entry.referenceNo === item.accountOrCertificateNo
+    )) {
       return { success: false, error: 'This income source is already synchronized to ledger.' };
     }
 
@@ -80,7 +97,7 @@ export class IncomeSyncService {
       status: 'SYNCED',
       workflow: 'SYNC_FROM_INCOME',
       isManual: false,
-      externalVerified: true,
+      externalVerified: false,
       remarks: `Synchronized from eReturn Income Head: ${item.sourceHead}`,
     });
 

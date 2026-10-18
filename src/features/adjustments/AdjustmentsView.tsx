@@ -53,7 +53,7 @@ export const AdjustmentsView: React.FC = () => {
       grossAmount: entryData.grossAmount,
       taxDeducted: entryData.taxDeducted,
       date: entryData.date,
-      status: 'VERIFIED',
+      status: 'PENDING_VERIFICATION',
       workflow: currentRoute.workflow,
       isManual: true,
       externalVerified: false,
