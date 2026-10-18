@@ -95,15 +95,26 @@ export function validateExternalLookupMatch(
   if (!result.found || result.status === 'NOT_FOUND') {
     return {
       canSave: false,
-      reason: 'Reference record not found in national verification registry.',
+      reason: 'No matching reference record found.',
     };
   }
 
-  if (result.status === 'MISMATCH' || result.matchedTin !== query.expectedTin) {
+  if (result.matchedTin !== query.expectedTin) {
     return {
       canSave: false,
       reason: `Taxpayer TIN mismatch: Reference belongs to TIN ${result.matchedTin}, but current taxpayer is ${query.expectedTin}. Verification rejected.`,
     };
+  }
+
+  if (result.status === 'MISMATCH') {
+    return { canSave: false, reason: result.statusMessage || 'Reference context mismatch.' };
+  }
+
+  if (
+    (result.routeId && result.routeId !== query.routeId) ||
+    (result.assessmentYear && result.assessmentYear !== query.assessmentYear)
+  ) {
+    return { canSave: false, reason: 'Reference category or assessment year mismatch.' };
   }
 
   if (result.taxAmount <= 0) {
@@ -126,11 +137,11 @@ export function getInitialVerificationStatus(
   isManual: boolean,
   isExternalVerified: boolean
 ): VerificationStatus {
-  if (isExternalVerified) {
-    return 'VERIFIED';
-  }
   if (isManual) {
     return 'PENDING_VERIFICATION';
+  }
+  if (isExternalVerified) {
+    return 'VERIFIED';
   }
   return 'DRAFT';
 }

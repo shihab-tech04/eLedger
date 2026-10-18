@@ -75,6 +75,10 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     const now = new Date().toISOString();
     const newEntry: LedgerEntry = {
       ...entry,
+      // This repository is local-only. It cannot mint verified tax credits.
+      status: entry.status === 'SYNCED' ? 'SYNCED' : 'PENDING_VERIFICATION',
+      externalVerified: false,
+      verificationAuthority: undefined,
       id: `ledg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       createdAt: now,
       updatedAt: now,
@@ -93,6 +97,12 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     const updated: LedgerEntry = {
       ...all[index],
       ...patch,
+      // Editing a local row must not grant verification or move its ownership.
+      taxpayerTin: all[index].taxpayerTin,
+      assessmentYear: all[index].assessmentYear,
+      status: all[index].status === 'SYNCED' ? 'SYNCED' : 'PENDING_VERIFICATION',
+      externalVerified: false,
+      verificationAuthority: undefined,
       updatedAt: new Date().toISOString(),
     };
     all[index] = updated;

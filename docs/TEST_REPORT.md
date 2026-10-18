@@ -1,4 +1,26 @@
-# NBR eReturn Ledger (eLedger) — Automated Test Execution Report
+# NBR eReturn Ledger — Phase 1 Verified Checkpoint Report
+
+**Execution date:** 2026-10-18
+
+**Baseline:** `shihab-tech04/eLedger` at `f5ce28d` before local repair
+
+**Clean dependency installation:** PASS (`npm ci`, no legacy peer-dependency bypass)
+
+**TypeScript:** PASS (`npm run lint`)
+
+**Unit tests:** **23/23 PASS** (`npm run test`)
+**Production build:** PASS (`npm run build`)
+
+The five added Phase 1 tests cover taxpayer/assessment-year Income-sync
+isolation, duplicate/re-sync recovery, route/year mismatch rejection, exclusion
+of unsupported credits, and prevention of local verification promotion. Local
+reference matches are recorded pending verification; no government service or
+authoritative credit posting was exercised. Browser-level acceptance and live
+deployment verification are separate release gates.
+
+---
+
+# Historical Phase 0 Test Report (Superseded)
 
 **Execution Date:** 2026-10-18  
 **Runner:** Node.js Native Test Runner (`node --import tsx --test`)  

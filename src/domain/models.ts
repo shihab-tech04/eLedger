@@ -76,6 +76,8 @@ export interface LedgerEntry {
   workflow: WorkflowPattern;
   isManual: boolean;
   externalVerified: boolean;
+  // Reserved for future server-attested verification. Never set by local adapters.
+  verificationAuthority?: 'AUTHORITATIVE';
   remarks?: string;
   createdAt: string;
   updatedAt: string;
@@ -105,6 +107,10 @@ export interface ExternalLookupQuery {
 
 export interface ExternalLookupResult {
   found: boolean;
+  // A matching local reference is not evidence of government verification.
+  authoritative?: boolean;
+  routeId?: LedgerRouteId;
+  assessmentYear?: AssessmentYear;
   referenceNo: string;
   matchedTin: string;
   entityName: string;

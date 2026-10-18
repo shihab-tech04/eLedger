@@ -42,6 +42,6 @@
 
 ## Status Definitions
 
-- **CONFIRMED:** Statutory backing identified under Bangladesh Income Tax Act 2023 with verified workflow mapping and implemented UI.
-- **PROVISIONAL:** Recognized statutory deduction category under ITA 2023 (e.g., Contractor supply under Sec 89 and House Property under Sec 109) with confirmed UI implementation, pending official NBR XML schema synchronization.
+- **CONFIRMED:** Recovered functional route with an implemented UI pattern. This is not independent certification of statutory section applicability.
+- **PROVISIONAL:** Route label or field mapping still requires confirmation against the original source and official NBR requirements.
 - **UNRESOLVED:** Out-of-scope or external systems (NBR TaxPay e-challan creation, general assessment order issuance) explicitly excluded from eLedger boundaries.

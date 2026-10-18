@@ -1,5 +1,5 @@
 /**
- * Comprehensive Unit Test Suite for NBR eReturn Ledger (Phase 0)
+ * Unit Test Suite for NBR eReturn Ledger (Phase 1 recovery)
  * Uses Node.js native test runner (node:test & node:assert/strict)
  *
  * Verifies all 14 mandatory areas from Section 11:
@@ -37,9 +37,11 @@ import {
 import { LedgerEntry, ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
 import { INITIAL_LEDGER_ENTRIES, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
 import { LocalStorageLedgerRepository } from '../services/ledgerRepository.ts';
+import { ledgerRepository } from '../services/ledgerRepository.ts';
 import { ExternalLookupService } from '../services/externalLookupService.ts';
+import { incomeSyncService } from '../services/incomeSyncService.ts';
 
-describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
+describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
   describe('1. Route Registry & Navigation Structure', () => {
     it('should contain exactly 18 functional routes', () => {
@@ -175,6 +177,7 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
           workflow: 'SYSTEM_CLAIM',
           isManual: false,
           externalVerified: true,
+          verificationAuthority: 'AUTHORITATIVE',
           createdAt: '',
           updatedAt: '',
         },
@@ -194,6 +197,7 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
           workflow: 'SYSTEM_LOOKUP',
           isManual: false,
           externalVerified: true,
+          verificationAuthority: 'AUTHORITATIVE',
           createdAt: '',
           updatedAt: '',
         },
@@ -213,6 +217,7 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
           workflow: 'SYSTEM_LOOKUP',
           isManual: false,
           externalVerified: true,
+          verificationAuthority: 'AUTHORITATIVE',
           createdAt: '',
           updatedAt: '',
         },
@@ -247,7 +252,8 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
       assert.equal(totals.paymentsCount, 1);
       assert.equal(totals.adjustmentsTotal, 5000);
       assert.equal(totals.adjustmentsCount, 1);
-      assert.equal(totals.grandTotalCredits, 70000);
+      // The 5,000 manual adjustment is recorded but cannot be auto-credited.
+      assert.equal(totals.grandTotalCredits, 65000);
       assert.equal(totals.totalRecordsCount, 4);
     });
   });
@@ -363,6 +369,7 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
       const result = await service.lookup(query);
       assert.equal(result.status, 'VALID');
       assert.equal(result.taxAmount, 16000);
+      assert.equal(result.authoritative, false);
 
       const validation = validateExternalLookupMatch(query, result);
       assert.equal(validation.canSave, true);
@@ -386,6 +393,24 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
       assert.equal(validation.canSave, false);
       assert.match(validation.reason || '', /offline|unavailable/i);
     });
+
+    it('rejects a matching reference used for a different route or assessment year', async () => {
+      const service = new ExternalLookupService();
+      const base: ExternalLookupQuery = {
+        routeId: 'commercial-vehicle',
+        referenceNo: 'DHAKA-METRO-JA-11-2044',
+        expectedTin: '123456789012',
+        assessmentYear: '2026-2027',
+      };
+      for (const query of [
+        { ...base, routeId: 'car-ait' as const },
+        { ...base, assessmentYear: '2025-2026' as const },
+      ]) {
+        const result = await service.lookup(query);
+        assert.equal(result.status, 'MISMATCH');
+        assert.equal(validateExternalLookupMatch(query, result).canSave, false);
+      }
+    });
   });
 
   // Test 12: Income Sync Isolation
@@ -395,6 +420,45 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
       assert.ok(entries.length > 0);
       assert.equal(entries[0].workflow, 'SYNC_FROM_INCOME');
       assert.equal(entries[0].status, 'SYNCED');
+    });
+
+    it('rejects sync into a different taxpayer or assessment year', async () => {
+      const wrongTin = await incomeSyncService.syncItemToLedger(
+        'sync-item-bank-02', 'Sec 102', '987654321098', '2026-2027'
+      );
+      const wrongYear = await incomeSyncService.syncItemToLedger(
+        'sync-item-bank-02', 'Sec 102', '123456789012', '2025-2026'
+      );
+      assert.equal(wrongTin.success, false);
+      assert.equal(wrongYear.success, false);
+    });
+
+    it('prevents duplicates and allows resync after a ledger row is deleted', async () => {
+      await ledgerRepository.resetToDefaults();
+      const first = await incomeSyncService.syncItemToLedger(
+        'sync-item-bank-02', 'Sec 102', '123456789012', '2026-2027'
+      );
+      assert.equal(first.success, true);
+      assert.equal(first.entry?.status, 'SYNCED');
+      assert.equal(first.entry?.externalVerified, false);
+
+      const duplicate = await incomeSyncService.syncItemToLedger(
+        'sync-item-bank-02', 'Sec 102', '123456789012', '2026-2027'
+      );
+      assert.equal(duplicate.success, false);
+
+      assert.ok(first.entry);
+      await ledgerRepository.deleteEntry(first.entry.id);
+      const visible = await incomeSyncService.getSyncItemsForRoute(
+        '123456789012', '2026-2027', 'bank-fi'
+      );
+      assert.equal(visible.find((item) => item.id === 'sync-item-bank-02')?.isSyncedToLedger, false);
+
+      const again = await incomeSyncService.syncItemToLedger(
+        'sync-item-bank-02', 'Sec 102', '123456789012', '2026-2027'
+      );
+      assert.equal(again.success, true);
+      await ledgerRepository.resetToDefaults();
     });
   });
 
@@ -409,7 +473,10 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
         sumFromGroups += grouped[key].totalTax;
       }
 
-      assert.equal(Math.round(sumFromGroups * 100) / 100, totals.grandTotalCredits);
+      const recordedTotal = totals.sourceTaxTotal + totals.aitTotal +
+        totals.paymentsTotal + totals.adjustmentsTotal;
+      assert.equal(Math.round(sumFromGroups * 100) / 100, recordedTotal);
+      assert.equal(totals.grandTotalCredits, 0);
     });
 
     it('should format currency consistently in Bangladeshi Taka (BDT)', () => {
@@ -423,9 +490,53 @@ describe('NBR eReturn Ledger — Phase 0 Test Suite', () => {
     it('should never automatically classify a locally entered amount as an authorized tax credit', () => {
       const manualStatus = getInitialVerificationStatus(true, false);
       assert.equal(manualStatus, 'PENDING_VERIFICATION');
+      assert.equal(getInitialVerificationStatus(true, true), 'PENDING_VERIFICATION');
 
       const verifiedStatus = getInitialVerificationStatus(false, true);
       assert.equal(verifiedStatus, 'VERIFIED');
+    });
+
+    it('does not count an unsubstantiated VERIFIED flag as an eligible credit', () => {
+      const manual = INITIAL_LEDGER_ENTRIES[0];
+      const totals = calculateCategoryTotals([
+        { ...manual, status: 'VERIFIED', externalVerified: true, isManual: true },
+        { ...manual, id: 'unsourced', status: 'VERIFIED', externalVerified: true },
+      ]);
+      assert.equal(totals.sourceTaxTotal, manual.taxDeducted * 2);
+      assert.equal(totals.grandTotalCredits, 0);
+    });
+
+    it('blocks local repository writes from granting VERIFIED status', async () => {
+      const repo = new LocalStorageLedgerRepository();
+      const created = await repo.addEntry({
+        taxpayerTin: '123456789012',
+        assessmentYear: '2026-2027',
+        category: 'SOURCE_TAX',
+        routeId: 'salary-others',
+        referenceNo: 'LOCAL-UNVERIFIED-01',
+        sourceEntity: 'Test Payer',
+        sectionCode: 'Sec 86',
+        grossAmount: 1000,
+        taxDeducted: 100,
+        date: '2026-10-18',
+        status: 'VERIFIED',
+        workflow: 'MANUAL_ENTRY',
+        isManual: true,
+        externalVerified: true,
+        verificationAuthority: 'AUTHORITATIVE',
+      });
+      assert.equal(created.status, 'PENDING_VERIFICATION');
+      assert.equal(created.externalVerified, false);
+      assert.equal(created.verificationAuthority, undefined);
+      const modified = await repo.updateEntry(created.id, {
+        status: 'VERIFIED',
+        externalVerified: true,
+        verificationAuthority: 'AUTHORITATIVE',
+        taxpayerTin: '987654321098',
+      });
+      assert.equal(modified.status, 'PENDING_VERIFICATION');
+      assert.equal(modified.externalVerified, false);
+      assert.equal(modified.taxpayerTin, '123456789012');
     });
   });
 });

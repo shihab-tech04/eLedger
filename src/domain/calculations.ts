@@ -14,9 +14,21 @@ export function calculateCategoryTotals(entries: LedgerEntry[]): TaxCategoryTota
   let paymentsCount = 0;
   let adjustmentsTotal = 0;
   let adjustmentsCount = 0;
+  let verifiedTotal = 0;
 
   for (const entry of entries) {
-    const tax = Number(entry.taxDeducted) || 0;
+    const amount = Number(entry.taxDeducted);
+    const tax = Number.isFinite(amount) ? amount : 0;
+    // Recorded claims are not necessarily eligible credits. A local/manual
+    // record or an Income sync must never increase the verified total.
+    if (
+      entry.status === 'VERIFIED' &&
+      entry.externalVerified &&
+      entry.verificationAuthority === 'AUTHORITATIVE' &&
+      !entry.isManual
+    ) {
+      verifiedTotal += tax;
+    }
     switch (entry.category) {
       case 'SOURCE_TAX':
         sourceTaxTotal += tax;
@@ -39,7 +51,7 @@ export function calculateCategoryTotals(entries: LedgerEntry[]): TaxCategoryTota
     }
   }
 
-  const grandTotalCredits = sourceTaxTotal + aitTotal + paymentsTotal + adjustmentsTotal;
+  const grandTotalCredits = verifiedTotal;
   const totalRecordsCount = entries.length;
 
   return {

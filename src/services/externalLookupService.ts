@@ -10,11 +10,13 @@
 
 import { ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
 
-// Simulated official registry datasets for testing and verification
-const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
+// Local reference fixtures. These are never authoritative verification results.
+const LOCAL_REFERENCE_RECORDS: Record<string, ExternalLookupResult> = {
   // BRTA Commercial Vehicle records
   'DHAKA-METRO-JA-11-2044': {
     found: true,
+    routeId: 'commercial-vehicle',
+    assessmentYear: '2026-2027',
     referenceNo: 'DHAKA-METRO-JA-11-2044',
     matchedTin: '123456789012',
     entityName: 'BRTA Dhaka Metro (Commercial Bus)',
@@ -24,11 +26,13 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
     challanOrTokenNo: 'BRTA-TOK-2026-90812',
     verificationSource: 'BRTA',
     status: 'VALID',
-    statusMessage: 'Official BRTA vehicle advance tax token verified with NBR tax database.',
+    statusMessage: 'Matching BRTA reference found in local records. External verification is pending.',
   },
   // BRTA Private Car record
   'DHAKA-METRO-GA-34-9182': {
     found: true,
+    routeId: 'car-ait',
+    assessmentYear: '2026-2027',
     referenceNo: 'DHAKA-METRO-GA-34-9182',
     matchedTin: '123456789012',
     entityName: 'BRTA Mirpur (Toyota Corolla 1498cc)',
@@ -38,11 +42,13 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
     challanOrTokenNo: 'BRTA-FIT-2026-44910',
     verificationSource: 'BRTA',
     status: 'VALID',
-    statusMessage: 'Motor car advance tax record confirmed matching taxpayer TIN.',
+    statusMessage: 'Matching motor car reference found in local records. External verification is pending.',
   },
   // Mismatched TIN record (belongs to different taxpayer TIN 999999999999)
   'DHAKA-METRO-KHA-55-1212': {
     found: true,
+    routeId: 'commercial-vehicle',
+    assessmentYear: '2026-2027',
     referenceNo: 'DHAKA-METRO-KHA-55-1212',
     matchedTin: '999999999999',
     entityName: 'BRTA Gazipur (Commercial Carrier)',
@@ -57,6 +63,8 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
   // Treasury A-Challan under Section 173
   'ACHALLAN-2026-788102': {
     found: true,
+    routeId: 'sec-173',
+    assessmentYear: '2026-2027',
     referenceNo: 'ACHALLAN-2026-788102',
     matchedTin: '123456789012',
     entityName: 'Sonali Bank (A-Challan Code: 1-1141-0010-0101)',
@@ -66,11 +74,13 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
     challanOrTokenNo: 'TR-ACH-9882194',
     verificationSource: 'A-CHALLAN',
     status: 'VALID',
-    statusMessage: 'Treasury payment verified against Bangladesh Bank A-Challan portal.',
+    statusMessage: 'Matching challan reference found in local records. External verification is pending.',
   },
   // Section 171 Quarterly Advance Challan
   'ACHALLAN-Q1-2026-5541': {
     found: true,
+    routeId: 'sec-171',
+    assessmentYear: '2026-2027',
     referenceNo: 'ACHALLAN-Q1-2026-5541',
     matchedTin: '123456789012',
     entityName: 'Treasury Challan (Quarter 1 Advance Tax)',
@@ -80,11 +90,13 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
     challanOrTokenNo: 'TR-ACH-5541-Q1',
     verificationSource: 'A-CHALLAN',
     status: 'VALID',
-    statusMessage: 'Advance tax installment verified under Section 171.',
+    statusMessage: 'Matching advance tax reference found in local records. External verification is pending.',
   },
   // Section 154 Specialized AIT
   'SEC154-AUCTION-2026-001': {
     found: true,
+    routeId: 'sec-154',
+    assessmentYear: '2026-2027',
     referenceNo: 'SEC154-AUCTION-2026-001',
     matchedTin: '123456789012',
     entityName: 'Chittagong Port Authority Auction House',
@@ -94,7 +106,7 @@ const OFFICIAL_EXTERNAL_REGISTRY: Record<string, ExternalLookupResult> = {
     challanOrTokenNo: 'CPA-TDS-AUC-771',
     verificationSource: 'A-CHALLAN',
     status: 'VALID',
-    statusMessage: 'Auction advance tax deduction certified.',
+    statusMessage: 'Matching auction reference found in local records. External verification is pending.',
   },
 };
 
@@ -129,8 +141,8 @@ export class ExternalLookupService implements IExternalLookupService {
       };
     }
 
-    // 2. Query official registry
-    const record = OFFICIAL_EXTERNAL_REGISTRY[cleanRef];
+    // 2. Match local references without representing them as live registry results.
+    const record = LOCAL_REFERENCE_RECORDS[cleanRef];
 
     if (!record) {
       return {
@@ -157,9 +169,19 @@ export class ExternalLookupService implements IExternalLookupService {
       };
     }
 
-    // 4. Precedence: return verified record
+    if (record.routeId !== query.routeId || record.assessmentYear !== query.assessmentYear) {
+      return {
+        ...record,
+        authoritative: false,
+        status: 'MISMATCH',
+        statusMessage: 'Reference does not match the selected ledger category or assessment year.',
+      };
+    }
+
+    // 4. Local matches may be recorded, but never become verified credits.
     return {
       ...record,
+      authoritative: false,
       status: 'VALID',
     };
   }

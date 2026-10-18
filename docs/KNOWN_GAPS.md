@@ -18,19 +18,22 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] External lookup fail-closed verification and TIN mismatch rejection
 - [x] Income Sync workflow (Bank, Dividend, Sanchayapatra, Service)
 - [x] Compact Tax Payment Status Modal with expandable sections and fixed footer
-- [x] Verification state distinction (manual entries not auto-credited)
+- [x] Verification state distinction (manual, Income-sync, and local-lookup entries not auto-credited)
+- [x] Local repository does not issue authoritative verification
+- [x] Cross-context lookup result cannot be saved after taxpayer/year/category changes
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
 - **House Property TDS (`house-property`):** Implemented with manual entry under Sec 109; provisional pending official tenancy agreement identifier schema.
 
 ### Partial / Blocked by External Environment
-- **Live iBAS++ API Endpoint:** Government CGA intranet network boundary prevents live TLS connection from GitHub Pages. Local adapter simulates verified seed claims.
-- **Live BRTA Vehicle Database API:** Requires bilateral NBR-BRTA government gateway token; client adapter uses verified registry seed lookup with fail-closed behavior on mismatch.
-- **Live Bangladesh Bank A-Challan Webhook:** Mocked in adapter; production deployment requires backend gateway integration.
+- **Live iBAS++ API Endpoint:** Not connected. Existing records are local reference data and remain pending verification.
+- **Live BRTA Vehicle Database API:** Not connected. Local matches remain pending; route, taxpayer, and year mismatches are rejected.
+- **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.
+- **Browser journey tests:** Not yet completed for the recovered UI; unit tests do not constitute full interface acceptance.
 
 ### Unverified Historical Commit Assets
-- PR #17 historical commit contents: Unavailable due to upstream GitHub access interruption. Base rebuilt from PR #16 baseline requirements.
+- Planned PR #17 was not published in the historical repository because of the upstream access interruption. Its assessment-year and taxpayer-context intent is now covered in the new baseline tests.
 
 ### Non-Goals for Phase 0
 - Live banking payment gateway (NBR TaxPay responsibilities)

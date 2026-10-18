@@ -122,7 +122,7 @@ export const DashboardView: React.FC = () => {
               {formatCurrencyBDT(totals.aitTotal)}
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-              <span>{totals.aitCount} verified records</span>
+              <span>{totals.aitCount} recorded claims</span>
               <span className="font-medium text-emerald-700 group-hover:underline flex items-center">
                 Manage <ArrowRight className="w-3 h-3 ml-0.5" />
               </span>
@@ -187,10 +187,10 @@ export const DashboardView: React.FC = () => {
       <div className="bg-slate-900 text-white rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm border border-slate-800">
         <div>
           <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold block">
-            Grand Total Tax Credits & Payments (AY {assessmentYear})
+            Verified Tax Payments & Deductions (AY {assessmentYear})
           </span>
           <p className="text-xs text-slate-300 mt-0.5">
-            Aggregated sum of all verified and recorded ledger entries claimable against final return tax liability.
+            Recorded and pending entries are excluded until external verification is confirmed.
           </p>
         </div>
         <div className="flex items-center space-x-4">
