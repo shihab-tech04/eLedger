@@ -69,7 +69,7 @@ const AppContent: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-4 text-slate-500">
-            <span>Income Tax Act 2023 Statutory Compliance</span>
+            <span>Prototype • Not an official NBR service</span>
             <span>•</span>
             <button
               onClick={() => setIsStatusModalOpen(true)}

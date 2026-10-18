@@ -78,7 +78,7 @@ export const LedgerGuideView: React.FC = () => {
         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
             <strong className="text-slate-800 block mb-1">System Boundaries:</strong>
-            eLedger solely manages verified tax payments, source tax (TDS) claims, Advance Income Tax (AIT), and prior return adjustments. It does not replace NBR TaxPay e-challan generation or general tax assessment order systems.
+            This eLedger prototype organizes recorded payments, source tax (TDS) claims, AIT, and prior-return adjustments. It does not replace NBR TaxPay, official verification services, or tax assessment systems.
           </div>
           <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
             <strong className="text-slate-800 block mb-1">Assessment Year Isolation:</strong>
@@ -100,7 +100,7 @@ export const LedgerGuideView: React.FC = () => {
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
             <span className="text-xs font-bold text-emerald-800 block">1. System Claim</span>
             <p className="text-xs text-slate-600 mt-1">
-              Government salary tax deduction automatically verified and pulled from Ministry of Finance iBAS++ payroll ledger (Sec 86/87).
+              Demonstration government salary deduction records modeled on iBAS++ (Sec 86/87). Live payroll synchronization and verification are not connected.
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export const LedgerGuideView: React.FC = () => {
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
             <span className="text-xs font-bold text-emerald-800 block">3. Sync from Income</span>
             <p className="text-xs text-slate-600 mt-1">
-              Direct synchronization of calculated withholding tax from interest, dividend, and Sanchayapatra income declared in eReturn income schedules.
+              Local demonstration import of income-related withholding records. Live eReturn income-schedule synchronization is not connected.
             </p>
           </div>
 
@@ -128,7 +128,7 @@ export const LedgerGuideView: React.FC = () => {
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
             <span className="text-xs font-bold text-emerald-800 block">5. System Lookup (Fail-Closed)</span>
             <p className="text-xs text-slate-600 mt-1">
-              Queries external registries (BRTA vehicles, A-Challans, Sec 154). Strictly validates taxpayer TIN match. If contradictory or offline, fails closed and rejects saving.
+              Checks bundled local reference records (BRTA, A-Challan, Sec 154), validates taxpayer and assessment-year context, and fails closed on mismatches. No live registry is connected.
             </p>
           </div>
 

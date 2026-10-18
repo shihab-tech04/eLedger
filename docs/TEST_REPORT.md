@@ -15,8 +15,14 @@ The five added Phase 1 tests cover taxpayer/assessment-year Income-sync
 isolation, duplicate/re-sync recovery, route/year mismatch rejection, exclusion
 of unsupported credits, and prevention of local verification promotion. Local
 reference matches are recorded pending verification; no government service or
-authoritative credit posting was exercised. Browser-level acceptance and live
-deployment verification are separate release gates.
+authoritative credit posting was exercised.
+
+**GitHub PR CI:** PASS ([workflow run 39143078002](https://github.com/shihab-tech04/eLedger/actions/runs/39143078002))
+
+**First deployment:** PASS ([workflow run 39143142347](https://github.com/shihab-tech04/eLedger/actions/runs/39143142347)). The public Pages URL returned HTTP 200, served JavaScript with the Phase 1 local-reference wording, and opened in a browser. Dashboard recorded totals remained visible while verified credit remained Tk. 0.00; the Tax Payment Status modal and AIT route loaded. A short follow-up wording patch removes legacy claims of official verification and live iBAS++/registry integration.
+
+Full route-by-route visual acceptance, cross-browser testing, and real
+government-service integration remain outside this checkpoint.
 
 ---
 
