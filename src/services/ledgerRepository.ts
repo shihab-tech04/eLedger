@@ -22,9 +22,17 @@ export interface ILedgerRepository {
 
 export class LocalStorageLedgerRepository implements ILedgerRepository {
   private inMemoryCache: LedgerEntry[] | null = null;
+  private mutationTail: Promise<void> = Promise.resolve();
 
   constructor(private readonly storage: LedgerStorage | null =
     typeof window === 'undefined' ? null : window.localStorage) {}
+
+  private serializeMutation<T>(mutation: () => Promise<T>): Promise<T> {
+    const result = this.mutationTail.then(mutation);
+    // A rejected write must not permanently block later valid operations.
+    this.mutationTail = result.then(() => undefined, () => undefined);
+    return result;
+  }
 
   private loadRaw(): LedgerEntry[] {
     if (!this.storage) {
@@ -40,18 +48,39 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
       if (!Array.isArray(parsed) || !parsed.every((entry) =>
         entry !== null && typeof entry === 'object' &&
         typeof entry.id === 'string' && typeof entry.taxpayerTin === 'string' &&
-        typeof entry.assessmentYear === 'string' && typeof entry.routeId === 'string'
+        ['2026-2027', '2025-2026', '2024-2025'].includes(entry.assessmentYear) &&
+        typeof entry.routeId === 'string' && typeof entry.referenceNo === 'string' &&
+        typeof entry.sourceEntity === 'string' && typeof entry.sectionCode === 'string' &&
+        typeof entry.grossAmount === 'number' && Number.isFinite(entry.grossAmount) &&
+        typeof entry.taxDeducted === 'number' && Number.isFinite(entry.taxDeducted) &&
+        typeof entry.date === 'string' && typeof entry.createdAt === 'string' &&
+        typeof entry.updatedAt === 'string' && typeof entry.isManual === 'boolean' &&
+        typeof entry.externalVerified === 'boolean' &&
+        ['DRAFT', 'PENDING_VERIFICATION', 'VERIFIED', 'DISPUTED', 'SYNCED'].includes(entry.status) &&
+        ['SYSTEM_CLAIM', 'MANUAL_ENTRY', 'SYNC_FROM_INCOME', 'HYBRID_SYNC_MANUAL',
+          'SYSTEM_LOOKUP', 'SYSTEM_RECORDS_IMPORT', 'SINGLE_CLAIM'].includes(entry.workflow) &&
+        (entry.remarks === undefined || typeof entry.remarks === 'string')
       )) {
         throw new Error('Stored entries have an invalid structure.');
       }
       // Browser storage is client-controlled. Never accept a locally persisted
       // flag as authoritative government verification.
-      return (parsed as LedgerEntry[]).map((entry) => ({
+      const entries = (parsed as LedgerEntry[]).map((entry) => ({
         ...entry,
         status: entry.status === 'VERIFIED' ? 'PENDING_VERIFICATION' : entry.status,
         externalVerified: false,
         verificationAuthority: undefined,
       }));
+      // Validate *every* stored row before displaying financial totals. The
+      // unreadable original remains intact for recovery; no partial import.
+      const ids = new Set<string>();
+      for (const entry of entries) {
+        if (ids.has(entry.id) || !validateLedgerEntry(entry, entries, entry.id).isValid) {
+          throw new Error('Invalid stored ledger record.');
+        }
+        ids.add(entry.id);
+      }
+      return entries;
     } catch {
       // Never overwrite a user's unreadable saved data with demo defaults.
       throw new Error('Saved ledger data could not be read. The stored data was left unchanged.');
@@ -94,6 +123,7 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
   async addEntry(
     entry: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<LedgerEntry> {
+    return this.serializeMutation(async () => {
     const all = await this.getAllEntries();
     const validation = validateLedgerEntry(entry, all);
     if (!validation.isValid) {
@@ -113,9 +143,11 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     all.push(newEntry);
     this.saveRaw(all);
     return newEntry;
+    });
   }
 
   async updateEntry(id: string, patch: Partial<LedgerEntry>): Promise<LedgerEntry> {
+    return this.serializeMutation(async () => {
     const all = await this.getAllEntries();
     const index = all.findIndex((e) => e.id === id);
     if (index === -1) {
@@ -146,9 +178,11 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     all[index] = updated;
     this.saveRaw(all);
     return updated;
+    });
   }
 
   async deleteEntry(id: string): Promise<boolean> {
+    return this.serializeMutation(async () => {
     const all = await this.getAllEntries();
     const filtered = all.filter((e) => e.id !== id);
     if (filtered.length === all.length) {
@@ -156,10 +190,13 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     }
     this.saveRaw(filtered);
     return true;
+    });
   }
 
   async resetToDefaults(): Promise<void> {
-    this.saveRaw(INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry })));
+    return this.serializeMutation(async () => {
+      this.saveRaw(INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry })));
+    });
   }
 }
 
