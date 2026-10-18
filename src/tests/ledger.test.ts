@@ -22,7 +22,7 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROUTE_REGISTRY, getRouteById, getRoutesByGroup } from '../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, getActiveRouteForGroup, getRouteById, getRoutesByGroup } from '../domain/routeRegistry.ts';
 import {
   calculateCategoryTotals,
   filterEntriesByRoute,
@@ -538,5 +538,168 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
       assert.equal(modified.externalVerified, false);
       assert.equal(modified.taxpayerTin, '123456789012');
     });
+  });
+});
+
+describe('eLedger — Phase 2 Context, Persistence and Validation Regressions', () => {
+  const manualEntry = {
+    taxpayerTin: '123456789012',
+    assessmentYear: '2026-2027' as const,
+    category: 'SOURCE_TAX' as const,
+    routeId: 'salary-others' as const,
+    referenceNo: 'PHASE2-MANUAL-001',
+    sourceEntity: 'Example Employer',
+    sectionCode: 'Sec 86',
+    grossAmount: 10000,
+    taxDeducted: 1000,
+    date: '2026-10-18',
+    status: 'PENDING_VERIFICATION' as const,
+    workflow: 'MANUAL_ENTRY' as const,
+    isManual: true,
+    externalVerified: false,
+  };
+
+  it('never resolves a foreign category route in any workflow group', () => {
+    for (const group of ['Source Tax', 'AIT', 'Payment', 'Adjustment', 'Tax Payment Status'] as const) {
+      const firstRoute = getRoutesByGroup(group)[0];
+      for (const route of ROUTE_REGISTRY) {
+        const resolved = getActiveRouteForGroup(route.id, group);
+        assert.equal(resolved.group, group);
+        assert.equal(resolved.id, route.group === group ? route.id : firstRoute.id);
+      }
+    }
+  });
+
+  it('rejects impossible calendar dates and nonfinite or zero gross amounts', () => {
+    for (const date of ['2026-02-30', '2026-04-31', '2025-02-29', '2026-13-01']) {
+      const result = validateLedgerEntry({ ...manualEntry, date }, []);
+      assert.equal(result.isValid, false, `Accepted invalid date ${date}`);
+      assert.ok(result.errors.date);
+    }
+    assert.equal(validateLedgerEntry({ ...manualEntry, date: '2024-02-29' }, []).isValid, true);
+    for (const grossAmount of [0, -1, Number.POSITIVE_INFINITY, Number.NaN]) {
+      const result = validateLedgerEntry({ ...manualEntry, grossAmount }, []);
+      assert.equal(result.isValid, false);
+      assert.ok(result.errors.grossAmount);
+    }
+    assert.ok(validateLedgerEntry({ ...manualEntry, taxDeducted: Number.POSITIVE_INFINITY }, []).errors.taxDeducted);
+  });
+
+  it('rejects a lookup response with another reference or invalid amounts', async () => {
+    const query: ExternalLookupQuery = {
+      routeId: 'commercial-vehicle',
+      referenceNo: 'DHAKA-METRO-JA-11-2044',
+      expectedTin: '123456789012',
+      assessmentYear: '2026-2027',
+    };
+    const result = await new ExternalLookupService().lookup(query);
+    assert.equal(validateExternalLookupMatch(query, result).canSave, true);
+
+    for (const changed of [
+      { ...result, referenceNo: 'OTHER-REFERENCE' },
+      { ...result, taxAmount: Number.POSITIVE_INFINITY },
+      { ...result, grossAmount: Number.NaN },
+      { ...result, grossAmount: result.taxAmount - 1 },
+      { ...result, status: 'MISMATCH' as const },
+    ]) {
+      assert.equal(validateExternalLookupMatch(query, changed).canSave, false);
+    }
+    assert.equal(validateExternalLookupMatch({ ...query, referenceNo: query.referenceNo.toLowerCase() }, result).canSave, true);
+  });
+
+  it('enforces validation and duplicate checks at the repository boundary', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    await repo.resetToDefaults();
+    const created = await repo.addEntry(manualEntry);
+    await assert.rejects(repo.addEntry({ ...manualEntry, referenceNo: manualEntry.referenceNo.toLowerCase() }), /Duplicate/i);
+    await assert.rejects(repo.addEntry({ ...manualEntry, referenceNo: 'NEW', date: '2026-02-30' }), /date/i);
+    await assert.rejects(repo.addEntry({ ...manualEntry, referenceNo: 'NEW', category: 'AIT' }), /category/i);
+    await assert.rejects(repo.addEntry({ ...manualEntry, referenceNo: 'NEW', routeId: 'tax-payment-status' }), /route/i);
+    await assert.rejects(repo.updateEntry(created.id, { grossAmount: 0 }), /Gross amount/i);
+    assert.equal((await repo.getEntryById(created.id))?.grossAmount, 10000);
+  });
+
+  it('keeps classification, ownership and provenance immutable when a row is edited', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    const created = await repo.addEntry(manualEntry);
+    const updated = await repo.updateEntry(created.id, {
+      referenceNo: 'PHASE2-MANUAL-EDIT',
+      taxpayerTin: '987654321098',
+      assessmentYear: '2025-2026',
+      category: 'AIT',
+      routeId: 'car-ait',
+      workflow: 'SYSTEM_LOOKUP',
+      isManual: false,
+      id: 'CHANGED-ID',
+      createdAt: '2000-01-01T00:00:00Z',
+      status: 'VERIFIED',
+      externalVerified: true,
+      verificationAuthority: 'AUTHORITATIVE',
+    });
+    for (const key of ['id', 'createdAt', 'taxpayerTin', 'assessmentYear', 'category', 'routeId', 'workflow', 'isManual'] as const) {
+      assert.equal(updated[key], created[key], `${key} should not be writable`);
+    }
+    assert.equal(updated.referenceNo, 'PHASE2-MANUAL-EDIT');
+    assert.equal(updated.status, 'PENDING_VERIFICATION');
+    assert.equal(updated.externalVerified, false);
+    assert.equal(updated.verificationAuthority, undefined);
+  });
+
+  it('returns defensive snapshots so a caller cannot mutate the stored ledger', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    const created = await repo.addEntry(manualEntry);
+    const snapshots = await repo.getAllEntries();
+    const original = snapshots.find((entry) => entry.id === created.id);
+    assert.ok(original);
+    original.taxDeducted = 900000;
+    snapshots.length = 0;
+    assert.equal((await repo.getEntryById(created.id))?.taxDeducted, 1000);
+  });
+
+  it('persists valid writes across repository instances and isolates TIN and year', async () => {
+    const map = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => { map.set(key, value); },
+    };
+    const repo = new LocalStorageLedgerRepository(storage);
+    await repo.resetToDefaults();
+    const created = await repo.addEntry(manualEntry);
+    const reloaded = new LocalStorageLedgerRepository(storage);
+    assert.equal((await reloaded.getEntryById(created.id))?.referenceNo, manualEntry.referenceNo);
+    assert.equal((await reloaded.getEntries(manualEntry.taxpayerTin, '2026-2027')).some((e) => e.id === created.id), true);
+    assert.equal((await reloaded.getEntries('987654321098', '2026-2027')).some((e) => e.id === created.id), false);
+    assert.equal((await reloaded.getEntries(manualEntry.taxpayerTin, '2025-2026')).some((e) => e.id === created.id), false);
+  });
+
+  it('rejects failed storage writes and preserves saved bytes and in-memory records', async () => {
+    const map = new Map<string, string>();
+    let rejectWrites = false;
+    const storage = {
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        if (rejectWrites) throw new Error('Quota exceeded');
+        map.set(key, value);
+      },
+    };
+    const repo = new LocalStorageLedgerRepository(storage);
+    await repo.resetToDefaults();
+    const savedBefore = [...map.values()][0];
+    rejectWrites = true;
+    await assert.rejects(repo.addEntry(manualEntry), /could not be saved/i);
+    assert.equal([...map.values()][0], savedBefore);
+    assert.equal((await repo.getAllEntries()).some((e) => e.referenceNo === manualEntry.referenceNo), false);
+  });
+
+  it('fails closed on corrupt saved JSON without replacing its contents', async () => {
+    const saved = '{unparseable';
+    const map = new Map([['nbr_eledger_entries_v1', saved]]);
+    const storage = {
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => { map.set(key, value); },
+    };
+    const repo = new LocalStorageLedgerRepository(storage);
+    await assert.rejects(repo.getAllEntries(), /could not be read/i);
+    assert.equal(map.get('nbr_eledger_entries_v1'), saved);
   });
 });

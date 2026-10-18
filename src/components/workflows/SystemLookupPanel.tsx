@@ -6,7 +6,7 @@
  * - Confirmed external lookup records take precedence.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerRouteId, TaxCategory, ExternalLookupResult } from '../../domain/models.ts';
 import { externalLookupService } from '../../services/externalLookupService.ts';
@@ -36,19 +36,32 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [lookupContext, setLookupContext] = useState<string | null>(null);
+  const requestSequence = useRef(0);
   const currentContext = `${taxpayer.tin}|${assessmentYear}|${routeId}`;
 
   useEffect(() => {
+    requestSequence.current += 1;
     setLookupResult(null);
     setLookupContext(null);
     setValidationError(null);
     setSaveSuccess(null);
   }, [currentContext]);
 
+  const changeReference = (value: string) => {
+    requestSequence.current += 1;
+    setReferenceQuery(value);
+    setLookupResult(null);
+    setLookupContext(null);
+    setValidationError(null);
+    setSaveSuccess(null);
+    setIsSearching(false);
+  };
+
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!referenceQuery.trim()) return;
 
+    const requestId = ++requestSequence.current;
     setIsSearching(true);
     setLookupResult(null);
     setLookupContext(null);
@@ -62,6 +75,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         expectedTin: taxpayer.tin,
         assessmentYear,
       });
+      if (requestId !== requestSequence.current) return;
 
       // Do not reuse a previously found reference under a different context.
       setLookupResult(result);
@@ -82,15 +96,19 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         setValidationError(validation.reason || 'Verification rejected by revenue validation rules.');
       }
     } catch {
-      setValidationError('External registry lookup encountered a fatal communication failure.');
+      if (requestId === requestSequence.current) {
+        setValidationError('Reference lookup could not be completed.');
+      }
     } finally {
-      setIsSearching(false);
+      if (requestId === requestSequence.current) setIsSearching(false);
     }
   };
 
   const handleSaveToLedger = async () => {
     if (!lookupResult || !lookupResult.found) return;
-    if (lookupContext !== currentContext || !validateExternalLookupMatch({
+    if (lookupContext !== currentContext ||
+      lookupResult.referenceNo.trim().toLowerCase() !== referenceQuery.trim().toLowerCase() ||
+      !validateExternalLookupMatch({
       routeId,
       referenceNo: lookupResult.referenceNo,
       expectedTin: taxpayer.tin,
@@ -123,7 +141,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       setLookupResult(null);
       setReferenceQuery('');
     } else {
-      setValidationError(res.validation?.errors.referenceNo || 'Failed to save to ledger.');
+      setValidationError(Object.values(res.validation?.errors || {})[0] || 'Failed to save to ledger.');
     }
   };
 
@@ -146,7 +164,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
           <input
             type="text"
             value={referenceQuery}
-            onChange={(e) => setReferenceQuery(e.target.value)}
+            onChange={(e) => changeReference(e.target.value)}
             placeholder={lookupPlaceholder}
             className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
           />
@@ -166,7 +184,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         <span className="font-medium text-slate-600">Sample references:</span>
         <button
           type="button"
-          onClick={() => setReferenceQuery('DHAKA-METRO-JA-11-2044')}
+          onClick={() => changeReference('DHAKA-METRO-JA-11-2044')}
           className="underline hover:text-emerald-700 font-mono text-[11px]"
         >
           DHAKA-METRO-JA-11-2044 (Commercial)
@@ -174,7 +192,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         <span>•</span>
         <button
           type="button"
-          onClick={() => setReferenceQuery('DHAKA-METRO-GA-34-9182')}
+          onClick={() => changeReference('DHAKA-METRO-GA-34-9182')}
           className="underline hover:text-emerald-700 font-mono text-[11px]"
         >
           DHAKA-METRO-GA-34-9182 (Private Car)
@@ -182,7 +200,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         <span>•</span>
         <button
           type="button"
-          onClick={() => setReferenceQuery('DHAKA-METRO-KHA-55-1212')}
+          onClick={() => changeReference('DHAKA-METRO-KHA-55-1212')}
           className="underline hover:text-rose-700 font-mono text-[11px]"
           title="Tests TIN mismatch rejection"
         >

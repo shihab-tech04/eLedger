@@ -9,6 +9,7 @@ import {
   ExternalLookupResult,
   VerificationStatus,
 } from './models.ts';
+import { getRouteById } from './routeRegistry.ts';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -21,6 +22,21 @@ export function validateLedgerEntry(
   currentEntryIdToIgnore?: string
 ): ValidationResult {
   const errors: Record<string, string> = {};
+
+  // Never let a write classify a Source Tax route as Payment, AIT, etc.
+  const route = entry.routeId ? getRouteById(entry.routeId) : undefined;
+  const categoryForGroup = {
+    'Source Tax': 'SOURCE_TAX',
+    AIT: 'AIT',
+    Payment: 'PAYMENT',
+    Adjustment: 'ADJUSTMENT',
+    'Tax Payment Status': 'RECONCILIATION',
+  } as const;
+  if (!route || route.group === 'Tax Payment Status') {
+    errors.routeId = 'A valid ledger entry route is required.';
+  } else if (entry.category && entry.category !== categoryForGroup[route.group]) {
+    errors.category = 'Ledger category does not match the selected route.';
+  }
 
   // 1. Reference number requirement
   if (!entry.referenceNo || entry.referenceNo.trim().length === 0) {
@@ -49,14 +65,14 @@ export function validateLedgerEntry(
 
   // 4. Amount validation
   const taxDeducted = Number(entry.taxDeducted);
-  if (isNaN(taxDeducted) || taxDeducted <= 0) {
+  if (!Number.isFinite(taxDeducted) || taxDeducted <= 0) {
     errors.taxDeducted = 'Tax amount must be a positive number greater than 0.';
   }
 
   const grossAmount = Number(entry.grossAmount);
-  if (isNaN(grossAmount) || grossAmount < 0) {
-    errors.grossAmount = 'Gross amount cannot be negative.';
-  } else if (taxDeducted > 0 && grossAmount > 0 && taxDeducted > grossAmount) {
+  if (!Number.isFinite(grossAmount) || grossAmount <= 0) {
+    errors.grossAmount = 'Gross amount must be a positive finite number.';
+  } else if (taxDeducted > 0 && taxDeducted > grossAmount) {
     errors.taxDeducted = 'Tax deducted cannot exceed gross payment/deposit amount.';
   }
 
@@ -64,8 +80,10 @@ export function validateLedgerEntry(
   if (!entry.date || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
     errors.date = 'Valid date in YYYY-MM-DD format is required.';
   } else {
-    const parsedDate = new Date(entry.date);
-    if (isNaN(parsedDate.getTime())) {
+    const [year, month, day] = entry.date.split('-').map(Number);
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+    if (parsedDate.getUTCFullYear() !== year ||
+      parsedDate.getUTCMonth() !== month - 1 || parsedDate.getUTCDate() !== day) {
       errors.date = 'Invalid calendar date provided.';
     }
   }
@@ -110,6 +128,14 @@ export function validateExternalLookupMatch(
     return { canSave: false, reason: result.statusMessage || 'Reference context mismatch.' };
   }
 
+  if (result.status !== 'VALID') {
+    return { canSave: false, reason: 'Reference was not validated.' };
+  }
+
+  if (result.referenceNo.trim().toLowerCase() !== query.referenceNo.trim().toLowerCase()) {
+    return { canSave: false, reason: 'The response reference does not match the requested reference.' };
+  }
+
   if (
     (result.routeId && result.routeId !== query.routeId) ||
     (result.assessmentYear && result.assessmentYear !== query.assessmentYear)
@@ -117,10 +143,11 @@ export function validateExternalLookupMatch(
     return { canSave: false, reason: 'Reference category or assessment year mismatch.' };
   }
 
-  if (result.taxAmount <= 0) {
+  if (!Number.isFinite(result.taxAmount) || result.taxAmount <= 0 ||
+      !Number.isFinite(result.grossAmount) || result.grossAmount < result.taxAmount) {
     return {
       canSave: false,
-      reason: 'External record contains zero or negative tax amount.',
+      reason: 'Reference amounts are invalid or inconsistent.',
     };
   }
 

@@ -5,8 +5,10 @@
 
 import { LedgerEntry, AssessmentYear } from '../domain/models.ts';
 import { INITIAL_LEDGER_ENTRIES } from '../data/seedData.ts';
+import { validateLedgerEntry } from '../domain/validation.ts';
 
 const STORAGE_KEY = 'nbr_eledger_entries_v1';
+type LedgerStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export interface ILedgerRepository {
   getEntries(taxpayerTin: string, assessmentYear: AssessmentYear): Promise<LedgerEntry[]>;
@@ -21,38 +23,50 @@ export interface ILedgerRepository {
 export class LocalStorageLedgerRepository implements ILedgerRepository {
   private inMemoryCache: LedgerEntry[] | null = null;
 
+  constructor(private readonly storage: LedgerStorage | null =
+    typeof window === 'undefined' ? null : window.localStorage) {}
+
   private loadRaw(): LedgerEntry[] {
-    if (typeof window === 'undefined') {
-      return [...INITIAL_LEDGER_ENTRIES];
+    if (!this.storage) {
+      return INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry }));
     }
     try {
-      const data = localStorage.getItem(STORAGE_KEY);
+      const data = this.storage.getItem(STORAGE_KEY);
       if (!data) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES));
-        return [...INITIAL_LEDGER_ENTRIES];
+        this.storage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES));
+        return INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry }));
       }
-      return JSON.parse(data) as LedgerEntry[];
+      const parsed: unknown = JSON.parse(data);
+      if (!Array.isArray(parsed) || !parsed.every((entry) =>
+        entry !== null && typeof entry === 'object' &&
+        typeof entry.id === 'string' && typeof entry.taxpayerTin === 'string' &&
+        typeof entry.assessmentYear === 'string' && typeof entry.routeId === 'string'
+      )) {
+        throw new Error('Stored entries have an invalid structure.');
+      }
+      return parsed as LedgerEntry[];
     } catch {
-      return [...INITIAL_LEDGER_ENTRIES];
+      // Never overwrite a user's unreadable saved data with demo defaults.
+      throw new Error('Saved ledger data could not be read. The stored data was left unchanged.');
     }
   }
 
   private saveRaw(entries: LedgerEntry[]): void {
-    if (typeof window !== 'undefined') {
+    if (this.storage) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
-      } catch (err) {
-        console.error('Failed to save to localStorage:', err);
+        this.storage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      } catch {
+        throw new Error('Ledger changes could not be saved to browser storage.');
       }
     }
-    this.inMemoryCache = entries;
+    this.inMemoryCache = entries.map((entry) => ({ ...entry }));
   }
 
   async getAllEntries(): Promise<LedgerEntry[]> {
     if (!this.inMemoryCache) {
       this.inMemoryCache = this.loadRaw();
     }
-    return [...this.inMemoryCache];
+    return this.inMemoryCache.map((entry) => ({ ...entry }));
   }
 
   async getEntries(taxpayerTin: string, assessmentYear: AssessmentYear): Promise<LedgerEntry[]> {
@@ -72,6 +86,10 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     entry: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<LedgerEntry> {
     const all = await this.getAllEntries();
+    const validation = validateLedgerEntry(entry, all);
+    if (!validation.isValid) {
+      throw new Error(Object.values(validation.errors)[0]);
+    }
     const now = new Date().toISOString();
     const newEntry: LedgerEntry = {
       ...entry,
@@ -94,17 +112,28 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     if (index === -1) {
       throw new Error(`Ledger entry with ID '${id}' not found.`);
     }
+    const original = all[index];
     const updated: LedgerEntry = {
-      ...all[index],
+      ...original,
       ...patch,
-      // Editing a local row must not grant verification or move its ownership.
-      taxpayerTin: all[index].taxpayerTin,
-      assessmentYear: all[index].assessmentYear,
-      status: all[index].status === 'SYNCED' ? 'SYNCED' : 'PENDING_VERIFICATION',
+      // All provenance, classification, ownership and identity fields are immutable.
+      id: original.id,
+      createdAt: original.createdAt,
+      taxpayerTin: original.taxpayerTin,
+      assessmentYear: original.assessmentYear,
+      routeId: original.routeId,
+      category: original.category,
+      workflow: original.workflow,
+      isManual: original.isManual,
+      status: original.status === 'SYNCED' ? 'SYNCED' : 'PENDING_VERIFICATION',
       externalVerified: false,
       verificationAuthority: undefined,
       updatedAt: new Date().toISOString(),
     };
+    const validation = validateLedgerEntry(updated, all, id);
+    if (!validation.isValid) {
+      throw new Error(Object.values(validation.errors)[0]);
+    }
     all[index] = updated;
     this.saveRaw(all);
     return updated;
@@ -121,7 +150,7 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
   }
 
   async resetToDefaults(): Promise<void> {
-    this.saveRaw([...INITIAL_LEDGER_ENTRIES]);
+    this.saveRaw(INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry })));
   }
 }
 

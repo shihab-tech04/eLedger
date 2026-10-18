@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
@@ -27,8 +27,7 @@ export const PaymentsView: React.FC = () => {
   } = useLedger();
 
   const paymentRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Payment');
-  const currentRoute =
-    paymentRoutes.find((r) => r.id === activeRouteId) || paymentRoutes[0];
+  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Payment');
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
