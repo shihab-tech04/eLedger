@@ -1,3 +1,27 @@
+# NBR eReturn Ledger — Phase 5 Candidate Verification
+
+**Starting point:** Phase 4 deployed `main` at `3a84a59`.
+
+- `npm test`: **69/69 passing** (including Phase 4 route transactions and Phase 5 corruption/concurrency/reconciliation cases).
+- `npm run lint`: PASS (TypeScript type checking).
+- `npm run build`: PASS; output `index-C5tRcvNK.js`.
+- `git diff --check`: PASS.
+- See [`PHASE5_DATA_RECONCILIATION.md`](PHASE5_DATA_RECONCILIATION.md) for the exact acceptance boundary and external service blockers.
+
+Phase 5 GitHub Actions and live Pages checks remain release gates.
+
+---
+
+# NBR eReturn Ledger — Phase 4 Checkpoint Verification
+
+- `npm test`: **59/59 passing**.
+- `npm run lint`, `npm run build`, `git diff --check`: PASS.
+- GitHub PR #5 merged as `3a84a59`, Pages deployment run 39148482678 succeeded.
+- Live Pages loaded `index-DxLODjdJ.js`, matching the local build.
+- See [`PHASE4_WORKFLOW_ACCEPTANCE.md`](PHASE4_WORKFLOW_ACCEPTANCE.md).
+
+---
+
 # NBR eReturn Ledger — Phase 3 Candidate Verification
 
 **Execution date:** 2026-10-18

@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–4)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–5)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -36,6 +36,9 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Phase 4: Repository create/edit/delete/duplicate/context/reconciliation matrix for all 16 writable routes
 - [x] Phase 4: System-only salary route and reconciliation modal reject local manual writes
 - [x] Phase 4: Income sync reference matching and claim lifecycle state are consistent with saved records
+- [x] Phase 5: Malformed saved financial rows fail closed without modifying original browser data
+- [x] Phase 5: A same-taxpayer, same-year treasury reference cannot be duplicated across payment sections
+- [x] Phase 5: Mutations are serialized within one repository instance; missing lookup context fails closed
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
@@ -48,6 +51,7 @@ This document tracks items where source evidence was interrupted or where live g
 - **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
 - **Customs/system imports:** The import route offers local reference entry, not ASYCUDA ingestion or import-file reconciliation.
 - **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks and 16 writable routes have repository-level transaction tests. Browser form-level create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute complete financial-workflow acceptance.
+- **Concurrent independent tabs:** A single-tab mutation queue does not make browser localStorage a transactional multi-user database. Simultaneous cross-tab writes remain a known limitation pending a backend.
 
 ### Unverified Historical Commit Assets
 - Planned PR #17 was not published in the historical repository because of the upstream access interruption. Its assessment-year and taxpayer-context intent is now covered in the new baseline tests.

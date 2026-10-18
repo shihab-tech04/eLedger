@@ -67,7 +67,9 @@ export function validateLedgerEntry(
         e.id !== currentEntryIdToIgnore &&
         e.taxpayerTin === entry.taxpayerTin &&
         e.assessmentYear === entry.assessmentYear &&
-        e.routeId === entry.routeId &&
+        // A treasury challan cannot support separate claims under both
+        // Section 171 and Section 173 in the same taxpayer/year context.
+        (e.routeId === entry.routeId || (entry.category === 'PAYMENT' && e.category === 'PAYMENT')) &&
         sameLedgerReference(e.referenceNo, entry.referenceNo!)
     );
 
@@ -155,8 +157,8 @@ export function validateExternalLookupMatch(
   }
 
   if (
-    (result.routeId && result.routeId !== query.routeId) ||
-    (result.assessmentYear && result.assessmentYear !== query.assessmentYear)
+    result.routeId !== query.routeId ||
+    result.assessmentYear !== query.assessmentYear
   ) {
     return { canSave: false, reason: 'Reference category or assessment year mismatch.' };
   }

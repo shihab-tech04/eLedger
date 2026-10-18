@@ -37,7 +37,7 @@ import {
 } from '../domain/validation.ts';
 import { LedgerEntry, ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
 import { INITIAL_LEDGER_ENTRIES, INITIAL_INCOME_SYNC_ITEMS, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
-import { LocalStorageLedgerRepository } from '../services/ledgerRepository.ts';
+import { LEDGER_STORAGE_KEY, LocalStorageLedgerRepository } from '../services/ledgerRepository.ts';
 import { ledgerRepository } from '../services/ledgerRepository.ts';
 import { ExternalLookupService } from '../services/externalLookupService.ts';
 import { incomeSyncService } from '../services/incomeSyncService.ts';
@@ -942,5 +942,98 @@ describe('eLedger — Phase 4 Workflow Transaction Acceptance', () => {
     } finally {
       await ledgerRepository.resetToDefaults();
     }
+  });
+});
+
+describe('eLedger — Phase 5 Persistence and Reconciliation Integrity', () => {
+  const entry = {
+    taxpayerTin: '123456789012',
+    assessmentYear: '2026-2027' as const,
+    category: 'PAYMENT' as const,
+    routeId: 'sec-173' as const,
+    referenceNo: 'PHASE5-TREASURY-01',
+    sourceEntity: 'Treasury',
+    sectionCode: 'Sec 173',
+    grossAmount: 750,
+    taxDeducted: 750,
+    date: '2026-10-18',
+    status: 'PENDING_VERIFICATION' as const,
+    workflow: 'MANUAL_ENTRY' as const,
+    isManual: true,
+    externalVerified: false,
+  };
+
+  const storageFixture = () => {
+    const saved = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => { saved.set(key, value); },
+    };
+    return { saved, storage, repo: new LocalStorageLedgerRepository(storage) };
+  };
+
+  it('serializes simultaneous saves and does not drop records or accept duplicate requests', async () => {
+    const { repo } = storageFixture();
+    await repo.resetToDefaults();
+    const [first, second] = await Promise.allSettled([repo.addEntry(entry), repo.addEntry(entry)]);
+    assert.equal(first.status, 'fulfilled');
+    assert.equal(second.status, 'rejected');
+    const saved = await repo.getEntries(entry.taxpayerTin, entry.assessmentYear);
+    assert.equal(saved.filter((row) => row.referenceNo === entry.referenceNo).length, 1);
+
+    const [a, b] = await Promise.all([
+      repo.addEntry({ ...entry, referenceNo: 'PHASE5-INDEPENDENT-A' }),
+      repo.addEntry({ ...entry, referenceNo: 'PHASE5-INDEPENDENT-B' }),
+    ]);
+    assert.ok((await repo.getEntryById(a.id))?.id);
+    assert.ok((await repo.getEntryById(b.id))?.id);
+    assert.equal(await repo.deleteEntry(a.id), true);
+  });
+
+  it('does not allow one treasury challan to be entered against two payment sections', async () => {
+    const { repo } = storageFixture();
+    await repo.resetToDefaults();
+    await repo.addEntry(entry);
+    await assert.rejects(repo.addEntry({
+      ...entry,
+      routeId: 'sec-171',
+      sectionCode: 'Sec 171',
+      referenceNo: ` ${entry.referenceNo.toLowerCase()} `,
+    }), /Duplicate/i);
+    const separate = await repo.addEntry({ ...entry, routeId: 'car-ait', category: 'AIT', referenceNo: entry.referenceNo });
+    assert.equal(separate.category, 'AIT', 'Distinct categories are not assumed to share a treasury reference namespace');
+  });
+
+  it('leaves invalid amounts, dates, duplicate IDs and categories untouched in browser storage', async (t) => {
+    for (const corruption of [
+      (rows: LedgerEntry[]) => { rows[0].taxDeducted = -100; },
+      (rows: LedgerEntry[]) => { rows[0].grossAmount = Number.NaN; },
+      (rows: LedgerEntry[]) => { rows[0].date = '2026-02-30'; },
+      (rows: LedgerEntry[]) => { rows[0].category = 'PAYMENT'; },
+      (rows: LedgerEntry[]) => { rows[1].id = rows[0].id; },
+      (rows: LedgerEntry[]) => { rows[0].routeId = 'tax-payment-status'; },
+    ]) {
+      await t.test(corruption.toString().slice(0, 55), async () => {
+        const { saved, storage, repo } = storageFixture();
+        await repo.resetToDefaults();
+        const rows = JSON.parse(saved.get(LEDGER_STORAGE_KEY)!) as LedgerEntry[];
+        corruption(rows);
+        const bytes = JSON.stringify(rows);
+        saved.set(LEDGER_STORAGE_KEY, bytes);
+        await assert.rejects(new LocalStorageLedgerRepository(storage).getAllEntries(), /could not be read/i);
+        assert.equal(saved.get(LEDGER_STORAGE_KEY), bytes);
+      });
+    }
+  });
+
+  it('rejects lookup responses without their exact assessment-year and route context', async () => {
+    const query: ExternalLookupQuery = {
+      routeId: 'sec-173', referenceNo: 'ACHALLAN-2026-788102',
+      expectedTin: '123456789012', assessmentYear: '2026-2027',
+    };
+    const record = await new ExternalLookupService().lookup(query);
+    assert.equal(validateExternalLookupMatch(query, record).canSave, true);
+    assert.equal(validateExternalLookupMatch(query, { ...record, routeId: undefined }).canSave, false);
+    assert.equal(validateExternalLookupMatch(query, { ...record, assessmentYear: undefined }).canSave, false);
   });
 });
