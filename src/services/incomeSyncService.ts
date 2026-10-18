@@ -6,6 +6,7 @@
 import { IncomeSyncItem, LedgerEntry, AssessmentYear } from '../domain/models.ts';
 import { INITIAL_INCOME_SYNC_ITEMS } from '../data/seedData.ts';
 import { ledgerRepository } from './ledgerRepository.ts';
+import { sameLedgerReference } from '../domain/validation.ts';
 
 const SYNC_STORAGE_KEY = 'nbr_eledger_income_sync_v1';
 type IncomeStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -66,7 +67,7 @@ export class IncomeSyncService {
       // The ledger is the source of truth after a row has been deleted.
       isSyncedToLedger: ledgerEntries.some(
         (entry) => entry.routeId === item.routeId &&
-          entry.referenceNo === item.accountOrCertificateNo
+          sameLedgerReference(entry.referenceNo, item.accountOrCertificateNo)
       ),
     }));
   }
@@ -90,7 +91,7 @@ export class IncomeSyncService {
 
     const existing = await ledgerRepository.getEntries(expectedTin, expectedAssessmentYear);
     if (existing.some((entry) =>
-      entry.routeId === item.routeId && entry.referenceNo === item.accountOrCertificateNo
+      entry.routeId === item.routeId && sameLedgerReference(entry.referenceNo, item.accountOrCertificateNo)
     )) {
       return { success: false, error: 'This income source is already synchronized to ledger.' };
     }

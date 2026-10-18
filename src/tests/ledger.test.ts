@@ -33,6 +33,7 @@ import {
   validateLedgerEntry,
   validateExternalLookupMatch,
   getInitialVerificationStatus,
+  sameLedgerReference,
 } from '../domain/validation.ts';
 import { LedgerEntry, ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
 import { INITIAL_LEDGER_ENTRIES, INITIAL_INCOME_SYNC_ITEMS, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
@@ -836,5 +837,110 @@ describe('eLedger — Phase 3 Route Journey and Local Integrity Regressions', ()
     assert.equal(validateExternalLookupMatch(query, result).canSave, true);
     const wrongRoute = await service.lookup({ ...query, routeId: 'car-ait' });
     assert.equal(validateExternalLookupMatch({ ...query, routeId: 'car-ait' }, wrongRoute).canSave, false);
+  });
+});
+
+describe('eLedger — Phase 4 Workflow Transaction Acceptance', () => {
+  const sharedContext = {
+    taxpayerTin: '123456789012',
+    assessmentYear: '2026-2027' as const,
+    grossAmount: 1200,
+    taxDeducted: 120,
+    date: '2026-10-18',
+    status: 'PENDING_VERIFICATION' as const,
+    isManual: true,
+    externalVerified: false,
+  };
+
+  const groupToCategory = {
+    'Source Tax': 'SOURCE_TAX',
+    AIT: 'AIT',
+    Payment: 'PAYMENT',
+    Adjustment: 'ADJUSTMENT',
+  } as const;
+
+  it('executes create, edit, delete and isolated reconciliation for every writable route', async (t) => {
+    const writable = ROUTE_REGISTRY.filter((route) => route.supportsManualEntry);
+    assert.equal(writable.length, 16);
+    const saved = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => { saved.set(key, value); },
+    };
+    const repo = new LocalStorageLedgerRepository(storage);
+    await repo.resetToDefaults();
+
+    for (const route of writable) {
+      await t.test(route.id, async () => {
+        const category = groupToCategory[route.group as keyof typeof groupToCategory];
+        assert.ok(category);
+        const record = {
+          ...sharedContext,
+          category,
+          routeId: route.id,
+          workflow: route.id === 'carry-forward' ? 'SINGLE_CLAIM' as const : 'MANUAL_ENTRY' as const,
+          referenceNo: `PHASE4-${route.id}`,
+          sourceEntity: 'Acceptance Test Payor',
+          sectionCode: route.statutorySection,
+        };
+        const created = await repo.addEntry(record);
+        assert.equal(created.status, 'PENDING_VERIFICATION');
+        assert.equal(created.externalVerified, false);
+        assert.equal((await repo.getEntries(sharedContext.taxpayerTin, sharedContext.assessmentYear)).filter(
+          (entry) => entry.id === created.id && entry.routeId === route.id
+        ).length, 1);
+        await assert.rejects(repo.addEntry({ ...record, referenceNo: ` ${record.referenceNo.toLowerCase()} ` }), /Duplicate|one carry-forward/i);
+        const updated = await repo.updateEntry(created.id, { taxDeducted: 110, remarks: 'Reviewed' });
+        assert.equal(updated.taxDeducted, 110);
+        assert.equal(updated.remarks, 'Reviewed');
+        assert.equal(updated.routeId, route.id);
+        assert.equal((await repo.getEntries('987654321098', sharedContext.assessmentYear)).some((entry) => entry.id === created.id), false);
+        assert.equal((await repo.getEntries(sharedContext.taxpayerTin, '2025-2026')).some((entry) => entry.id === created.id), false);
+        assert.equal(await repo.deleteEntry(created.id), true);
+        assert.equal(await repo.deleteEntry(created.id), false);
+        assert.equal(await repo.getEntryById(created.id), undefined);
+      });
+    }
+    assert.equal(calculateCategoryTotals(await repo.getEntries(sharedContext.taxpayerTin, sharedContext.assessmentYear)).grandTotalCredits, 0);
+  });
+
+  it('rejects a manual write for the iBAS++ system-only route and never writes into the reconciliation modal', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    const record = {
+      ...sharedContext,
+      category: 'SOURCE_TAX' as const,
+      routeId: 'salary-ibas' as const,
+      workflow: 'MANUAL_ENTRY' as const,
+      referenceNo: 'FORBIDDEN-MANUAL-SALARY',
+      sourceEntity: 'Wrong workflow',
+      sectionCode: 'Sec 86',
+    };
+    await assert.rejects(repo.addEntry(record), /Manual entries are not permitted/i);
+    await assert.rejects(repo.addEntry({ ...record, routeId: 'tax-payment-status', category: 'RECONCILIATION' }), /valid ledger entry route/i);
+  });
+
+  it('recognizes an income item already stored with different reference case or whitespace', async () => {
+    assert.equal(sameLedgerReference('  Bank-REF-01 ', 'bank-ref-01'), true);
+    const item = INITIAL_INCOME_SYNC_ITEMS.find((entry) => entry.id === 'sync-item-bank-02');
+    assert.ok(item);
+    await ledgerRepository.resetToDefaults();
+    try {
+      await ledgerRepository.addEntry({
+        ...sharedContext,
+        category: item.category,
+        routeId: item.routeId,
+        workflow: 'MANUAL_ENTRY',
+        referenceNo: ` ${item.accountOrCertificateNo.toUpperCase()} `,
+        sourceEntity: item.payerName,
+        sectionCode: 'Sec 102',
+      });
+      const visible = await incomeSyncService.getSyncItemsForRoute(item.taxpayerTin, item.assessmentYear, item.routeId);
+      assert.equal(visible.find((entry) => entry.id === item.id)?.isSyncedToLedger, true);
+      const result = await incomeSyncService.syncItemToLedger(item.id, 'Sec 102', item.taxpayerTin, item.assessmentYear);
+      assert.equal(result.success, false);
+      assert.match(result.error || '', /already synchronized/i);
+    } finally {
+      await ledgerRepository.resetToDefaults();
+    }
   });
 });

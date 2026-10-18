@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–3)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–4)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -33,6 +33,9 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Phase 3: Locally persisted verification flags cannot be used to fabricate authoritative credits
 - [x] Phase 3: Other-tab ledger writes are reloaded before local writes, with storage-event UI refresh
 - [x] Phase 3: Corrupted income declarations are preserved, and sync completion does not depend on a second metadata write
+- [x] Phase 4: Repository create/edit/delete/duplicate/context/reconciliation matrix for all 16 writable routes
+- [x] Phase 4: System-only salary route and reconciliation modal reject local manual writes
+- [x] Phase 4: Income sync reference matching and claim lifecycle state are consistent with saved records
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
@@ -44,7 +47,7 @@ This document tracks items where source evidence was interrupted or where live g
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.
 - **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
 - **Customs/system imports:** The import route offers local reference entry, not ASYCUDA ingestion or import-file reconciliation.
-- **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks. Per-route create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute full financial-workflow acceptance.
+- **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks and 16 writable routes have repository-level transaction tests. Browser form-level create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute complete financial-workflow acceptance.
 
 ### Unverified Historical Commit Assets
 - Planned PR #17 was not published in the historical repository because of the upstream access interruption. Its assessment-year and taxpayer-context intent is now covered in the new baseline tests.

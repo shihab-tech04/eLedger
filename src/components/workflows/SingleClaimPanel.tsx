@@ -4,7 +4,7 @@
  * Used for Carry-Forward / Prior-Return adjustments (Sec 70 / 215)
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerEntry } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
@@ -31,6 +31,17 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
   );
   const [lossOrCreditType, setLossOrCreditType] = useState(existingDetails.classification);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // The first saved claim or a deleted claim changes this panel from create to
+  // edit (or back) without changing routes. Keep fields in the correct mode.
+  useEffect(() => {
+    const details = readCarryForwardDetails(existingClaim?.remarks, assessmentYear);
+    setPriorAssessmentYear(details.priorAssessmentYear);
+    setAssessmentOrderNo(existingClaim?.referenceNo ?? '');
+    setAssessingCircle(existingClaim?.sourceEntity ?? `${taxpayer.circle}, ${taxpayer.taxesZone}`);
+    setUnabsorbedCredit(existingClaim ? String(existingClaim.taxDeducted) : '');
+    setLossOrCreditType(details.classification);
+  }, [existingClaim?.id, assessmentYear, taxpayer.circle, taxpayer.taxesZone]);
 
   const handleSaveClaim = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -204,7 +204,8 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
 
   const handleDelete = async (id: string, ref: string) => {
     if (window.confirm(`Delete ledger entry for reference '${ref}'?`)) {
-      await onDeleteEntry(id);
+      const deleted = await onDeleteEntry(id);
+      if (!deleted) setEditRowError('The ledger entry could not be deleted. It remains in the ledger.');
     }
   };
 
