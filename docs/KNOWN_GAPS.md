@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phase 0)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–2)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -21,6 +21,12 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Verification state distinction (manual, Income-sync, and local-lookup entries not auto-credited)
 - [x] Local repository does not issue authoritative verification
 - [x] Cross-context lookup result cannot be saved after taxpayer/year/category changes
+- [x] Phase 2: Route group isolation across all 18 registered routes; Source Tax cannot inherit another category's route
+- [x] Phase 2: Unsaved workflow state is cleared on taxpayer, assessment-year, or route switch
+- [x] Phase 2: Invalid calendar dates and non-finite/zero gross amounts rejected by the domain and repository
+- [x] Phase 2: Direct storage writes cannot silently appear successful after browser quota failures
+- [x] Phase 2: Corrupt saved browser data is left unchanged instead of overwritten with defaults
+- [x] Phase 2: Stale reference lookup results cannot be submitted after editing their lookup key
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
@@ -30,7 +36,9 @@ This document tracks items where source evidence was interrupted or where live g
 - **Live iBAS++ API Endpoint:** Not connected. Existing records are local reference data and remain pending verification.
 - **Live BRTA Vehicle Database API:** Not connected. Local matches remain pending; route, taxpayer, and year mismatches are rejected.
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.
-- **Browser journey tests:** Not yet completed for the recovered UI; unit tests do not constitute full interface acceptance.
+- **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
+- **Customs/system imports:** The import route offers local reference entry, not ASYCUDA ingestion or import-file reconciliation.
+- **Browser journey tests:** Targeted Phase 1/2 smoke only; the full 18-route manual workflow matrix, multiple browsers, accessibility checks, and storage failure UI exercise are still unverified. Unit tests do not constitute full interface acceptance.
 
 ### Unverified Historical Commit Assets
 - Planned PR #17 was not published in the historical repository because of the upstream access interruption. Its assessment-year and taxpayer-context intent is now covered in the new baseline tests.

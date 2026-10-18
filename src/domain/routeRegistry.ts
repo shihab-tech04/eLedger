@@ -284,3 +284,16 @@ export function getRouteById(id: string): RouteRegistryEntry | undefined {
 export function getRoutesByGroup(group: RouteRegistryEntry['group']): RouteRegistryEntry[] {
   return ROUTE_REGISTRY.filter((r) => r.group === group);
 }
+
+/** A route saved in another navigation group must never leak into this group's workflow. */
+export function getActiveRouteForGroup(
+  id: string,
+  group: RouteRegistryEntry['group']
+): RouteRegistryEntry {
+  const routes = getRoutesByGroup(group);
+  const route = routes.find((candidate) => candidate.id === id) ?? routes[0];
+  if (!route) {
+    throw new Error(`No ledger routes registered for ${group}.`);
+  }
+  return route;
+}

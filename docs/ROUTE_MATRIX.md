@@ -1,7 +1,7 @@
 # NBR eReturn Ledger (eLedger) — Route Matrix & Functional Inventory
 
 **Project:** NBR eReturn Ledger (`eRETURN-LEDGER`)  
-**Phase:** Phase 0 Reconstructed Baseline  
+**Phase:** Phase 2 recovery inventory (baseline route registry unchanged)
 **Total Routes Cataloged:** 18
 
 ---
@@ -45,3 +45,17 @@
 - **CONFIRMED:** Recovered functional route with an implemented UI pattern. This is not independent certification of statutory section applicability.
 - **PROVISIONAL:** Route label or field mapping still requires confirmation against the original source and official NBR requirements.
 - **UNRESOLVED:** Out-of-scope or external systems (NBR TaxPay e-challan creation, general assessment order issuance) explicitly excluded from eLedger boundaries.
+
+## Phase 2 Validation Notes
+
+The route-group resolver has regression coverage for every route against all five
+groups, including 10 Source Tax, 3 AIT, 2 Payment, 2 Adjustment, and the Status
+route. This verifies route context and protects against cross-category entries;
+it is **not** 18 completed end-to-end UI journeys.
+
+The **External Lookup** column reflects registry capability declarations, not
+live connectivity. In particular, Source Tax has no rendered lookup control,
+and lookup records for AIT/Payments are local fixtures, not authoritative
+government responses. The System Import route is local reference entry only.
+Keep the two provisional routes provisional until authoritative mapping evidence
+is available.

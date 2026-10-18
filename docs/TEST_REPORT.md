@@ -1,3 +1,35 @@
+# NBR eReturn Ledger — Phase 2 Candidate Verification
+
+**Execution date:** 2026-10-18
+
+**Starting point:** Phase 1 verified `main` at `c393eb9`
+
+**Local checks:**
+- `npm test`: **32/32 passed** (23 baseline + 9 Phase 2 regression cases)
+- `npm run lint`: **PASS**
+- `npm run build`: **PASS**
+
+**New regression coverage:** All 18 route IDs stay inside the selected workflow
+group; strict date/finite amount checks; local reference number matching;
+repository-level duplicate and category rejection; immutable entry identity,
+ownership and provenance; defensive read snapshots; storage persistence and
+taxpayer/year isolation; explicit failed-write behavior; preservation of
+unreadable local data.
+
+**UI-level correction:** Workflow component remount on taxpayer, year, or route
+switch; Source Tax no longer interprets a foreign-group route as its active
+route; stale lookup results are invalidated on input/context changes.
+
+**Release gate:** GitHub PR CI, Pages deployment, and live browser smoke must
+pass before this section may be marked deployed.
+
+**Coverage boundary:** The tests validate route-group resolution, not a full
+human-driven form journey on every one of the 18 screens. Real government API
+verification, statutory-field mapping, and production credit entitlement are
+not tested or claimed.
+
+---
+
 # NBR eReturn Ledger — Phase 1 Verified Checkpoint Report
 
 **Execution date:** 2026-10-18

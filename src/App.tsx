@@ -18,7 +18,9 @@ import { TaxPaymentStatusModal } from './components/modals/TaxPaymentStatusModal
 import { Shield, FileCheck2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { activeNavTab, isStatusModalOpen, setIsStatusModalOpen } = useLedger();
+  const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen } = useLedger();
+  // Discard unsaved form/lookup state when the route or taxpayer context changes.
+  const workflowKey = `${taxpayer.tin}:${assessmentYear}:${activeRouteId}`;
 
   const renderActiveView = () => {
     switch (activeNavTab) {
@@ -27,13 +29,13 @@ const AppContent: React.FC = () => {
       case 'ledger-guide':
         return <LedgerGuideView />;
       case 'source-tax':
-        return <SourceTaxView />;
+        return <SourceTaxView key={workflowKey} />;
       case 'ait':
-        return <AitView />;
+        return <AitView key={workflowKey} />;
       case 'payments':
-        return <PaymentsView />;
+        return <PaymentsView key={workflowKey} />;
       case 'adjustments':
-        return <AdjustmentsView />;
+        return <AdjustmentsView key={workflowKey} />;
       default:
         return <DashboardView />;
     }

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
@@ -27,8 +27,7 @@ export const AdjustmentsView: React.FC = () => {
   } = useLedger();
 
   const adjustmentRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Adjustment');
-  const currentRoute =
-    adjustmentRoutes.find((r) => r.id === activeRouteId) || adjustmentRoutes[0];
+  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Adjustment');
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);

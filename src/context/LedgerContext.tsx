@@ -3,7 +3,7 @@
  * Coordinates taxpayer selection, assessment year isolation, and reactive ledger entries
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   TaxpayerContext,
   AssessmentYear,
@@ -46,22 +46,29 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [availableTaxpayers] = useState<TaxpayerContext[]>(DEFAULT_TAXPAYERS);
   const [taxpayer, setTaxpayerState] = useState<TaxpayerContext>(DEFAULT_TAXPAYERS[0]);
   const [assessmentYear, setAssessmentYearState] = useState<AssessmentYear>('2026-2027');
-  const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [loadedEntries, setLoadedEntries] = useState<LedgerEntry[]>([]);
+  const loadSequence = useRef(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments'>('dashboard');
   const [activeRouteId, setActiveRouteId] = useState<LedgerRouteId>('salary-ibas');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
 
+  // Filter synchronously on context switches, even before the next async load resolves.
+  const entries = useMemo(() => loadedEntries.filter(
+    (entry) => entry.taxpayerTin === taxpayer.tin && entry.assessmentYear === assessmentYear
+  ), [loadedEntries, taxpayer.tin, assessmentYear]);
+
   // Load entries for current taxpayer TIN and assessment year
   const loadEntries = useCallback(async () => {
+    const loadId = ++loadSequence.current;
     setIsLoading(true);
     try {
       const data = await ledgerRepository.getEntries(taxpayer.tin, assessmentYear);
-      setEntries(data);
+      if (loadId === loadSequence.current) setLoadedEntries(data);
     } catch (err) {
       console.error('Error fetching ledger entries:', err);
     } finally {
-      setIsLoading(false);
+      if (loadId === loadSequence.current) setIsLoading(false);
     }
   }, [taxpayer.tin, assessmentYear]);
 
@@ -85,19 +92,22 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addEntry = async (
     entryData: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
-    const validation = validateLedgerEntry(entryData, entries);
+    const contextualEntry = { ...entryData, taxpayerTin: taxpayer.tin, assessmentYear };
+    const validation = validateLedgerEntry(contextualEntry, entries);
     if (!validation.isValid) {
       return { success: false, validation };
     }
 
-    const created = await ledgerRepository.addEntry({
-      ...entryData,
-      taxpayerTin: taxpayer.tin,
-      assessmentYear: assessmentYear,
-    });
-
-    await loadEntries();
-    return { success: true, entry: created };
+    try {
+      const created = await ledgerRepository.addEntry(contextualEntry);
+      await loadEntries();
+      return { success: true, entry: created };
+    } catch (err) {
+      return { success: false, validation: {
+        isValid: false,
+        errors: { general: err instanceof Error ? err.message : 'Failed to save ledger entry.' },
+      } };
+    }
   };
 
   const updateEntry = async (id: string, patch: Partial<LedgerEntry>) => {
@@ -118,30 +128,43 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return { success: false, validation };
     }
 
-    const updated = await ledgerRepository.updateEntry(id, patch);
-    await loadEntries();
-    return { success: true, entry: updated };
+    try {
+      const updated = await ledgerRepository.updateEntry(id, patch);
+      await loadEntries();
+      return { success: true, entry: updated };
+    } catch (err) {
+      return { success: false, validation: {
+        isValid: false,
+        errors: { general: err instanceof Error ? err.message : 'Failed to update ledger entry.' },
+      } };
+    }
   };
 
   const deleteEntry = async (id: string) => {
-    const success = await ledgerRepository.deleteEntry(id);
-    if (success) {
-      await loadEntries();
+    if (!entries.some((entry) => entry.id === id)) return false;
+    try {
+      const success = await ledgerRepository.deleteEntry(id);
+      if (success) await loadEntries();
+      return success;
+    } catch (err) {
+      console.error('Failed to delete ledger entry:', err);
+      return false;
     }
-    return success;
   };
 
   const syncIncomeItem = async (itemId: string, sectionCode: string) => {
-    const res = await incomeSyncService.syncItemToLedger(
-      itemId,
-      sectionCode,
-      taxpayer.tin,
-      assessmentYear
-    );
-    if (res.success) {
-      await loadEntries();
+    try {
+      const res = await incomeSyncService.syncItemToLedger(
+        itemId,
+        sectionCode,
+        taxpayer.tin,
+        assessmentYear
+      );
+      if (res.success) await loadEntries();
+      return res;
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Income sync could not be saved.' };
     }
-    return res;
   };
 
   const refreshData = async () => {

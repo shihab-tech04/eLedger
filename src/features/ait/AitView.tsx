@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getRouteById } from '../../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
@@ -30,8 +30,7 @@ export const AitView: React.FC = () => {
   const aitRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'AIT');
 
   // Check if activeRouteId is in AIT, otherwise default to first
-  const currentRoute =
-    aitRoutes.find((r) => r.id === activeRouteId) || aitRoutes[0];
+  const currentRoute = getActiveRouteForGroup(activeRouteId, 'AIT');
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);

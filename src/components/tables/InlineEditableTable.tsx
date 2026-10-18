@@ -107,13 +107,17 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       setNewRowError('Deductor / Organization is required.');
       return;
     }
-    const taxNum = parseFloat(newRowData.taxDeducted);
-    if (isNaN(taxNum) || taxNum <= 0) {
+    const taxNum = Number(newRowData.taxDeducted);
+    if (!Number.isFinite(taxNum) || taxNum <= 0) {
       setNewRowError('Tax Deducted must be a positive number.');
       return;
     }
-    const grossNum = parseFloat(newRowData.grossAmount) || 0;
-    if (grossNum > 0 && taxNum > grossNum) {
+    const grossNum = Number(newRowData.grossAmount);
+    if (!Number.isFinite(grossNum) || grossNum <= 0) {
+      setNewRowError('Gross Amount must be a positive number.');
+      return;
+    }
+    if (taxNum > grossNum) {
       setNewRowError('Tax deducted cannot exceed gross amount.');
       return;
     }
@@ -166,13 +170,17 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       setEditRowError('Deductor / Organization is required.');
       return;
     }
-    const taxNum = parseFloat(editRowData.taxDeducted);
-    if (isNaN(taxNum) || taxNum <= 0) {
+    const taxNum = Number(editRowData.taxDeducted);
+    if (!Number.isFinite(taxNum) || taxNum <= 0) {
       setEditRowError('Tax Deducted must be a positive number.');
       return;
     }
-    const grossNum = parseFloat(editRowData.grossAmount) || 0;
-    if (grossNum > 0 && taxNum > grossNum) {
+    const grossNum = Number(editRowData.grossAmount);
+    if (!Number.isFinite(grossNum) || grossNum <= 0) {
+      setEditRowError('Gross Amount must be a positive number.');
+      return;
+    }
+    if (taxNum > grossNum) {
       setEditRowError('Tax deducted cannot exceed gross amount.');
       return;
     }

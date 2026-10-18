@@ -8,9 +8,9 @@
  * - System Records / Import (Customs TDS)
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getRouteById } from '../../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
@@ -33,7 +33,7 @@ export const SourceTaxView: React.FC = () => {
   const sourceTaxRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Source Tax');
 
   // Active route
-  const currentRoute = getRouteById(activeRouteId) || sourceTaxRoutes[0];
+  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Source Tax');
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
 
@@ -214,7 +214,7 @@ export const SourceTaxView: React.FC = () => {
             </h4>
           </div>
           <p className="text-xs text-slate-600 mt-2">
-            Import records are pulled from NBR Customs Bill-of-Entry database. Enter custom clearing challans or Bill of Entry numbers below using Add Entry.
+            Record customs clearance references below using Add Entry. Live ASYCUDA Bill-of-Entry imports are not connected.
           </p>
         </div>
       )}
