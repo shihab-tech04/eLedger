@@ -89,17 +89,17 @@ export const AitView: React.FC = () => {
     if (currentRoute.id === 'commercial-vehicle') {
       return {
         placeholder: 'e.g. DHAKA-METRO-JA-11-2044',
-        helper: 'Query official BRTA vehicle registry for commercial buses, trucks, and primes.',
+        helper: 'Check sample BRTA commercial vehicle references stored locally (not a live registry query).',
       };
     } else if (currentRoute.id === 'car-ait') {
       return {
         placeholder: 'e.g. DHAKA-METRO-GA-34-9182',
-        helper: 'Query BRTA motor vehicle registration database for private car fitness/tax tokens.',
+        helper: 'Check sample private car fitness/tax-token references stored locally (not a live BRTA query).',
       };
     } else {
       return {
         placeholder: 'e.g. SEC154-AUCTION-2026-001',
-        helper: 'Query specialized advance income tax challans deposited under Section 154.',
+        helper: 'Check sample Section 154 challan references stored locally; external verification is not connected.',
       };
     }
   };

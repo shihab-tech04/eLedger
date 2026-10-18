@@ -104,7 +104,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
                 Tax Payment Status & Reconciliation
               </h2>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-800 text-emerald-100 border border-emerald-600">
-                Official eLedger Audit
+                Local Ledger Review
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-0.5">
@@ -129,10 +129,10 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
             <ShieldCheck className="w-4 h-4 text-emerald-700 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-emerald-950">
-                Reconciliation Summary Generated from Verified Ledger Data
+                Reconciliation Summary from Recorded Ledger Data
               </p>
               <p className="text-emerald-800 text-[11px] mt-0.5">
-                All credits and payments are compiled dynamically from underlying statutory ledger entries. Local unverified entries remain marked as pending until validated by revenue authorities.
+                Recorded amounts are shown for review. Only independently confirmed authority-verified entries count toward the verified-credit total; this prototype cannot issue that verification.
               </p>
             </div>
           </div>

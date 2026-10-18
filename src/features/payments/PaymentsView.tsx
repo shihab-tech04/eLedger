@@ -179,7 +179,7 @@ export const PaymentsView: React.FC = () => {
             ? 'e.g. ACHALLAN-2026-788102'
             : 'e.g. ACHALLAN-Q1-2026-5541'
         }
-        helperText="Verify Bangladesh Bank A-Challan e-payment receipt with national treasury records."
+        helperText="Check local A-Challan reference examples; national treasury verification is not connected."
       />
 
       {/* Inline Editable Table (Requirement #6) */}

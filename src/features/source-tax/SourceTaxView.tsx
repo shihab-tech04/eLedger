@@ -186,11 +186,11 @@ export const SourceTaxView: React.FC = () => {
           <div className="flex items-center space-x-2 mb-1.5">
             <ShieldCheck className="w-4 h-4 text-sky-700" />
             <strong className="text-sm font-semibold text-sky-950">
-              Integrated iBAS++ Government Payroll Ledger
+              iBAS++ Payroll Ledger Reference (Demo)
             </strong>
           </div>
           <p className="text-sky-800 leading-relaxed">
-            Government and autonomous institution employee monthly salary TDS deductions are automatically matched and locked via the CGA iBAS++ interface. Discrepancies should be resolved with your Drawing and Disbursing Officer (DDO).
+            These salary TDS records are local demonstration data. No CGA iBAS++ connection or automatic government verification is active; real discrepancies must be resolved with the appropriate Drawing and Disbursing Officer (DDO).
           </p>
         </div>
       )}
