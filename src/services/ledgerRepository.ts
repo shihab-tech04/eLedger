@@ -154,6 +154,9 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
       throw new Error(`Ledger entry with ID '${id}' not found.`);
     }
     const original = all[index];
+    if (original.routeId === 'salary-ibas') {
+      throw new Error('System-only iBAS++ records cannot be edited in the local ledger.');
+    }
     const updated: LedgerEntry = {
       ...original,
       ...patch,
@@ -184,6 +187,9 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
   async deleteEntry(id: string): Promise<boolean> {
     return this.serializeMutation(async () => {
     const all = await this.getAllEntries();
+    if (all.some((entry) => entry.id === id && entry.routeId === 'salary-ibas')) {
+      throw new Error('System-only iBAS++ records cannot be deleted in the local ledger.');
+    }
     const filtered = all.filter((e) => e.id !== id);
     if (filtered.length === all.length) {
       return false;

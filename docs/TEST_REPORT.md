@@ -1,4 +1,28 @@
-# NBR eReturn Ledger — Phase 5 Candidate Verification
+# NBR eReturn Ledger — Phase 6 Candidate Verification
+
+**Starting point:** Phase 5 deployed `main` at `a96f31e`.
+
+- `npm test`: **72/72 passed**, including readonly iBAS++ UI markup and repository mutation guards.
+- `npm run lint`: PASS.
+- `npm run build`: PASS, output `index-jqG4gfHd.js`.
+- `git diff --check`: PASS.
+- No changes to CSS, top navigation or page-shell layout.
+- See [`PHASE6_FINAL_ACCEPTANCE.md`](PHASE6_FINAL_ACCEPTANCE.md).
+
+Final PR CI, Pages deployment and live browser checks are release gates.
+
+---
+
+# NBR eReturn Ledger — Phase 5 Checkpoint Verification
+
+- `npm test`: **69/69 passed**; TypeScript, build and diff checks passed.
+- GitHub PR #6 merged at `a96f31e`; Pages deployment run 39148963234 succeeded.
+- Live Pages loaded `index-C5tRcvNK.js`, matching the local build.
+- See [`PHASE5_DATA_RECONCILIATION.md`](PHASE5_DATA_RECONCILIATION.md).
+
+---
+
+# NBR eReturn Ledger — Phase 5 Candidate Verification (Pre-Release)
 
 **Starting point:** Phase 4 deployed `main` at `3a84a59`.
 

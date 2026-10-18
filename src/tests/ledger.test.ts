@@ -21,6 +21,8 @@
 
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { ROUTE_REGISTRY, getActiveRouteForGroup, getRouteById, getRoutesByGroup } from '../domain/routeRegistry.ts';
 import {
@@ -43,6 +45,7 @@ import { ExternalLookupService } from '../services/externalLookupService.ts';
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { IncomeSyncService } from '../services/incomeSyncService.ts';
 import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
+import { InlineEditableTable } from '../components/tables/InlineEditableTable.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1035,5 +1038,51 @@ describe('eLedger — Phase 5 Persistence and Reconciliation Integrity', () => {
     assert.equal(validateExternalLookupMatch(query, record).canSave, true);
     assert.equal(validateExternalLookupMatch(query, { ...record, routeId: undefined }).canSave, false);
     assert.equal(validateExternalLookupMatch(query, { ...record, assessmentYear: undefined }).canSave, false);
+  });
+});
+
+describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
+  it('keeps iBAS++ system entries read-only in the reusable ledger table', () => {
+    const props = {
+      entries: INITIAL_LEDGER_ENTRIES.filter((entry) => entry.routeId === 'salary-ibas'),
+      category: 'SOURCE_TAX' as const,
+      routeId: 'salary-ibas' as const,
+      defaultSection: 'Sec 86',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    };
+    const locked = renderToStaticMarkup(React.createElement(InlineEditableTable, {
+      ...props, allowAdd: false, allowEditDelete: false,
+    }));
+    assert.doesNotMatch(locked, /title="Edit row inline"/);
+    assert.doesNotMatch(locked, /title="Delete row"/);
+    assert.doesNotMatch(locked, />Add Entry</);
+    assert.match(locked, /IBAS\/GOV\/2026\/08821/);
+
+    const manual = renderToStaticMarkup(React.createElement(InlineEditableTable, {
+      ...props, entries: INITIAL_LEDGER_ENTRIES.filter((entry) => entry.routeId === 'service-payment'),
+      routeId: 'service-payment', allowAdd: true, allowEditDelete: true,
+    }));
+    assert.match(manual, /title="Edit row inline"/);
+    assert.match(manual, /title="Delete row"/);
+    assert.match(manual, />Add Entry</);
+  });
+
+  it('blocks local modification and deletion of imported salary system records', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    const original = await repo.getEntryById('entry-ibas-01');
+    assert.ok(original);
+    await assert.rejects(repo.updateEntry(original.id, { taxDeducted: 1 }), /System-only iBAS/i);
+    await assert.rejects(repo.deleteEntry(original.id), /System-only iBAS/i);
+    assert.deepEqual(await repo.getEntryById(original.id), original);
+  });
+
+  it('preserves all 18 route identities and prevents a fabricated local verified total', () => {
+    assert.equal(new Set(ROUTE_REGISTRY.map((route) => route.id)).size, 18);
+    for (const group of ['Source Tax', 'AIT', 'Payment', 'Adjustment', 'Tax Payment Status'] as const) {
+      assert.ok(getRoutesByGroup(group).length > 0);
+    }
+    assert.equal(calculateCategoryTotals(INITIAL_LEDGER_ENTRIES).grandTotalCredits, 0);
   });
 });
