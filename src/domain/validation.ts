@@ -16,6 +16,11 @@ export interface ValidationResult {
   errors: Record<string, string>;
 }
 
+/** Reference matching must agree across the form, ledger and income sync. */
+export function sameLedgerReference(left: string, right: string): boolean {
+  return left.trim().toLowerCase() === right.trim().toLowerCase();
+}
+
 export function validateLedgerEntry(
   entry: Partial<LedgerEntry>,
   existingEntries: LedgerEntry[],
@@ -37,6 +42,12 @@ export function validateLedgerEntry(
   } else if (entry.category && entry.category !== categoryForGroup[route.group]) {
     errors.category = 'Ledger category does not match the selected route.';
   }
+  if (route && entry.isManual && !route.supportsManualEntry) {
+    errors.workflow = 'Manual entries are not permitted for this system-only route.';
+  }
+  if (route && entry.workflow === 'SYNC_FROM_INCOME' && !route.supportsIncomeSync) {
+    errors.workflow = 'Income synchronization is not available for this route.';
+  }
   if (route?.workflow === 'SINGLE_CLAIM' && existingEntries.some((existing) =>
     existing.id !== currentEntryIdToIgnore &&
     existing.taxpayerTin === entry.taxpayerTin &&
@@ -51,14 +62,13 @@ export function validateLedgerEntry(
     errors.referenceNo = 'Challan / Certificate / Reference Number is required.';
   } else {
     // 2. Duplicate prevention
-    const trimmedRef = entry.referenceNo.trim().toLowerCase();
     const isDuplicate = existingEntries.some(
       (e) =>
         e.id !== currentEntryIdToIgnore &&
         e.taxpayerTin === entry.taxpayerTin &&
         e.assessmentYear === entry.assessmentYear &&
         e.routeId === entry.routeId &&
-        e.referenceNo.trim().toLowerCase() === trimmedRef
+        sameLedgerReference(e.referenceNo, entry.referenceNo!)
     );
 
     if (isDuplicate) {
