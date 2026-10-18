@@ -8,30 +8,43 @@ import { INITIAL_INCOME_SYNC_ITEMS } from '../data/seedData.ts';
 import { ledgerRepository } from './ledgerRepository.ts';
 
 const SYNC_STORAGE_KEY = 'nbr_eledger_income_sync_v1';
+type IncomeStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export class IncomeSyncService {
+  constructor(private readonly storage: IncomeStorage | null =
+    typeof window === 'undefined' ? null : window.localStorage) {}
+
   private loadItems(): IncomeSyncItem[] {
-    if (typeof window === 'undefined') {
-      return [...INITIAL_INCOME_SYNC_ITEMS];
+    if (!this.storage) {
+      return INITIAL_INCOME_SYNC_ITEMS.map((item) => ({ ...item }));
     }
     try {
-      const data = localStorage.getItem(SYNC_STORAGE_KEY);
+      const data = this.storage.getItem(SYNC_STORAGE_KEY);
       if (!data) {
-        localStorage.setItem(SYNC_STORAGE_KEY, JSON.stringify(INITIAL_INCOME_SYNC_ITEMS));
-        return [...INITIAL_INCOME_SYNC_ITEMS];
+        this.storage.setItem(SYNC_STORAGE_KEY, JSON.stringify(INITIAL_INCOME_SYNC_ITEMS));
+        return INITIAL_INCOME_SYNC_ITEMS.map((item) => ({ ...item }));
       }
-      return JSON.parse(data) as IncomeSyncItem[];
+      const parsed: unknown = JSON.parse(data);
+      if (!Array.isArray(parsed) || !parsed.every((item) =>
+        item !== null && typeof item === 'object' &&
+        typeof item.id === 'string' && typeof item.taxpayerTin === 'string' &&
+        typeof item.assessmentYear === 'string' && typeof item.routeId === 'string' &&
+        typeof item.accountOrCertificateNo === 'string'
+      )) {
+        throw new Error('Invalid income declarations');
+      }
+      return parsed as IncomeSyncItem[];
     } catch {
-      return [...INITIAL_INCOME_SYNC_ITEMS];
+      throw new Error('Saved income declarations could not be read. The stored data was left unchanged.');
     }
   }
 
   private saveItems(items: IncomeSyncItem[]): void {
-    if (typeof window !== 'undefined') {
+    if (this.storage) {
       try {
-        localStorage.setItem(SYNC_STORAGE_KEY, JSON.stringify(items));
-      } catch (err) {
-        console.error('Failed to save income sync items:', err);
+        this.storage.setItem(SYNC_STORAGE_KEY, JSON.stringify(items));
+      } catch {
+        throw new Error('Income declarations could not be saved to browser storage.');
       }
     }
   }
@@ -101,15 +114,14 @@ export class IncomeSyncService {
       remarks: `Synchronized from eReturn Income Head: ${item.sourceHead}`,
     });
 
-    // Mark synced
-    items[itemIndex].isSyncedToLedger = true;
-    this.saveItems(items);
+    // Ledger entries are the source of truth for the synced state. Avoid a
+    // second storage write that could fail after the ledger commit succeeds.
 
     return { success: true, entry: newEntry };
   }
 
   async resetSyncItems(): Promise<void> {
-    this.saveItems([...INITIAL_INCOME_SYNC_ITEMS]);
+    this.saveItems(INITIAL_INCOME_SYNC_ITEMS.map((item) => ({ ...item })));
   }
 }
 

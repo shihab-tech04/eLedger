@@ -1,3 +1,25 @@
+# NBR eReturn Ledger — Phase 3 Candidate Verification
+
+**Execution date:** 2026-10-18
+
+**Starting point:** Phase 2 deployed `main` at `77669b4`
+
+**Local checks:** 40/40 automated tests passed, TypeScript passed, and Vite
+production build passed. Eight new tests cover carry-forward year context,
+editing metadata, single-claim uniqueness, refusal to trust browser-stored
+verification flags, multi-tab preservation, corrupt income-declaration data,
+atomic income-sync success, and case-insensitive local reference lookup.
+
+**Browser matrix:** All 18 route views opened in the deployed Phase 2 build;
+the expected heading and route-specific workflow region or reconciliation
+modal rendered. Details in `docs/PHASE3_ROUTE_ACCEPTANCE.md`.
+
+**Release gate:** Phase 3 PR CI and live Pages deployment must pass before
+marking this candidate a verified deployed checkpoint. Full financial-journey
+acceptance is still outstanding.
+
+---
+
 # NBR eReturn Ledger — Phase 2 Candidate Verification
 
 **Execution date:** 2026-10-18

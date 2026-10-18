@@ -35,11 +35,13 @@ import {
   getInitialVerificationStatus,
 } from '../domain/validation.ts';
 import { LedgerEntry, ExternalLookupQuery, ExternalLookupResult } from '../domain/models.ts';
-import { INITIAL_LEDGER_ENTRIES, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
+import { INITIAL_LEDGER_ENTRIES, INITIAL_INCOME_SYNC_ITEMS, DEFAULT_TAXPAYERS } from '../data/seedData.ts';
 import { LocalStorageLedgerRepository } from '../services/ledgerRepository.ts';
 import { ledgerRepository } from '../services/ledgerRepository.ts';
 import { ExternalLookupService } from '../services/externalLookupService.ts';
 import { incomeSyncService } from '../services/incomeSyncService.ts';
+import { IncomeSyncService } from '../services/incomeSyncService.ts';
+import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -701,5 +703,138 @@ describe('eLedger — Phase 2 Context, Persistence and Validation Regressions', 
     const repo = new LocalStorageLedgerRepository(storage);
     await assert.rejects(repo.getAllEntries(), /could not be read/i);
     assert.equal(map.get('nbr_eledger_entries_v1'), saved);
+  });
+});
+
+describe('eLedger — Phase 3 Route Journey and Local Integrity Regressions', () => {
+  const carryForward = {
+    taxpayerTin: '123456789012',
+    assessmentYear: '2026-2027' as const,
+    category: 'ADJUSTMENT' as const,
+    routeId: 'carry-forward' as const,
+    referenceNo: 'CARRY-FORWARD-PHASE3',
+    sourceEntity: 'Tax Circle-015',
+    sectionCode: 'Sec 70/215',
+    grossAmount: 10000,
+    taxDeducted: 10000,
+    date: '2026-10-18',
+    status: 'PENDING_VERIFICATION' as const,
+    workflow: 'SINGLE_CLAIM' as const,
+    isManual: true,
+    externalVerified: false,
+    remarks: 'Prior Year: 2025-2026 | Type: Business Loss Carried Forward (Sec 70)',
+  };
+
+  const freshStorage = () => {
+    const map = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => map.get(key) ?? null,
+      setItem: (key: string, value: string) => { map.set(key, value); },
+    };
+    return { map, storage };
+  };
+
+  it('provides only earlier assessment years for every selectable current year', () => {
+    assert.deepEqual(getPriorAssessmentYears('2026-2027'), ['2025-2026', '2024-2025', '2023-2024']);
+    assert.deepEqual(getPriorAssessmentYears('2025-2026'), ['2024-2025', '2023-2024', '2022-2023']);
+    assert.deepEqual(getPriorAssessmentYears('2024-2025'), ['2023-2024', '2022-2023', '2021-2022']);
+  });
+
+  it('retains an existing carry-forward origin and classification while editing', () => {
+    const details = readCarryForwardDetails(carryForward.remarks, carryForward.assessmentYear);
+    assert.equal(details.priorAssessmentYear, '2025-2026');
+    assert.equal(details.classification, 'Business Loss Carried Forward (Sec 70)');
+    const prior = readCarryForwardDetails(undefined, '2025-2026');
+    assert.equal(prior.priorAssessmentYear, '2024-2025');
+    assert.equal(readCarryForwardDetails('Prior Year: 2025-2026 | Type: Business Loss Carried Forward (Sec 70)', '2025-2026').priorAssessmentYear, '2024-2025');
+  });
+
+  it('enforces single-claim cardinality even for a different reference, but isolates taxpayer/year', async () => {
+    const repo = new LocalStorageLedgerRepository();
+    const created = await repo.addEntry(carryForward);
+    await assert.rejects(repo.addEntry({ ...carryForward, referenceNo: 'ANOTHER-ORDER' }), /one carry-forward claim/i);
+    const updated = await repo.updateEntry(created.id, { taxDeducted: 9500 });
+    assert.equal(updated.taxDeducted, 9500);
+    const otherYear = await repo.addEntry({ ...carryForward, assessmentYear: '2025-2026', referenceNo: 'PRIOR-AY' });
+    const otherTin = await repo.addEntry({ ...carryForward, taxpayerTin: '987654321098', referenceNo: 'SECOND-TIN' });
+    assert.ok(otherYear.id);
+    assert.ok(otherTin.id);
+    assert.equal(updated.externalVerified, false);
+  });
+
+  it('strips unsupported authoritative verification from browser-stored records without erasing source bytes', async () => {
+    const { map, storage } = freshStorage();
+    const repo = new LocalStorageLedgerRepository(storage);
+    await repo.resetToDefaults();
+    const raw = JSON.parse(map.get('nbr_eledger_entries_v1')!) as LedgerEntry[];
+    raw[0] = { ...raw[0], status: 'VERIFIED', externalVerified: true, verificationAuthority: 'AUTHORITATIVE' };
+    const forged = JSON.stringify(raw);
+    map.set('nbr_eledger_entries_v1', forged);
+    const loaded = await new LocalStorageLedgerRepository(storage).getAllEntries();
+    assert.equal(loaded[0].status, 'PENDING_VERIFICATION');
+    assert.equal(loaded[0].externalVerified, false);
+    assert.equal(loaded[0].verificationAuthority, undefined);
+    assert.equal(calculateCategoryTotals(loaded).grandTotalCredits, 0);
+    assert.equal(map.get('nbr_eledger_entries_v1'), forged);
+  });
+
+  it('reloads saved state before writes so independent tabs do not drop each other’s entries', async () => {
+    const { storage } = freshStorage();
+    const tabA = new LocalStorageLedgerRepository(storage);
+    const tabB = new LocalStorageLedgerRepository(storage);
+    await tabA.resetToDefaults();
+    await tabA.getAllEntries();
+    const entryOne = await tabB.addEntry(carryForward);
+    const entryTwo = await tabA.addEntry({
+      ...carryForward,
+      category: 'SOURCE_TAX',
+      routeId: 'salary-others',
+      workflow: 'MANUAL_ENTRY',
+      referenceNo: 'PARALLEL-TAB-ENTRY',
+    });
+    const reloaded = await new LocalStorageLedgerRepository(storage).getAllEntries();
+    assert.ok(reloaded.some((entry) => entry.id === entryOne.id));
+    assert.ok(reloaded.some((entry) => entry.id === entryTwo.id));
+  });
+
+  it('treats corrupted income declaration storage as unreadable and leaves it intact', async () => {
+    const { map, storage } = freshStorage();
+    map.set('nbr_eledger_income_sync_v1', '{bad income json');
+    const service = new IncomeSyncService(storage);
+    await assert.rejects(service.getSyncItemsForRoute('123456789012', '2026-2027', 'bank-fi'), /could not be read/i);
+    assert.equal(map.get('nbr_eledger_income_sync_v1'), '{bad income json');
+  });
+
+  it('does not require a second metadata write after a successful income-to-ledger sync', async () => {
+    const { map, storage } = freshStorage();
+    map.set('nbr_eledger_income_sync_v1', JSON.stringify(INITIAL_INCOME_SYNC_ITEMS));
+    const service = new IncomeSyncService({
+      getItem: storage.getItem,
+      setItem: () => { throw new Error('Income metadata storage unavailable'); },
+    });
+    await ledgerRepository.resetToDefaults();
+    try {
+      const sync = await service.syncItemToLedger('sync-item-bank-02', 'Sec 102', '123456789012', '2026-2027');
+      assert.equal(sync.success, true);
+      assert.equal((await ledgerRepository.getEntries('123456789012', '2026-2027')).some((e) => e.id === sync.entry?.id), true);
+      assert.equal(map.get('nbr_eledger_income_sync_v1'), JSON.stringify(INITIAL_INCOME_SYNC_ITEMS));
+    } finally {
+      await ledgerRepository.resetToDefaults();
+    }
+  });
+
+  it('accepts case-insensitive local fixture references but still fails route/year mismatches', async () => {
+    const query: ExternalLookupQuery = {
+      routeId: 'commercial-vehicle',
+      referenceNo: 'dhaka-metro-ja-11-2044',
+      expectedTin: '123456789012',
+      assessmentYear: '2026-2027',
+    };
+    const service = new ExternalLookupService();
+    const result = await service.lookup(query);
+    assert.equal(result.status, 'VALID');
+    assert.equal(validateExternalLookupMatch(query, result).canSave, true);
+    const wrongRoute = await service.lookup({ ...query, routeId: 'car-ait' });
+    assert.equal(validateExternalLookupMatch({ ...query, routeId: 'car-ait' }, wrongRoute).canSave, false);
   });
 });

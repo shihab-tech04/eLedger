@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerEntry } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
+import { CARRY_FORWARD_CLASSIFICATIONS, getPriorAssessmentYears, readCarryForwardDetails } from '../../domain/carryForward.ts';
 import { SlidersHorizontal, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface SingleClaimPanelProps {
@@ -16,7 +17,9 @@ interface SingleClaimPanelProps {
 
 export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClaim }) => {
   const { taxpayer, assessmentYear, addEntry, updateEntry } = useLedger();
-  const [priorAssessmentYear, setPriorAssessmentYear] = useState('2024-2025');
+  const priorYearOptions = getPriorAssessmentYears(assessmentYear);
+  const existingDetails = readCarryForwardDetails(existingClaim?.remarks, assessmentYear);
+  const [priorAssessmentYear, setPriorAssessmentYear] = useState(existingDetails.priorAssessmentYear);
   const [assessmentOrderNo, setAssessmentOrderNo] = useState(
     existingClaim ? existingClaim.referenceNo : ''
   );
@@ -26,16 +29,20 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
   const [unabsorbedCredit, setUnabsorbedCredit] = useState(
     existingClaim ? existingClaim.taxDeducted.toString() : ''
   );
-  const [lossOrCreditType, setLossOrCreditType] = useState('Unabsorbed Minimum Tax Credit (Sec 163)');
+  const [lossOrCreditType, setLossOrCreditType] = useState(existingDetails.classification);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const handleSaveClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
 
-    const amount = parseFloat(unabsorbedCredit);
-    if (isNaN(amount) || amount <= 0) {
+    const amount = Number(unabsorbedCredit);
+    if (!Number.isFinite(amount) || amount <= 0) {
       setMessage({ type: 'error', text: 'Please enter a valid unabsorbed credit amount greater than 0.' });
+      return;
+    }
+    if (!priorYearOptions.includes(priorAssessmentYear)) {
+      setMessage({ type: 'error', text: 'The origin assessment year must precede the selected assessment year.' });
       return;
     }
     if (!assessmentOrderNo.trim()) {
@@ -54,7 +61,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
       if (res.success) {
         setMessage({ type: 'success', text: 'Carry-forward claim updated successfully.' });
       } else {
-        setMessage({ type: 'error', text: res.validation?.errors.referenceNo || 'Failed to update claim.' });
+        setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to update claim.' });
       }
     } else {
       const res = await addEntry({
@@ -77,7 +84,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
       if (res.success) {
         setMessage({ type: 'success', text: 'Carry-forward claim recorded successfully into ledger.' });
       } else {
-        setMessage({ type: 'error', text: res.validation?.errors.referenceNo || 'Failed to record claim.' });
+        setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to record claim.' });
       }
     }
   };
@@ -126,9 +133,11 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             onChange={(e) => setPriorAssessmentYear(e.target.value)}
             className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
           >
-            <option value="2025-2026">2025-2026 (Immediately Preceding Year)</option>
-            <option value="2024-2025">2024-2025</option>
-            <option value="2023-2024">2023-2024</option>
+            {priorYearOptions.map((year, index) => (
+              <option key={year} value={year}>
+                {year}{index === 0 ? ' (Immediately Preceding Year)' : ''}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -141,15 +150,9 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             onChange={(e) => setLossOrCreditType(e.target.value)}
             className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
           >
-            <option value="Unabsorbed Minimum Tax Credit (Sec 163)">
-              Unabsorbed Minimum Tax Credit (Sec 163)
-            </option>
-            <option value="Unabsorbed Depreciation Allowance">
-              Unabsorbed Depreciation Allowance
-            </option>
-            <option value="Business Loss Carried Forward (Sec 70)">
-              Business Loss Carried Forward (Sec 70)
-            </option>
+            {CARRY_FORWARD_CLASSIFICATIONS.map((classification) => (
+              <option key={classification} value={classification}>{classification}</option>
+            ))}
           </select>
         </div>
 
