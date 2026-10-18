@@ -1,0 +1,6 @@
+{
+  "name": "NBR eReturn Ledger",
+  "description": "Bangladesh National Board of Revenue (NBR) eReturn Ledger (eLedger) for managing tax payments, source tax credits, AIT claims, and reconciliation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
