@@ -7,7 +7,7 @@ import { LedgerEntry, AssessmentYear } from '../domain/models.ts';
 import { INITIAL_LEDGER_ENTRIES } from '../data/seedData.ts';
 import { validateLedgerEntry } from '../domain/validation.ts';
 
-const STORAGE_KEY = 'nbr_eledger_entries_v1';
+export const LEDGER_STORAGE_KEY = 'nbr_eledger_entries_v1';
 type LedgerStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export interface ILedgerRepository {
@@ -31,9 +31,9 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
       return INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry }));
     }
     try {
-      const data = this.storage.getItem(STORAGE_KEY);
+      const data = this.storage.getItem(LEDGER_STORAGE_KEY);
       if (!data) {
-        this.storage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES));
+        this.storage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES));
         return INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry }));
       }
       const parsed: unknown = JSON.parse(data);
@@ -44,7 +44,14 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
       )) {
         throw new Error('Stored entries have an invalid structure.');
       }
-      return parsed as LedgerEntry[];
+      // Browser storage is client-controlled. Never accept a locally persisted
+      // flag as authoritative government verification.
+      return (parsed as LedgerEntry[]).map((entry) => ({
+        ...entry,
+        status: entry.status === 'VERIFIED' ? 'PENDING_VERIFICATION' : entry.status,
+        externalVerified: false,
+        verificationAuthority: undefined,
+      }));
     } catch {
       // Never overwrite a user's unreadable saved data with demo defaults.
       throw new Error('Saved ledger data could not be read. The stored data was left unchanged.');
@@ -54,7 +61,7 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
   private saveRaw(entries: LedgerEntry[]): void {
     if (this.storage) {
       try {
-        this.storage.setItem(STORAGE_KEY, JSON.stringify(entries));
+        this.storage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(entries));
       } catch {
         throw new Error('Ledger changes could not be saved to browser storage.');
       }
@@ -63,7 +70,9 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
   }
 
   async getAllEntries(): Promise<LedgerEntry[]> {
-    if (!this.inMemoryCache) {
+    // Refresh persisted state on reads so another tab's committed records are
+    // not overwritten by a stale cache on the next mutation.
+    if (this.storage || !this.inMemoryCache) {
       this.inMemoryCache = this.loadRaw();
     }
     return this.inMemoryCache.map((entry) => ({ ...entry }));

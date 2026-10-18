@@ -12,7 +12,7 @@ import {
   LedgerRouteId,
 } from '../domain/models.ts';
 import { DEFAULT_TAXPAYERS } from '../data/seedData.ts';
-import { ledgerRepository } from '../services/ledgerRepository.ts';
+import { LEDGER_STORAGE_KEY, ledgerRepository } from '../services/ledgerRepository.ts';
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { calculateCategoryTotals } from '../domain/calculations.ts';
 import { validateLedgerEntry, ValidationResult } from '../domain/validation.ts';
@@ -74,6 +74,14 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   useEffect(() => {
     loadEntries();
+  }, [loadEntries]);
+
+  useEffect(() => {
+    const handleStorageUpdate = (event: StorageEvent) => {
+      if (event.key === LEDGER_STORAGE_KEY) void loadEntries();
+    };
+    window.addEventListener('storage', handleStorageUpdate);
+    return () => window.removeEventListener('storage', handleStorageUpdate);
   }, [loadEntries]);
 
   const setTaxpayer = (tp: TaxpayerContext) => {

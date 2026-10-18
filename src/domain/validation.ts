@@ -37,6 +37,14 @@ export function validateLedgerEntry(
   } else if (entry.category && entry.category !== categoryForGroup[route.group]) {
     errors.category = 'Ledger category does not match the selected route.';
   }
+  if (route?.workflow === 'SINGLE_CLAIM' && existingEntries.some((existing) =>
+    existing.id !== currentEntryIdToIgnore &&
+    existing.taxpayerTin === entry.taxpayerTin &&
+    existing.assessmentYear === entry.assessmentYear &&
+    existing.routeId === entry.routeId
+  )) {
+    errors.routeId = 'Only one carry-forward claim is permitted per taxpayer and assessment year.';
+  }
 
   // 1. Reference number requirement
   if (!entry.referenceNo || entry.referenceNo.trim().length === 0) {

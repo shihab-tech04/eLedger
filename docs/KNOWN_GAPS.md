@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–2)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–3)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -27,6 +27,12 @@ This document tracks items where source evidence was interrupted or where live g
 - [x] Phase 2: Direct storage writes cannot silently appear successful after browser quota failures
 - [x] Phase 2: Corrupt saved browser data is left unchanged instead of overwritten with defaults
 - [x] Phase 2: Stale reference lookup results cannot be submitted after editing their lookup key
+- [x] Phase 3: All 18 registered route views selected and rendered in the live browser
+- [x] Phase 3: Carry-forward prior-year choice tracks the active assessment year and saved claim type is restored
+- [x] Phase 3: Only one carry-forward claim per taxpayer and year is accepted at the repository boundary
+- [x] Phase 3: Locally persisted verification flags cannot be used to fabricate authoritative credits
+- [x] Phase 3: Other-tab ledger writes are reloaded before local writes, with storage-event UI refresh
+- [x] Phase 3: Corrupted income declarations are preserved, and sync completion does not depend on a second metadata write
 
 ### Implemented but Provisional
 - **Contractor & Supply of Goods (`contractor-supplier`):** Implemented with hybrid sync and manual entry; provisional pending final NBR Form 26AS equivalent XML tag mapping.
@@ -38,7 +44,7 @@ This document tracks items where source evidence was interrupted or where live g
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.
 - **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
 - **Customs/system imports:** The import route offers local reference entry, not ASYCUDA ingestion or import-file reconciliation.
-- **Browser journey tests:** Targeted Phase 1/2 smoke only; the full 18-route manual workflow matrix, multiple browsers, accessibility checks, and storage failure UI exercise are still unverified. Unit tests do not constitute full interface acceptance.
+- **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks. Per-route create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute full financial-workflow acceptance.
 
 ### Unverified Historical Commit Assets
 - Planned PR #17 was not published in the historical repository because of the upstream access interruption. Its assessment-year and taxpayer-context intent is now covered in the new baseline tests.

@@ -122,7 +122,7 @@ export class ExternalLookupService implements IExternalLookupService {
   }
 
   async lookup(query: ExternalLookupQuery): Promise<ExternalLookupResult> {
-    const cleanRef = query.referenceNo.trim();
+    const cleanRef = query.referenceNo.trim().toUpperCase();
 
     // 1. Fail closed if service is configured offline or unavailable
     if (this.simulateOffline) {
