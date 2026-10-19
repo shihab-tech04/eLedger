@@ -158,8 +158,11 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       </div>
       {error && <div role="alert" className="eledger-salary-error">{error}</div>}
       {activeId !== null && renderEditor()}
-      <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>
-      <div className="eledger-salary-scroll">
+      {entries.length === 0 && activeId === null && <p className="eledger-entry-empty">
+        {t('No salary claims yet. Use Add new to record one.','এখনো বেতনের দাবি নেই। নতুন যোগ করুন দিয়ে রেকর্ড করুন।')}
+      </p>}
+      {entries.length > 0 && <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>}
+      {entries.length > 0 && <div className="eledger-salary-scroll">
         <table>
           <thead><tr>
             <th scope="col">{t('SL.','ক্রম')}</th><th scope="col">{t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}</th>
@@ -189,10 +192,9 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 </div></td>
               </tr>
             ))}
-            {entries.length === 0 && activeId === null && <tr><td colSpan={9} className="eledger-salary-empty">{t('No salary claims recorded for this taxpayer and year. Use Add new to create a local claim.','এই করদাতা ও করবর্ষে কোনো বেতনের দাবি রেকর্ড নেই। স্থানীয় দাবি যোগ করতে নতুন যোগ করুন চাপুন।')}</td></tr>}
           </tbody>
         </table>
-      </div>
+      </div>}
       <p className="eledger-salary-disclaimer">{t('These are recorded claims, not confirmed credits. Payment verification requires an independent authoritative source.','এগুলো রেকর্ডকৃত দাবি, নিশ্চিত ক্রেডিট নয়। পরিশোধ যাচাইয়ের জন্য স্বতন্ত্র সরকারি প্রমাণ প্রয়োজন।')}</p>
     </section>
   );

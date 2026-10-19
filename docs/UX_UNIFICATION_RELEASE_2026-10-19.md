@@ -21,6 +21,14 @@ This release builds on the recovered September custom-sidebar design. It does no
 8. Avoided pre-filling an unsupported assessing-circle claim on Section 163; added category-specific surcharge column labels and corrected singular “1 record”.
 9. Persisted only the English/Bengali display-language preference in browser storage, without migrating or modifying taxpayer data. Clarified income-sync fixture timestamp as import time rather than deduction date.
 
+### Live review follow-up
+
+Live review of the first publication exposed two additional layout gaps not visible in automated markup tests:
+
+- Generic ledger entry/edit rows still put the Save/Cancel actions outside the visible portion of a wide table at medium desktop widths. The same shared, labeled full-width editor is now used across every manual-entry route, regardless of screen width. Read-only tables keep horizontal scrolling, with numeric values on one line.
+- Empty financial tables presented clipped, unhelpful headers. Empty states now show one concise instruction with no wide table, while existing financial rows retain the detailed table.
+- The 390px dashboard returns to a compact two-column summary; at 360px and below the cards stack for readability.
+
 ## Verification gate
 
 Before merge, require TypeScript (`npm run lint`), regression tests (`npm run test`), production build (`npm run build`), production dependency audit (`npm audit --omit=dev --audit-level=high`) and `git diff --check` to pass. GitHub PR validation and Pages deployment must then succeed, followed by live visual spot checks at desktop/390px/320px and Bengali.

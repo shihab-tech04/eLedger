@@ -638,7 +638,7 @@ describe('eLedger — Final Workflow UX Audit', () => {
       ['PAYMENT', 'Tax Paid (৳)'], ['ADJUSTMENT', 'Adjusted Amount (৳)'],
     ] as const) {
       const html = renderToStaticMarkup(React.createElement(InlineEditableTable, {
-        entries: [], category, routeId: category === 'PAYMENT' ? 'sec-173'
+        entries: [INITIAL_LEDGER_ENTRIES[0]], category, routeId: category === 'PAYMENT' ? 'sec-173'
           : category === 'ADJUSTMENT' ? 'refund' : category === 'AIT' ? 'car-ait' : 'other-tds',
         defaultSection: 'Sec 173', onSaveNewEntry: async () => ({ success: true }),
         onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
@@ -712,24 +712,20 @@ describe('eLedger — Phase 9 Mobile and Data-Safety Regression', () => {
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true,
     }));
-    const mobile = renderToStaticMarkup(React.createElement('table', null,
-      React.createElement('tbody', null,
-        React.createElement(MobileRowEditor, {
-          values: { referenceNo: '', sourceEntity: '', sectionCode: 'Sec 89', grossAmount: '', taxDeducted: '', date: '2026-10-19' },
-          onFieldChange: () => {}, onSave: () => {}, onCancel: () => {},
-          evidence: {}, onEvidenceChange: () => {}, routeId: 'service-payment', isEdit: false,
-        })
-      )
-    ));
+    const mobile = renderToStaticMarkup(React.createElement(MobileRowEditor, {
+      values: { referenceNo: '', sourceEntity: '', sectionCode: 'Sec 89', grossAmount: '', taxDeducted: '', date: '2026-10-19' },
+      onFieldChange: () => {}, onSave: () => {}, onCancel: () => {},
+      evidence: {}, onEvidenceChange: () => {}, routeId: 'service-payment', isEdit: false,
+    }));
     assert.match(table, /Recorded Ledger Entries/);
     assert.match(table, /Add Entry/);
-    assert.match(table, /overflow-x-auto/);
-    assert.match(mobile, /sticky left-0/);
+    assert.doesNotMatch(table, /overflow-x-auto/);
+    assert.match(mobile, /eledger-entry-editor/);
     assert.match(mobile, /New Reference \/ Challan No/);
     assert.match(mobile, /Depositing Authority/);
     assert.match(mobile, /Save Entry/);
     assert.match(mobile, /Cancel/);
-    assert.match(mobile, /w-\[calc\(100vw-3\.5rem\)\]/);
+    assert.doesNotMatch(mobile, /w-\[calc\(100vw-3\.5rem\)\]/);
   });
 
   it('formats a local browser calendar day without a UTC conversion', () => {
@@ -1872,7 +1868,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const salary = renderBn(React.createElement(SalaryOthersTable, { entries: [], defaultSection: 'Sec 86',
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true }));
-    assert.match(salary, /জমাদানকারী কর্তৃপক্ষ/);
+    assert.match(salary, /এখনো বেতনের দাবি নেই/);
     assert.match(salary, /নতুন যোগ করুন/);
   });
 
