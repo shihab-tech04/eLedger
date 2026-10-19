@@ -46,6 +46,8 @@ import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { IncomeSyncService } from '../services/incomeSyncService.ts';
 import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
 import { InlineEditableTable } from '../components/tables/InlineEditableTable.tsx';
+import { ClaimEvidenceFields, ClaimEvidenceSummary } from '../components/tables/ClaimEvidenceFields.tsx';
+import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimEvidence.ts';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1190,5 +1192,86 @@ describe('eLedger — October 8 Screenshot Crosswalk and Credit Guard', () => {
     assert.match(synced.entry?.remarks ?? '', /Instrument TDS/);
     const bank = INITIAL_INCOME_SYNC_ITEMS.find((entry) => entry.id === 'sync-item-bank-02')!;
     assert.equal((await incomeSyncService.syncItemToLedger(bank.id, 'Sec 102', bank.taxpayerTin, bank.assessmentYear, 1)).success, false);
+  });
+});
+
+describe('eLedger — Phase 8 Historic Claim Evidence Parity', () => {
+  const base = {
+    taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const,
+    category: 'SOURCE_TAX' as const, routeId: 'service-payment' as const,
+    referenceNo: 'TDS-SVC-P8', sourceEntity: 'Depositor Ltd',
+    sectionCode: 'Sec 89', grossAmount: 10000, taxDeducted: 500,
+    date: '2026-07-08', status: 'PENDING_VERIFICATION' as const,
+    workflow: 'MANUAL_ENTRY' as const, isManual: true, externalVerified: false,
+  };
+
+  it('offers the old screen’s document, payment and savings fields on their correct routes', () => {
+    const fields = (route: LedgerEntry['routeId']) => getClaimEvidenceFields(route).map((field) => field.key);
+    assert.deepEqual(fields('service-payment').slice(0, 3), ['depositingAuthority', 'paymentDocumentType', 'documentAmount']);
+    assert.ok(fields('source-ltu').includes('attachmentFileName'));
+    assert.ok(fields('other-tds').includes('paymentPurpose'));
+    assert.deepEqual(fields('sec-154').slice(-5), ['paymentMode', 'bankName', 'branchName', 'taxZone', 'taxCircle']);
+    assert.deepEqual(fields('sec-173').slice(-5), fields('sec-154').slice(-5));
+    assert.ok(fields('ait-import').includes('bankName'));
+    assert.deepEqual(fields('sanchayapatra'), ['savingsScheme', 'savingsRegistration', 'savingsIssueDate']);
+    assert.deepEqual(fields('salary-ibas'), []);
+  });
+
+  it('normalizes optional evidence while preserving historic claims that have no metadata', () => {
+    assert.equal(normalizeClaimEvidence({}), undefined);
+    assert.equal(normalizeClaimEvidence({ paymentPurpose: '   ' }), undefined);
+    assert.deepEqual(normalizeClaimEvidence({ paymentPurpose: ' Consulting ', documentAmount: 1000 }), {
+      paymentPurpose: 'Consulting', documentAmount: 1000,
+    });
+    assert.equal(validateLedgerEntry(base, []).isValid, true);
+  });
+
+  it('rejects claims above the document amount, invalid savings dates and misplaced evidence', () => {
+    assert.equal(validateLedgerEntry({ ...base, claimEvidence: { paymentDocumentType: 'CHALLAN', documentAmount: 600 } }, []).isValid, true);
+    assert.match(validateLedgerEntry({ ...base, claimEvidence: { documentAmount: 400 } }, []).errors.documentAmount, /cover/);
+    assert.match(validateLedgerEntry({ ...base, claimEvidence: { documentAmount: Number.NaN } }, []).errors.documentAmount, /positive/);
+    assert.match(validateLedgerEntry({ ...base, claimEvidence: { bankName: 'Unrelated Bank' } }, []).errors.claimEvidence, /not applicable/);
+    assert.match(validateLedgerEntry({ ...base, claimEvidence: { paymentPurpose: 'x'.repeat(251) } }, []).errors.claimEvidence, /250/);
+    const savings = { ...base, routeId: 'sanchayapatra' as const };
+    assert.match(validateLedgerEntry({ ...savings, claimEvidence: { savingsIssueDate: '2026-02-30' } }, []).errors.savingsIssueDate, /valid/);
+    assert.match(validateLedgerEntry({ ...savings, claimEvidence: { savingsIssueDate: '2026-08-01' } }, []).errors.savingsIssueDate, /later/);
+    assert.equal(validateLedgerEntry({ ...savings, claimEvidence: { savingsIssueDate: '2026-05-10' } }, []).isValid, true);
+  });
+
+  it('persists and edits structured metadata without altering the credited amount or other taxpayer contexts', async () => {
+    const localStore = new Map<string, string>();
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key) => localStore.get(key) ?? null,
+      setItem: (key, value) => { localStore.set(key, value); },
+    });
+    await repo.resetToDefaults();
+    const saved = await repo.addEntry({ ...base, referenceNo: 'NEW-P8-CLAIM', claimEvidence: {
+      depositingAuthority: 'Bank XYZ', paymentDocumentType: 'CERTIFICATE', documentAmount: 650,
+    } });
+    assert.equal(saved.status, 'PENDING_VERIFICATION');
+    assert.equal(saved.externalVerified, false);
+    assert.equal(saved.taxDeducted, 500);
+    assert.equal((await repo.getEntryById(saved.id))?.claimEvidence?.depositingAuthority, 'Bank XYZ');
+    const updated = await repo.updateEntry(saved.id, { claimEvidence: {
+      depositingAuthority: 'Treasury', paymentDocumentType: 'CHALLAN', documentAmount: 700,
+    } });
+    assert.equal(updated.claimEvidence?.paymentDocumentType, 'CHALLAN');
+    assert.equal(updated.taxDeducted, 500);
+    assert.ok(!(await repo.getEntries('987654321098', '2026-2027')).some((entry) => entry.id === saved.id));
+  });
+
+  it('renders route-specific fields and a persisted evidence disclosure in the existing inline-table design', () => {
+    const fields = renderToStaticMarkup(React.createElement(ClaimEvidenceFields, {
+      routeId: 'service-payment', evidence: { documentAmount: 1000 }, onChange: () => {},
+    }));
+    assert.match(fields, /Depositing Authority/);
+    assert.match(fields, /Payment Document Type/);
+    assert.match(fields, /Total Challan/);
+    const summary = renderToStaticMarkup(React.createElement(ClaimEvidenceSummary, {
+      routeId: 'service-payment', evidence: { documentAmount: 1000, paymentDocumentType: 'CHALLAN' },
+    }));
+    assert.match(summary, /Claim evidence \(2 fields\)/);
+    assert.match(summary, /CHALLAN/);
+    assert.equal(renderToStaticMarkup(React.createElement(ClaimEvidenceSummary, { routeId: 'service-payment' })), '');
   });
 });

@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–6)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–8)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -7,6 +7,9 @@ This document tracks items where source evidence was interrupted or where live g
 ## 1. Status Breakdown
 
 ### Implemented & Tested
+- [x] Phase 8: Per-route claim evidence editor and persisted disclosure for service TDS, other TDS, Source Tax LTU, Section 154, Section 173, AIT Import, and Sanchayapatra
+- [x] Phase 8: Validate document amount against claimed credit, savings-issue dates, field applicability and length; old claims without evidence remain editable
+- [x] Phase 8: Keep inline-table row entry/edits and reset unsaved evidence when changing route; no automatic government verification
 - [x] Phase 7: 28 historic authenticated screenshots crosswalked to the current 18-route UI, preserving preexisting legacy records
 - [x] Phase 7: Source Tax LTU, commercial-vehicle source-tax, AIT Import (120), and Environmental Surcharge are distinct route selections
 - [x] Phase 7: Section 120 Source/AIT cross-claim duplicate guard, s.163 carry-forward labels, separate status buckets and Sanchayapatra taxpayer-share bound
@@ -51,7 +54,8 @@ This document tracks items where source evidence was interrupted or where live g
 - **House Property TDS (`house-property`):** Implemented with manual entry under Sec 109; provisional pending official tenancy agreement identifier schema.
 
 ### Partial / Blocked by External Environment
-- **Screenshot field parity:** Payment document type, certificate/challan total versus claimed amount, LTU file evidence, and Section 154 challan metadata still need structured forms and persistence (see `PHASE7_SCREENSHOT_ALIGNMENT.md`).
+- **Actual evidence file upload:** LTU evidence now has a reference filename field only. The application deliberately does not claim to upload/store document bytes or provide a government-accessible attachment. A secured, authenticated backend and lifecycle are required to support real document upload.
+- **Authoritative form mapping:** Newly supplied route-specific fields follow the screenshot evidence, but official NBR payload schemas, field-requiredness and live acknowledgement remain unverified.
 - **Live iBAS++ API Endpoint:** Not connected. Existing records are local reference data and remain pending verification.
 - **Live BRTA Vehicle Database API:** Not connected. Local matches remain pending; route, taxpayer, and year mismatches are rejected.
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.

@@ -175,6 +175,7 @@ export const AdjustmentsView: React.FC = () => {
 
       {/* Inline Editable Table (Requirement #6) */}
       <InlineEditableTable
+        key={currentRoute.id}
         entries={routeEntries}
         category="ADJUSTMENT"
         routeId={currentRoute.id}

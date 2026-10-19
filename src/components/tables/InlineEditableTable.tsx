@@ -9,8 +9,10 @@
  */
 
 import React, { useState } from 'react';
-import { LedgerEntry, TaxCategory, LedgerRouteId } from '../../domain/models.ts';
+import { LedgerEntry, TaxCategory, LedgerRouteId, ClaimEvidence } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
+import { getClaimEvidenceFields, normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
+import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface InlineEditableTableProps {
@@ -26,6 +28,7 @@ interface InlineEditableTableProps {
     taxDeducted: number;
     date: string;
     remarks?: string;
+    claimEvidence?: ClaimEvidence;
   }) => Promise<{ success: boolean; error?: string }>;
   onUpdateEntry: (
     id: string,
@@ -38,6 +41,7 @@ interface InlineEditableTableProps {
 
 export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   entries,
+  routeId,
   defaultSection,
   onSaveNewEntry,
   onUpdateEntry,
@@ -57,6 +61,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     remarks: '',
   });
   const [newRowError, setNewRowError] = useState<string | null>(null);
+  const [newClaimEvidence, setNewClaimEvidence] = useState<ClaimEvidence>({});
 
   // Edit existing row state
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
@@ -76,6 +81,8 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     date: '',
   });
   const [editRowError, setEditRowError] = useState<string | null>(null);
+  const [editClaimEvidence, setEditClaimEvidence] = useState<ClaimEvidence>({});
+  const hasEvidenceFields = getClaimEvidenceFields(routeId).length > 0;
 
   // Start adding new inline row
   const handleStartAdd = () => {
@@ -90,6 +97,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       remarks: '',
     });
     setNewRowError(null);
+    setNewClaimEvidence({});
   };
 
   const handleCancelAdd = () => {
@@ -132,6 +140,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       taxDeducted: taxNum,
       date: newRowData.date,
       remarks: newRowData.remarks.trim() || undefined,
+      claimEvidence: normalizeClaimEvidence(newClaimEvidence),
     });
 
     if (res.success) {
@@ -145,6 +154,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   // Start editing existing row
   const handleStartEdit = (entry: LedgerEntry) => {
     setEditingRowId(entry.id);
+    setEditClaimEvidence({ ...entry.claimEvidence });
     setEditRowData({
       referenceNo: entry.referenceNo,
       sourceEntity: entry.sourceEntity,
@@ -194,6 +204,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       grossAmount: grossNum,
       taxDeducted: taxNum,
       date: editRowData.date,
+      claimEvidence: normalizeClaimEvidence(editClaimEvidence),
     });
 
     if (res.success) {
@@ -302,6 +313,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
           <tbody className="divide-y divide-slate-200">
             {/* Inline New Entry Row (Requirement #6) */}
             {isAddingRow && (
+              <React.Fragment>
               <tr className="bg-emerald-50/70 border-2 border-emerald-500 transition-all">
                 {/* Reference Input */}
                 <td className="px-3 py-2">
@@ -409,6 +421,14 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                   </div>
                 </td>
               </tr>
+              {hasEvidenceFields && (
+                <tr className="bg-emerald-50/70 border-b-2 border-emerald-500">
+                  <td colSpan={8} className="px-3 pb-3">
+                    <ClaimEvidenceFields routeId={routeId} evidence={newClaimEvidence} onChange={setNewClaimEvidence} />
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             )}
 
             {/* Existing Rows */}
@@ -429,8 +449,8 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
 
                 if (isEditing) {
                   return (
+                    <React.Fragment key={entry.id}>
                     <tr
-                      key={entry.id}
                       className="bg-amber-50/70 border-2 border-amber-500 transition-all"
                     >
                       <td className="px-3 py-2">
@@ -521,6 +541,14 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                         </div>
                       </td>
                     </tr>
+                    {hasEvidenceFields && (
+                      <tr className="bg-amber-50/70 border-b-2 border-amber-500">
+                        <td colSpan={8} className="px-3 pb-3">
+                          <ClaimEvidenceFields routeId={routeId} evidence={editClaimEvidence} onChange={setEditClaimEvidence} />
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 }
 
@@ -533,6 +561,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                           {entry.remarks}
                         </div>
                       )}
+                      <ClaimEvidenceSummary routeId={routeId} evidence={entry.claimEvidence} />
                     </td>
                     <td className="px-3 py-2.5 text-slate-700">
                       {entry.sourceEntity}
