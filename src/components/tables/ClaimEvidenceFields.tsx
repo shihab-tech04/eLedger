@@ -2,6 +2,7 @@ import React from 'react';
 import { ClaimEvidence, LedgerRouteId } from '../../domain/models.ts';
 import { getClaimEvidenceFields } from '../../domain/claimEvidence.ts';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
+import { LedgerInput, LedgerSelect, LedgerTip } from '../ui/LedgerForm.tsx';
 
 const bengaliEvidenceNames: Partial<Record<keyof ClaimEvidence, string>> = {
   paymentDocumentType: 'পরিশোধ দলিলের ধরন', documentAmount: 'চালান / সনদের মোট অঙ্ক (৳)',
@@ -25,42 +26,37 @@ export const ClaimEvidenceFields: React.FC<ClaimEvidenceFieldsProps> = ({ routeI
   if (!fields.length) return null;
 
   return (
-    <div className="bg-white/80 border border-emerald-200 rounded-md p-3">
-      <p className="text-xs font-semibold text-emerald-950 mb-2">{t('Supporting claim / challan details','দাবি / চালানের সহায়ক তথ্য')}</p>
+    <div className="eledger-evidence-fields border rounded-md p-3">
+      <p className="text-xs font-semibold text-slate-800 mb-2">{t('Supporting document details','সহায়ক দলিলের তথ্য')}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {fields.map(({ key, label, kind, options, helperText }) => (
-          <label key={key} className="block text-xs font-medium text-slate-700">
-            <span className="block mb-1">{fieldName(key, label)}</span>
+          <div key={key} className="min-w-0">
             {kind === 'select' ? (
-              <select
-                aria-label={fieldName(key, label)}
+              <LedgerSelect label={fieldName(key, label)}
                 value={String(evidence[key] ?? '')}
-                onChange={(event) => onChange({ ...evidence, [key]: event.target.value || undefined })}
-                className="w-full text-xs px-2 py-1.5 bg-white border border-slate-300 rounded focus:border-emerald-600 outline-none"
+                onValueChange={(value) => onChange({ ...evidence, [key]: value || undefined })}
               >
                 {options?.map(({ value, label: optionLabel }) => <option key={value} value={value}>{language === 'bn' ? ({'': 'দলিলের ধরন বাছুন', CHALLAN: 'চালান', CERTIFICATE: 'সনদ', OTHER: 'অন্যান্য'} as Record<string,string>)[value] ?? optionLabel : optionLabel}</option>)}
-              </select>
+              </LedgerSelect>
             ) : (
-              <input
-                aria-label={fieldName(key, label)}
+              <LedgerInput label={fieldName(key, label)}
                 type={kind}
                 min={kind === 'number' ? 0 : undefined}
                 step={kind === 'number' ? 'any' : undefined}
                 maxLength={kind === 'text' ? 250 : undefined}
                 value={evidence[key] ?? ''}
-                onChange={(event) => onChange({
+                onValueChange={(value) => onChange({
                   ...evidence,
                   [key]: kind === 'number'
-                    ? event.target.value === '' ? undefined : Number(event.target.value)
-                    : event.target.value || undefined,
+                    ? value === '' ? undefined : Number(value)
+                    : value || undefined,
                 })}
-                className="w-full text-xs px-2 py-1.5 bg-white border border-slate-300 rounded focus:border-emerald-600 outline-none"
               />
             )}
-            {helperText && <span className="block text-[11px] font-normal text-slate-500 mt-1">{language === 'bn'
+            {helperText && <LedgerTip label={t('Help','সহায়তা')}>{language === 'bn'
               ? key === 'documentAmount' ? 'দলিলে উল্লেখিত মোট অঙ্ক দাবিকৃত অঙ্কের চেয়ে বেশি হতে পারে।' : 'এই ফাইলটি স্থানীয় অ্যাপে আপলোড বা সংরক্ষণ করা হয় না।'
-              : helperText}</span>}
-          </label>
+              : helperText}</LedgerTip>}
+          </div>
         ))}
       </div>
     </div>
@@ -79,7 +75,7 @@ export const ClaimEvidenceSummary: React.FC<{ routeId: LedgerRouteId; evidence?:
 
   return (
     <details className="mt-1 text-[11px] text-slate-600 max-w-xs">
-      <summary className="cursor-pointer text-emerald-800">{t('Claim evidence','দাবির প্রমাণ')} ({values.length} {t('fields','তথ্য')})</summary>
+      <summary className="cursor-pointer text-sky-800">{t('Claim evidence','দাবির প্রমাণ')} ({values.length} {t('fields','তথ্য')})</summary>
       <dl className="pt-1 space-y-1">
         {values.map(({ label, value }) => (
           <div key={label}>
