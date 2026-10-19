@@ -12,7 +12,6 @@ import React, { useState } from 'react';
 import { LedgerEntry, TaxCategory, LedgerRouteId, ClaimEvidence } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
-import { localDateInputValue } from '../../domain/localDate.ts';
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields.tsx';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -57,6 +56,7 @@ type TableFieldLabels = Pick<Record<keyof EditableRowFields, string>,
 export const getTableFieldLabels = (
   category: TaxCategory,
   t: (english: string, bengali: string) => string,
+  routeId?: LedgerRouteId,
 ): TableFieldLabels => ({
   referenceNo: category === 'ADJUSTMENT'
     ? t('Order / Adjustment Reference', 'আদেশ / সমন্বয়ের রেফারেন্স')
@@ -66,12 +66,16 @@ export const getTableFieldLabels = (
     : category === 'ADJUSTMENT'
       ? t('Issuing Authority / Circle', 'আদেশ প্রদানকারী কর্তৃপক্ষ / সার্কেল')
       : t('Deductor / Source Entity', 'কর্তনকারী / উৎস প্রতিষ্ঠান'),
-  grossAmount: category === 'PAYMENT'
+  grossAmount: routeId === 'environmental-surcharge'
+    ? t('Assessed Surcharge (৳)', 'নির্ধারিত সারচার্জ (৳)')
+    : category === 'PAYMENT'
     ? t('Payment Basis (৳)', 'পরিশোধের ভিত্তি (৳)')
     : category === 'ADJUSTMENT'
       ? t('Eligible Amount (৳)', 'যোগ্য অঙ্ক (৳)')
       : t('Gross Amount', 'মোট অঙ্ক'),
-  taxDeducted: category === 'PAYMENT'
+  taxDeducted: routeId === 'environmental-surcharge'
+    ? t('Recorded Surcharge (৳)', 'রেকর্ডকৃত সারচার্জ (৳)')
+    : category === 'PAYMENT'
     ? t('Tax Paid (৳)', 'পরিশোধিত কর (৳)')
     : category === 'ADJUSTMENT'
       ? t('Adjusted Amount (৳)', 'সমন্বিত অঙ্ক (৳)')
@@ -151,7 +155,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   allowEditDelete = true,
 }) => {
   const t = useLedgerCopy();
-  const fieldLabels = getTableFieldLabels(category, t);
+  const fieldLabels = getTableFieldLabels(category, t, routeId);
   // New row state
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState({
@@ -160,7 +164,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     sectionCode: defaultSection,
     grossAmount: '',
     taxDeducted: '',
-    date: localDateInputValue(),
+    date: '',
     remarks: '',
   });
   const [newRowError, setNewRowError] = useState<string | null>(null);
@@ -196,7 +200,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       sectionCode: defaultSection,
       grossAmount: '',
       taxDeducted: '',
-      date: localDateInputValue(),
+      date: '',
       remarks: '',
     });
     setNewRowError(null);
@@ -218,6 +222,10 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     }
     if (!newRowData.sourceEntity.trim()) {
       setNewRowError('Deductor / Organization is required.');
+      return;
+    }
+    if (!newRowData.date) {
+      setNewRowError(t('Enter the date shown on the source document.','উৎস দলিলে লেখা তারিখ দিন।'));
       return;
     }
     const taxNum = Number(newRowData.taxDeducted);
@@ -283,6 +291,10 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     }
     if (!editRowData.sourceEntity.trim()) {
       setEditRowError('Deductor / Organization is required.');
+      return;
+    }
+    if (!editRowData.date) {
+      setEditRowError(t('Enter the date shown on the source document.','উৎস দলিলে লেখা তারিখ দিন।'));
       return;
     }
     const taxNum = Number(editRowData.taxDeducted);
@@ -359,7 +371,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="eledger-ledger-table bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
       {/* Table Top Action Bar */}
       <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-2">
