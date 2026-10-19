@@ -15,6 +15,7 @@ import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.
 import { SurchargeTransferPanel } from '../../components/workflows/SurchargeTransferPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { ChevronLeft, FileCheck2 } from 'lucide-react';
+import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 
 export const PaymentsView: React.FC = () => {
   const {
@@ -120,13 +121,8 @@ export const PaymentsView: React.FC = () => {
         <p>{currentRoute.statutorySection}</p>
       </header>
 
-      <nav className="eledger-source-mobile-routes" aria-label={t('Payment categories','কর পরিশোধের খাতসমূহ')}>
-        {paymentRoutes.map((route) => (
-          <button type="button" key={route.id} className={route.id === currentRoute.id ? 'is-active' : ''}
-            aria-current={route.id === currentRoute.id ? 'page' : undefined}
-            onClick={() => setActiveRouteId(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
-        ))}
-      </nav>
+      <RouteMobileTabs routes={paymentRoutes} activeId={currentRoute.id}
+        label={t('Payment categories','কর পরিশোধের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
       <div className="eledger-ait-summary">
         <div><span>{t('Total Recorded Payment','মোট রেকর্ডকৃত পরিশোধ')}</span><strong>{formatLedgerAmount(totalTaxForRoute)}</strong></div>
