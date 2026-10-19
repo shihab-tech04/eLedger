@@ -75,14 +75,14 @@ export const Header: React.FC = () => {
               <option value="2024-2025">2024-2025</option>
             </select>
           </label>
-          <div className="eledger-language-switch" role="group" aria-label="Display language">
+          <div className="eledger-language-switch" role="group" aria-label={language === 'bn' ? 'প্রদর্শনের ভাষা' : 'Display language'}>
             <button type="button" lang="bn" className={language === 'bn' ? 'is-active' : ''}
               aria-pressed={language === 'bn'} onClick={() => setLanguage('bn')}>বাংলা</button>
             <button type="button" lang="en" className={language === 'en' ? 'is-active' : ''}
               aria-pressed={language === 'en'} onClick={() => setLanguage('en')}>English</button>
           </div>
           <div className="eledger-header-popover" ref={notificationRef}>
-            <button type="button" className="eledger-notification-button" aria-label="Notifications"
+            <button type="button" className="eledger-notification-button" aria-label={language === 'bn' ? 'বিজ্ঞপ্তি' : 'Notifications'}
               aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen((value) => !value); setProfileOpen(false); }}>
               <Bell size={17}/>
             </button>
@@ -92,7 +92,7 @@ export const Header: React.FC = () => {
             </div>}
           </div>
           <div className="eledger-header-popover" ref={profileRef}>
-            <button type="button" className="eledger-taxpayer-button" aria-label={'Taxpayer: ' + taxpayer.name + '. Open profile menu'}
+            <button type="button" className="eledger-taxpayer-button" aria-label={language === 'bn' ? `করদাতা: ${taxpayer.name}। প্রোফাইল মেনু খুলুন` : `Taxpayer: ${taxpayer.name}. Open profile menu`}
               aria-expanded={profileOpen} onClick={() => { setProfileOpen((value) => !value); setNotificationsOpen(false); }}>
               <span className="eledger-taxpayer-avatar" aria-hidden="true">{initials}</span>
               <span className="eledger-taxpayer-identity"><strong>{taxpayer.name}</strong><small>{language === 'en' ? 'Taxpayer' : 'করদাতা'}</small></span>

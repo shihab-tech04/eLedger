@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Building, ChevronLeft, Search, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
@@ -17,6 +18,8 @@ export const SourceTaxView: React.FC = () => {
     entries, activeRouteId, setActiveRouteId, setActiveNavTab,
     addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
+  const t = useLedgerCopy();
+  const { language } = useLedgerLanguage();
   const localClaimsRef = useRef<HTMLDivElement>(null);
   const sourceTaxRoutes = getVisibleRoutesByGroup('Source Tax', entries.map((entry) => entry.routeId));
   const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'Source Tax', entries.map((entry) => entry.routeId));
@@ -61,18 +64,19 @@ export const SourceTaxView: React.FC = () => {
     <div className="eledger-source-page">
       <header className="eledger-source-title">
         <div className="eledger-source-title-line">
-          <button type="button" className="eledger-source-back" aria-label="Back to dashboard"
+          <button type="button" className="eledger-source-back" aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}
             onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
-          <h1>{heading}</h1>
+          <h1>{language === 'bn' ? currentRoute.bengaliTitle : heading}</h1>
         </div>
-        <p>{caption}</p>
+        <p>{language === 'bn' && isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই' : caption}</p>
       </header>
 
       {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
-      <nav className="eledger-source-mobile-routes" aria-label="Source Tax categories">
+      <nav className="eledger-source-mobile-routes" aria-label={t('Source Tax categories','উৎস করের খাতসমূহ')}>
         {sourceTaxRoutes.map((route) => (
           <button key={route.id} type="button" className={route.id === currentRoute.id ? 'is-active' : ''}
-            onClick={() => setActiveRouteId(route.id)}>{route.title}</button>
+            aria-current={route.id === currentRoute.id ? 'page' : undefined}
+            onClick={() => setActiveRouteId(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
         ))}
       </nav>
 
@@ -80,21 +84,21 @@ export const SourceTaxView: React.FC = () => {
         <section className="eledger-ibas-workflow">
           <div className="eledger-ibas-search-row">
             <button type="button" onClick={() => localClaimsRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-              <Search size={17}/>Search local records
+              <Search size={17}/>{t('Search local records','স্থানীয় রেকর্ড খুঁজুন')}
             </button>
           </div>
           <div className="eledger-ibas-facts">
-            <div><span>Assessment Year</span><strong>{assessmentYear}</strong></div>
-            <div><span>Office Name (local demo record)</span><strong>{routeEntries[0]?.sourceEntity ?? 'Not available'}</strong></div>
-            <div><span>Designation</span><strong>Requires CGA/iBAS++ connection</strong></div>
-            <div><span>TDS Available (local records only)</span><strong className="is-amount">{money(totalTaxForRoute)}</strong></div>
+            <div><span>{t('Assessment Year','করবর্ষ')}</span><strong>{assessmentYear}</strong></div>
+            <div><span>{t('Office Name (local demo record)','কার্যালয় (স্থানীয় নমুনা)')}</span><strong>{routeEntries[0]?.sourceEntity ?? t('Not available','পাওয়া যায়নি')}</strong></div>
+            <div><span>{t('Designation','পদবি')}</span><strong>{t('Requires CGA/iBAS++ connection','CGA/iBAS++ সংযোগ প্রয়োজন')}</strong></div>
+            <div><span>{t('TDS Available (local records only)','উৎস কর (শুধু স্থানীয় রেকর্ড)')}</span><strong className="is-amount">{money(totalTaxForRoute)}</strong></div>
           </div>
           <div className="eledger-ibas-claim">
-            <label htmlFor="eledger-ibas-claimed">TDS Claim</label>
+            <label htmlFor="eledger-ibas-claimed">{t('TDS Claim','উৎস কর দাবি')}</label>
             <input id="eledger-ibas-claimed" value={money(totalTaxForRoute)} readOnly
               aria-describedby="eledger-ibas-integrity-note"/>
-            <span id="eledger-ibas-integrity-note">Read-only demonstration data. No live CGA/iBAS++ lookup or official claim submission is connected.</span>
-            <button type="button" disabled title="A verified iBAS++ connection is required">Save — official connection required</button>
+            <span id="eledger-ibas-integrity-note">{t('Read-only demonstration data. No live CGA/iBAS++ lookup or official claim submission is connected.','এটি শুধু পাঠযোগ্য নমুনা তথ্য। সরাসরি CGA/iBAS++ অনুসন্ধান বা সরকারি দাবি দাখিল সংযুক্ত নেই।')}</span>
+            <button type="button" disabled title={t('A verified iBAS++ connection is required','যাচাইকৃত iBAS++ সংযোগ প্রয়োজন')}>{t('Save — official connection required','সংরক্ষণ — সরকারি সংযোগ প্রয়োজন')}</button>
           </div>
         </section>
       )}
@@ -112,9 +116,9 @@ export const SourceTaxView: React.FC = () => {
         <>
           {!isIbas && (
             <div className="eledger-source-record-summary">
-              <span>Total Claimed Amount <strong>{money(totalTaxForRoute)}</strong></span>
-              <span>Records <strong>{routeEntries.length}</strong></span>
-              <small>{currentRoute.description}</small>
+              <span>{t('Total Claimed Amount','মোট দাবিকৃত অঙ্ক')} <strong>{money(totalTaxForRoute)}</strong></span>
+              <span>{t('Records','রেকর্ড')} <strong>{routeEntries.length}</strong></span>
+              <small>{language === 'bn' ? 'এই খাতের দাবি স্থানীয়ভাবে রেকর্ড করা হয়েছে; সরকারি যাচাই সম্পন্ন হয়নি।' : currentRoute.description}</small>
             </div>
           )}
           {currentRoute.supportsIncomeSync && (
@@ -122,14 +126,14 @@ export const SourceTaxView: React.FC = () => {
           )}
           {currentRoute.id === 'commercial-source' && (
             <SystemLookupPanel routeId={currentRoute.id} category="SOURCE_TAX"
-              defaultSection={currentRoute.statutorySection} lookupPlaceholder="Unique Key (Transaction No.)"
-              helperText="Enter the commercial vehicle transaction key to check the available reference record."/>
+              defaultSection={currentRoute.statutorySection} lookupPlaceholder={t('Unique Key (Transaction No.)','অনন্য কী (লেনদেন নম্বর)')}
+              helperText={t('Enter the commercial vehicle transaction key to check the available reference record.','সংশ্লিষ্ট স্থানীয় রেকর্ড খুঁজতে বাণিজ্যিক গাড়ির লেনদেন কী দিন।')}/>
           )}
           {currentRoute.id === 'system-import' && (
             <div className="eledger-source-import-note">
               <Building size={18}/>
-              <div><strong>Customs ASYCUDA World Port Clearance Import</strong>
-                <p>Record customs references with Add Entry or the local CSV importer. Live ASYCUDA imports are not connected.</p>
+              <div><strong>{t('Customs ASYCUDA World Port Clearance Import','কাস্টমস ASYCUDA World আমদানি তথ্য')}</strong>
+                <p>{t('Record customs references with Add Entry or the local CSV importer. Live ASYCUDA imports are not connected.','কাস্টমস রেফারেন্স এন্ট্রি যোগ করে বা স্থানীয় CSV দিয়ে রেকর্ড করুন। সরাসরি ASYCUDA সংযোগ নেই।')}</p>
               </div>
             </div>
           )}
@@ -138,7 +142,7 @@ export const SourceTaxView: React.FC = () => {
           )}
           <div ref={localClaimsRef} className="eledger-source-record-list">
             {isIbas && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
-              Saved iBAS++-style records are local demonstration entries; they do not establish authoritative tax credits.</div>}
+              {t('Saved iBAS++-style records are local demonstration entries; they do not establish authoritative tax credits.','সংরক্ষিত iBAS++-ধাঁচের রেকর্ড স্থানীয় নমুনা মাত্র; এগুলো সরকারি যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
             <InlineEditableTable
               key={currentRoute.id} entries={routeEntries} category="SOURCE_TAX"
               routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}

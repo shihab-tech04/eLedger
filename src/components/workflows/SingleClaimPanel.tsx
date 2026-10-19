@@ -6,6 +6,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerEntry } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { CARRY_FORWARD_CLASSIFICATIONS, getPriorAssessmentYears, readCarryForwardDetails } from '../../domain/carryForward.ts';
@@ -17,6 +18,7 @@ interface SingleClaimPanelProps {
 }
 
 export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClaim }) => {
+  const t = useLedgerCopy();
   const { taxpayer, assessmentYear, addEntry, updateEntry } = useLedger();
   const priorYearOptions = getPriorAssessmentYears(assessmentYear);
   const existingDetails = readCarryForwardDetails(existingClaim?.remarks, assessmentYear);
@@ -50,15 +52,15 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
 
     const amount = Number(unabsorbedCredit);
     if (!Number.isFinite(amount) || amount <= 0) {
-      setMessage({ type: 'error', text: 'Please enter a valid unabsorbed credit amount greater than 0.' });
+      setMessage({ type: 'error', text: t('Please enter a valid unabsorbed credit amount greater than 0.','শূন্যের বেশি বৈধ অব্যবহৃত ক্রেডিটের অঙ্ক লিখুন।') });
       return;
     }
     if (!priorYearOptions.includes(priorAssessmentYear)) {
-      setMessage({ type: 'error', text: 'The origin assessment year must precede the selected assessment year.' });
+      setMessage({ type: 'error', text: t('The origin assessment year must precede the selected assessment year.','মূল করবর্ষ নির্বাচিত করবর্ষের আগের হতে হবে।') });
       return;
     }
     if (!assessmentOrderNo.trim()) {
-      setMessage({ type: 'error', text: 'Prior Assessment Order / IT-30 Form reference is required.' });
+      setMessage({ type: 'error', text: t('Prior Assessment Order / IT-30 Form reference is required.','পূর্ববর্তী কর নির্ধারণ আদেশ / IT-30 ফর্ম রেফারেন্স প্রয়োজন।') });
       return;
     }
 
@@ -71,7 +73,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         remarks: `Prior Year: ${priorAssessmentYear} | Type: ${lossOrCreditType}`,
       });
       if (res.success) {
-        setMessage({ type: 'success', text: 'Carry-forward claim updated successfully.' });
+        setMessage({ type: 'success', text: t('Carry-forward claim updated successfully.','পূর্ববর্তী কর সমন্বয় সফলভাবে হালনাগাদ হয়েছে।') });
       } else {
         setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to update claim.' });
       }
@@ -94,7 +96,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         remarks: `Prior Year: ${priorAssessmentYear} | Type: ${lossOrCreditType}`,
       });
       if (res.success) {
-        setMessage({ type: 'success', text: 'Carry-forward claim recorded successfully into ledger.' });
+        setMessage({ type: 'success', text: t('Carry-forward claim recorded successfully into ledger.','পূর্ববর্তী কর সমন্বয় সফলভাবে লেজারে রেকর্ড হয়েছে।') });
       } else {
         setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to record claim.' });
       }
@@ -107,14 +109,14 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         <div className="flex items-center space-x-2">
           <SlidersHorizontal className="w-4 h-4 text-emerald-700" />
           <h4 className="text-sm font-semibold text-slate-800">
-            Adjustment of Carry-Forward Tax under Section 163
+            {t('Adjustment of Carry-Forward Tax under Section 163','ধারা ১৬৩ অনুসারে পূর্ববর্তী কর সমন্বয়')}
           </h4>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
             Section 163
           </span>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">
-          Record the prior-year minimum-tax adjustment supported by the relevant assessment and payment evidence.
+          {t('Record the prior-year minimum-tax adjustment supported by the relevant assessment and payment evidence.','আগের বছরের ন্যূনতম কর সমন্বয় যথাযথ নির্ধারণ ও পরিশোধের প্রমাণসহ রেকর্ড করুন।')}
         </p>
       </div>
 
@@ -137,27 +139,29 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
 
       <form onSubmit={handleSaveClaim} className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Prior Assessment Year of Origin
+          <label htmlFor="carry-prior-year" className="block text-xs font-medium text-slate-700 mb-1">
+            {t('Prior Assessment Year of Origin','পূর্ববর্তী করবর্ষ')}
           </label>
           <select
+            id="carry-prior-year"
             value={priorAssessmentYear}
             onChange={(e) => setPriorAssessmentYear(e.target.value)}
             className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
           >
             {priorYearOptions.map((year, index) => (
               <option key={year} value={year}>
-                {year}{index === 0 ? ' (Immediately Preceding Year)' : ''}
+                {year}{index === 0 ? t(' (Immediately Preceding Year)',' (অবিলম্বে পূর্ববর্তী বছর)') : ''}
               </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Credit / Adjustment Classification
+          <label htmlFor="carry-classification" className="block text-xs font-medium text-slate-700 mb-1">
+            {t('Credit / Adjustment Classification','ক্রেডিট / সমন্বয়ের ধরন')}
           </label>
           <select
+            id="carry-classification"
             value={lossOrCreditType}
             onChange={(e) => setLossOrCreditType(e.target.value)}
             className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
@@ -169,10 +173,11 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Assessment Order / Demand Notice Reference No
+          <label htmlFor="carry-order" className="block text-xs font-medium text-slate-700 mb-1">
+            {t('Assessment Order / Demand Notice Reference No','কর নির্ধারণ আদেশ / দাবি নোটিশের রেফারেন্স নম্বর')}
           </label>
           <input
+            id="carry-order"
             type="text"
             value={assessmentOrderNo}
             onChange={(e) => setAssessmentOrderNo(e.target.value)}
@@ -183,10 +188,11 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Assessing Officer / Circle Name
+          <label htmlFor="carry-circle" className="block text-xs font-medium text-slate-700 mb-1">
+            {t('Assessing Officer / Circle Name','কর নির্ধারণকারী কর্মকর্তা / সার্কেলের নাম')}
           </label>
           <input
+            id="carry-circle"
             type="text"
             value={assessingCircle}
             onChange={(e) => setAssessingCircle(e.target.value)}
@@ -197,12 +203,13 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Claimable Credit Amount (৳)
+          <label htmlFor="carry-credit" className="block text-xs font-medium text-slate-700 mb-1">
+            {t('Claimable Credit Amount (৳)','দাবিযোগ্য ক্রেডিটের অঙ্ক (৳)')}
           </label>
           <div className="relative">
             <span className="absolute left-3 top-2 text-xs font-bold text-slate-500">৳</span>
             <input
+              id="carry-credit"
               type="number"
               value={unabsorbedCredit}
               onChange={(e) => setUnabsorbedCredit(e.target.value)}
@@ -214,23 +221,23 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             />
           </div>
           <span className="text-[11px] text-slate-500 mt-1 block">
-            Subject to statutory limitation rules under Income Tax Act 2023.
+            {t('Subject to statutory limitation rules under Income Tax Act 2023.','আয়কর আইন ২০২৩-এর প্রযোজ্য সীমাবদ্ধতার অধীন।')}
           </span>
         </div>
 
         <div className="sm:col-span-2 flex items-center justify-between pt-2">
           <div className="text-xs text-slate-600">
             {existingClaim ? (
-              <span>Currently Recorded: <strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></span>
+              <span>{t('Currently Recorded:','বর্তমানে রেকর্ডকৃত:')} <strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></span>
             ) : (
-              <span>No carry-forward claim currently registered for AY {assessmentYear}.</span>
+              <span>{t(`No carry-forward claim currently registered for AY ${assessmentYear}.`,`${assessmentYear} করবর্ষে কোনো পূর্ববর্তী কর সমন্বয় রেকর্ড হয়নি।`)}</span>
             )}
           </div>
           <button
             type="submit"
             className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
           >
-            {existingClaim ? 'Update Carry-Forward Claim' : 'Save Carry-Forward Claim'}
+            {existingClaim ? t('Update Carry-Forward Claim','পূর্ববর্তী কর সমন্বয় হালনাগাদ করুন') : t('Save Carry-Forward Claim','পূর্ববর্তী কর সমন্বয় সংরক্ষণ করুন')}
           </button>
         </div>
       </form>

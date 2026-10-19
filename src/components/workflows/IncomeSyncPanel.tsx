@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { IncomeSyncItem } from '../../domain/models.ts';
 import { incomeSyncService } from '../../services/incomeSyncService.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
@@ -22,6 +23,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
   defaultSection,
   title,
 }) => {
+  const t = useLedgerCopy();
   const { taxpayer, assessmentYear, syncIncomeItem } = useLedger();
   const [items, setItems] = useState<IncomeSyncItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -88,14 +90,14 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-              Sync from eReturn Declared Income: {title}
+              {t('Sync from eReturn Declared Income:','স্থানীয় ঘোষিত আয় থেকে সমন্বয়:')} {title}
             </h4>
             <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">
-              Workflow: Income Sync
+              {t('Workflow: Income Sync','কাজ: আয়ের রেকর্ড সমন্বয়')}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Automatic source deductions calculated from income reported in eReturn Income Schedules.
+            {t('Local demonstration income-schedule deductions only; no live eReturn connection or official credit verification.','শুধু স্থানীয় নমুনা আয় বিবরণীর কর্তনের তথ্য; সরাসরি ই-রিটার্ন সংযোগ বা সরকারি ক্রেডিট যাচাই নেই।')}
           </p>
         </div>
         <button
@@ -104,7 +106,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
           className="inline-flex items-center space-x-1 px-2.5 py-1 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Declarations</span>
+          <span>{t('Refresh Declarations','ঘোষণা হালনাগাদ করুন')}</span>
         </button>
       </div>
 
@@ -127,10 +129,10 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
 
       <div className="mt-3">
         {loading ? (
-          <p className="text-xs text-slate-400 py-3 text-center">Loading income declarations...</p>
+          <p className="text-xs text-slate-400 py-3 text-center">{t('Loading income declarations...','আয়ের ঘোষণা লোড হচ্ছে...')}</p>
         ) : items.length === 0 ? (
           <p className="text-xs text-slate-400 py-3 text-center">
-            No pending declared income sources found for this head in AY {assessmentYear}.
+            {t(`No pending declared income sources found for this head in AY ${assessmentYear}.`,`${assessmentYear} করবর্ষে এই খাতে কোনো অনিষ্পন্ন ঘোষিত আয়ের উৎস নেই।`)}
           </p>
         ) : (
           <div className="space-y-2">
@@ -148,19 +150,19 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
                   </div>
                   <p className="text-xs text-slate-600">{item.sourceHead}</p>
                   <p className="text-[11px] text-slate-500">
-                    Gross Reported: {formatCurrencyBDT(item.reportedGrossIncome)} | Date: {item.syncDate}
+                    {t('Gross Reported:','ঘোষিত মোট অঙ্ক:')} {formatCurrencyBDT(item.reportedGrossIncome)} | {t('Date:','তারিখ:')} {item.syncDate}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between sm:justify-end space-x-4">
                   <div className="text-right">
-                    <span className="text-[11px] text-slate-500 block">Calculated TDS</span>
+                    <span className="text-[11px] text-slate-500 block">{t('Calculated TDS','গণনাকৃত উৎস কর')}</span>
                     <span className="text-sm font-bold text-emerald-800 font-mono">
                       {formatCurrencyBDT(item.calculatedTaxCredit)}
                     </span>
                     {routeId === 'sanchayapatra' && !item.isSyncedToLedger && (
                       <label className="block mt-2 text-[11px] text-slate-600">
-                        Your TDS Claim (৳)
+                        {t('Your TDS Claim (৳)','আপনার উৎস কর দাবি (৳)')}
                         <input
                           type="number"
                           min="0.01"
@@ -177,7 +179,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
                   {item.isSyncedToLedger ? (
                     <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-emerald-100 text-emerald-800 border border-emerald-300">
                       <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                      Synced to Ledger
+                      {t('Synced to Ledger','লেজারে সমন্বিত')}
                     </span>
                   ) : (
                     <button
@@ -186,7 +188,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
                       className="inline-flex items-center space-x-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors disabled:opacity-60"
                     >
                       <ArrowDownToLine className="w-3.5 h-3.5" />
-                      <span>{syncingId === item.id ? 'Syncing...' : 'Sync to Ledger'}</span>
+                      <span>{syncingId === item.id ? t('Syncing...','সমন্বয় হচ্ছে...') : t('Sync to Ledger','লেজারে সমন্বয় করুন')}</span>
                     </button>
                   )}
                 </div>

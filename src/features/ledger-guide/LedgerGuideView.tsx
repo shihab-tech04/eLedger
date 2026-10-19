@@ -1,190 +1,67 @@
-/**
- * Ledger Guide View
- * Comprehensive documentation of NBR eReturn Ledger workflows and statutory rules
- */
-
+/** September 21 custom eLedger Guide. Describes implemented local behavior honestly. */
 import React from 'react';
-import {
-  BookOpen,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-  Workflow,
-  HelpCircle,
-  FileCheck2,
-} from 'lucide-react';
+import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerLanguage } from '../../context/LanguageContext.tsx';
 
 export const LedgerGuideView: React.FC = () => {
+  const { assessmentYear } = useLedger();
+  const { language } = useLedgerLanguage();
+  const bn = language === 'bn';
+  const fiscalEnd = Number(assessmentYear.slice(0, 4));
+  const fiscalStart = fiscalEnd - 1;
+  const stepList = bn ? [
+    'বাম পাশের মেনু থেকে ‘উৎস কর দাবি’ নির্বাচন করুন।',
+    'উৎস করের ধরন নির্বাচন করুন। যেমন, iBAS++ বেতন হলে ‘বেতন (iBAS++)’ নির্বাচন করুন।',
+    'সঠিক চালান বা সনদের তথ্য দিয়ে ‘যোগ করুন’ এবং ‘সংরক্ষণ’ ব্যবহার করুন। স্থানীয়ভাবে সংরক্ষিত দাবি নিজে থেকেই যাচাইকৃত হয় না।',
+    'পরিবর্তন করতে সংশ্লিষ্ট সারির ‘সম্পাদনা’ বোতাম ব্যবহার করুন; সংরক্ষণের আগে অঙ্ক ও তথ্য পরীক্ষা করুন।',
+    'ভুল সারি মুছতে ‘মুছুন’ ব্যবহার করুন। মুছে ফেলা রেকর্ড স্থানীয় লেজার থেকে সরানো হয়।',
+    'উৎস কর, অগ্রিম কর ও সমন্বয় যোগ করার পরে ‘কর পরিশোধের অবস্থা’ খুলে মোট রেকর্ডকৃত অঙ্ক মিলিয়ে নিন।',
+    'ফেরত দাখিলের বাকি কাজের জন্য ‘ই-রিটার্নে যান’ লিংক ব্যবহার করুন। এই প্রোটোটাইপ নিজে কোনো কর জমা দেয় না।',
+  ] : [
+    "Click 'Claim Source Tax' in the menu at the left to update your source tax payments.",
+    "Select your source tax category. For example, for an iBAS++ pay bill, select 'Salary (iBAS++)'.",
+    "Enter the supported challan or certificate details and use Add Entry and Save. Locally recorded claims do not become verified automatically.",
+    "To change a saved source-tax figure, use the Edit icon in its row, check the values and save your changes.",
+    "To remove an incorrect ledger row, use its Delete control; this removes the local record.",
+    "When you finish recording source taxes and AIT, open Tax Payment Status to reconcile the recorded amounts and adjustments.",
+    "Use Go to eReturn to complete the remaining filing tasks in the official system. This prototype does not itself submit or pay tax.",
+  ];
+  const guidance = bn ? [
+    'উৎস কর অনলাইনে যাচাই করতে কর্তনকারী সংস্থার সিস্টেমের সঙ্গে সংযোগ প্রয়োজন হতে পারে। বর্তমানে এই লেজারে এমন সরকারি সংযোগ সক্রিয় নেই।',
+    'এখানে স্থানীয়ভাবে দেখানো উৎস কর, অগ্রিম কর ও পরিশোধের রেকর্ড সরকারি যাচাইয়ের সমতুল্য নয়। অফিসিয়াল সিস্টেমে তথ্য না মিললে রিটার্নের জন্য প্রাসঙ্গিক কাগজপত্র সংরক্ষণ করুন।',
+    'ই-রিটার্নের ‘Tax & Payment’ অংশে গিয়ে পরবর্তী পদক্ষেপ নিন। প্রয়োজন হলে অফিসিয়াল নির্দেশনা অনুসরণ করুন; এই লেজার থেকে সরাসরি জমা বা হস্তান্তর হয় না।',
+  ] : [
+    'Online verification of source tax can require connectivity with withholding agents. This local Ledger currently has no live government verification connection.',
+    'Source tax, AIT and payment amounts shown as recorded are not automatically verified tax payments. Keep supporting documents and consult the official eReturn service for authoritative confirmation.',
+    "Use the official eReturn Tax & Payment page for remaining return steps. This Ledger does not transfer or submit a payment or return to that system.",
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Title Banner */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-lg bg-emerald-800 text-white">
-            <BookOpen className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-              NBR eReturn Ledger (eLedger) Operational Guide
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Statutory tax payment recording, source tax credit reconciliation, and assessment year workflows
-            </p>
-          </div>
-        </div>
+    <article className="eledger-guide" lang={bn ? 'bn' : 'en'}>
+      <header className="eledger-guide-heading"><h1>eReturn LEDGER</h1></header>
+      <div className="eledger-guide-content">
+        <section aria-labelledby="eledger-guide-update-heading">
+          <h2 id="eledger-guide-update-heading">{bn
+            ? `১ জুলাই ${fiscalStart} থেকে ৩০ জুন ${fiscalEnd} পর্যন্ত উৎস কর ও অগ্রিম করের তথ্য যেভাবে হালনাগাদ করবেন`
+            : `How you will update your source tax and AIT payments made between 1 July ${fiscalStart} to 30 June ${fiscalEnd}`}</h2>
+          <ul>{stepList.map((step) => <li key={step}>{step}</li>)}</ul>
+          <p className="eledger-guide-emphasis">{bn
+            ? 'AIT যাচাইয়ের নির্দেশনা সরকারি সংযোগ চালু হলে হালনাগাদ করা হবে।'
+            : 'Guidelines for live AIT verification will be updated when official connectivity is available.'}</p>
+        </section>
+
+        <section className="eledger-guide-search" aria-labelledby="eledger-guide-search-heading">
+          <h2 id="eledger-guide-search-heading">{bn ? 'অনুসন্ধান বিকল্প' : 'Search Option'}</h2>
+          <p>{bn
+            ? 'উৎস করের সংশ্লিষ্ট পাতায় ‘Search’ বা রেফারেন্স অনুসন্ধান ব্যবহার করে স্থানীয় নমুনা রেকর্ড দেখতে পারেন। কর্তনকারী সংস্থার সরকারি সিস্টেমে অনুসন্ধান এখানে সংযুক্ত নেই।'
+            : "Select Search or a reference lookup on its supported source-tax page to inspect available local example records. It does not query the withholding agent's live system."}</p>
+        </section>
+
+        <aside className="eledger-guide-info" aria-label={bn ? 'জরুরি তথ্য' : 'Things to know'}>
+          <h3>{bn ? 'আপনি জেনে রাখতে পারেন' : 'You may want to know'}</h3>
+          <ul>{guidance.map((line) => <li key={line}>{line}</li>)}</ul>
+        </aside>
       </div>
-
-      {/* Intended System Journey */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center space-x-2 pb-3 border-b border-slate-200">
-          <Workflow className="w-4 h-4 text-emerald-700" />
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            1. Intended eReturn Ecosystem Journey
-          </h3>
-        </div>
-
-        <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-          eLedger is a local prototype of a sub-ledger within the Bangladesh National Board of Revenue (NBR) digital tax filing journey. The intended taxpayer journey flows as:
-        </p>
-
-        <div className="mt-4 p-4 rounded-lg bg-slate-900 text-white overflow-x-auto">
-          <div className="flex items-center space-x-2 text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap">
-            <span className="px-3 py-1.5 rounded bg-emerald-800 border border-emerald-600">
-              eReturn Portal
-            </span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-            <span className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700">
-              Tax & Payment Stage
-            </span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-            <span className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700">
-              Update Tax Payment Status
-            </span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-            <span className="px-3 py-1.5 rounded bg-emerald-700 border border-emerald-500 font-bold">
-              eLedger (Active App)
-            </span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-            <span className="px-3 py-1.5 rounded bg-slate-800 border border-slate-700">
-              Tax Payment Status Modal
-            </span>
-            <ArrowRight className="w-4 h-4 text-slate-400" />
-            <span className="px-3 py-1.5 rounded bg-emerald-800 border border-emerald-600">
-              eReturn Final Return
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-            <strong className="text-slate-800 block mb-1">System Boundaries:</strong>
-            This eLedger prototype organizes recorded payments, source tax (TDS) claims, AIT, and prior-return adjustments. It does not replace NBR TaxPay, official verification services, or tax assessment systems.
-          </div>
-          <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
-            <strong className="text-slate-800 block mb-1">Assessment Year Isolation:</strong>
-            Tax credits and payment records are isolated strictly to the active taxpayer TIN and assessment year. Modifying records for AY 2026-2027 never bleeds into AY 2025-2026.
-          </div>
-        </div>
-      </div>
-
-      {/* The 8 Workflow Patterns */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center space-x-2 pb-3 border-b border-slate-200">
-          <ShieldCheck className="w-4 h-4 text-emerald-700" />
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            2. Reusable Workflow Architecture (8 Established Patterns)
-          </h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">1. System Claim</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Demonstration government salary deduction records modeled on iBAS++ (Sec 86/87). Live payroll synchronization and verification are not connected.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">2. Manual Ledger Entry</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Clicking <strong>Add Entry</strong> inserts an inline editable row inside the table with input fields, Save, and Cancel. Supports row edit and deletion without separate modals.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">3. Sync from Income</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Local demonstration import of income-related withholding records. Live eReturn income-schedule synchronization is not connected.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">4. Hybrid Income Sync + Manual Entry</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Used in Service Payments & Contractor TDS (Sec 89/90) allowing both schedule sync and ad-hoc certificate entries.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">5. System Lookup (Fail-Closed)</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Checks bundled local reference records (BRTA, A-Challan, Sec 154), validates taxpayer and assessment-year context, and fails closed on mismatches. No live registry is connected.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">6. System Records / Import</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Atomic local CSV batch entry for Section 120 source-tax and AIT import references, without a live ASYCUDA customs feed. Imported amounts remain pending verification.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">7. Single Claim Pattern</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Section 163 prior-year minimum-tax adjustment with assessment and payment evidence tracking.
-            </p>
-          </div>
-
-          <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
-            <span className="text-xs font-bold text-emerald-800 block">8. Reconciliation Pattern</span>
-            <p className="text-xs text-slate-600 mt-1">
-              Compact Tax Payment Status modal summarizing all Source Tax, AIT, Payment, and Adjustment credits with fixed totals footer.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Statutory Rules & Duplicate Prevention */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center space-x-2 pb-3 border-b border-slate-200">
-          <HelpCircle className="w-4 h-4 text-emerald-700" />
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            3. Verification & Duplicate Prevention Protocol
-          </h3>
-        </div>
-
-        <div className="space-y-3 mt-3 text-xs text-slate-700">
-          <div className="flex items-start space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Duplicate Prevention:</strong> The system strictly rejects entries with identical reference/challan numbers within the same taxpayer TIN, assessment year, and route category.
-            </p>
-          </div>
-          <div className="flex items-start space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Amount Validation:</strong> Negative tax credits or tax amounts exceeding the reported gross payment are rejected immediately.
-            </p>
-          </div>
-          <div className="flex items-start space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <p>
-              <strong>Status Differentiation:</strong> Purely manual entries are classified as <code>PENDING_VERIFICATION</code> or <code>DRAFT</code> and never automatically marked as verified tax credits.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </article>
   );
 };

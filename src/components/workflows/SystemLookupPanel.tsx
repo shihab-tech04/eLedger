@@ -8,6 +8,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerRouteId, TaxCategory, ExternalLookupResult } from '../../domain/models.ts';
 import { externalLookupService, getLocalReferenceExamples } from '../../services/externalLookupService.ts';
 import { validateExternalLookupMatch } from '../../domain/validation.ts';
@@ -30,6 +31,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   lookupPlaceholder,
   helperText,
 }) => {
+  const t = useLedgerCopy();
   const { taxpayer, assessmentYear, addEntry } = useLedger();
   const [referenceQuery, setReferenceQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -152,10 +154,10 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       <div className="pb-3 border-b border-slate-200">
         <div className="flex items-center space-x-2">
           <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-            System Reference Lookup
+            {t('System Reference Lookup','সিস্টেম রেফারেন্স অনুসন্ধান')}
           </h4>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-            Workflow: System Lookup
+            {t('Workflow: System Lookup','কাজ: সিস্টেম অনুসন্ধান')}
           </span>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">{helperText}</p>
@@ -165,6 +167,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         <div className="relative flex-1">
           <input
             type="text"
+            aria-label={t('Reference number to look up','অনুসন্ধানের রেফারেন্স নম্বর')}
             value={referenceQuery}
             onChange={(e) => changeReference(e.target.value)}
             placeholder={lookupPlaceholder}
@@ -177,14 +180,14 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
           className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs sm:text-sm font-semibold shadow-xs transition-colors disabled:opacity-50"
         >
           <Search className="w-4 h-4" />
-          <span>{isSearching ? 'Verifying...' : 'Verify Reference'}</span>
+          <span>{isSearching ? t('Verifying...','যাচাই চলছে...') : t('Verify Reference','রেফারেন্স যাচাই করুন')}</span>
         </button>
       </form>
 
       {/* Route-specific local examples, not references from unrelated tax heads. */}
       {sampleReferences.length > 0 && (
         <div className="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
-          <span className="font-medium text-slate-600">Sample references:</span>
+          <span className="font-medium text-slate-600">{t('Sample references:','নমুনা রেফারেন্স:')}</span>
           {sampleReferences.map((sample, index) => (
             <React.Fragment key={sample.referenceNo}>
               {index > 0 && <span>•</span>}
@@ -214,7 +217,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         <div className="mt-3 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-900 flex items-start space-x-2">
           <AlertOctagon className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-rose-950">Verification Denied (Fail-Closed)</p>
+            <p className="font-semibold text-rose-950">{t('Verification Denied (Fail-Closed)','যাচাই প্রত্যাখ্যাত (নিরাপদ প্রত্যাখ্যান)')}</p>
             <p className="text-rose-800 text-[11px] mt-0.5">{validationError}</p>
           </div>
         </div>
@@ -228,7 +231,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-700" />
                 <span className="text-xs font-bold text-emerald-950">
-                  {lookupResult.authoritative ? 'Registry Record Verified' : 'Matching Reference Found'}
+                  {lookupResult.authoritative ? t('Registry Record Verified','রেজিস্ট্রি রেকর্ড যাচাইকৃত') : t('Matching Reference Found','মিলযুক্ত রেফারেন্স পাওয়া গেছে')}
                 </span>
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 font-mono">
                   {lookupResult.verificationSource}
@@ -247,7 +250,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
             <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2 border-t sm:border-t-0 pt-2 sm:pt-0 border-emerald-200">
               <div className="text-right">
-                <span className="text-[10px] text-slate-500 block uppercase">Recorded Tax</span>
+                <span className="text-[10px] text-slate-500 block uppercase">{t('Recorded Tax','রেকর্ডকৃত কর')}</span>
                 <span className="text-sm font-bold font-mono text-emerald-900">
                   {formatCurrencyBDT(lookupResult.taxAmount)}
                 </span>
@@ -257,7 +260,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
                 onClick={handleSaveToLedger}
                 className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
               >
-                Add Reference to Ledger
+                {t('Add Reference to Ledger','রেফারেন্স লেজারে যোগ করুন')}
               </button>
             </div>
           </div>
