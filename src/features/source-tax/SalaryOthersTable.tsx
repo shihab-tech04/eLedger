@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
-import { localDateInputValue } from '../../domain/localDate.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
+import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
 
 type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | 'OTHER';
 type SalaryDraft = {
@@ -36,7 +36,7 @@ interface SalaryOthersTableProps {
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 const humanDate = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('-') : iso;
 const blankDraft = (): SalaryDraft => ({
-  authority: '', documentType: 'CHALLAN', reference: '', date: localDateInputValue(),
+  authority: '', documentType: 'CHALLAN', reference: '', date: '',
   documentAmount: '', claimedAmount: '', bank: '', branch: '',
 });
 const draftFromEntry = (entry: LedgerEntry): SalaryDraft => ({
@@ -119,24 +119,34 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     if (!(await onDeleteEntry(entry.id))) setError('This entry could not be deleted and has been preserved.');
   };
 
-  const renderEditor = (key: string) => (
-    <tr key={key} className="eledger-salary-editor-row">
-      <td className="eledger-salary-row-index">{activeId === 'new' ? entries.length + 1 : entries.findIndex((entry) => entry.id === activeId) + 1}</td>
-      <td><input aria-label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus value={draft.authority} onChange={(event) => change('authority', event.target.value)} placeholder={t('Enter Depositing Authority','কর্তৃপক্ষের নাম লিখুন')}/></td>
-      <td><select aria-label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onChange={(event) => change('documentType', event.target.value)}>
-        <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option><option value="OTHER">{t('Other','অন্যান্য')}</option>
-      </select></td>
-      <td><input aria-label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} value={draft.reference} onChange={(event) => change('reference', event.target.value)} placeholder={t('Enter Challan/Certificate Reference','চালান / সনদ নম্বর লিখুন')}/></td>
-      <td><input aria-label={t('Challan / Certificate Date','চালান / সনদের তারিখ')} type="date" value={draft.date} onChange={(event) => change('date', event.target.value)}/></td>
-      <td><input aria-label={t('Challan / Certificate Amount','চালান / সনদের অঙ্ক')} type="number" min="0" step="any" value={draft.documentAmount} onChange={(event) => change('documentAmount', event.target.value)} placeholder={t('Enter Amount','অঙ্ক লিখুন')}/></td>
-      <td><input aria-label={t('Claimed Amount','দাবিকৃত অঙ্ক')} type="number" min="0" step="any" value={draft.claimedAmount} onChange={(event) => change('claimedAmount', event.target.value)} placeholder={t('Enter Claimed Amount','দাবিকৃত অঙ্ক লিখুন')}/></td>
-      <td className="eledger-salary-bank-fields"><input aria-label={t('Bank Name','ব্যাংকের নাম')} value={draft.bank} onChange={(event) => change('bank', event.target.value)} placeholder={t('Bank Name','ব্যাংকের নাম')}/>
-        <input aria-label={t('Branch Name','শাখার নাম')} value={draft.branch} onChange={(event) => change('branch', event.target.value)} placeholder={t('Branch Name','শাখার নাম')}/></td>
-      <td><div className="eledger-salary-row-actions">
-        <button type="button" className="save" aria-label={t('Save Salary claim','বেতনের দাবি সংরক্ষণ')} title={t('Save','সংরক্ষণ')} disabled={saving} onClick={save}><Check size={16}/></button>
-        <button type="button" className="cancel" aria-label={t('Cancel Salary edit','সম্পাদনা বাতিল')} title={t('Cancel','বাতিল')} disabled={saving} onClick={cancel}><X size={16}/></button>
-      </div></td>
-    </tr>
+  // Edit inside the same table section, but keep controls and actions inside
+  // the available width at every viewport rather than in a 1330px-wide row.
+  const renderEditor = () => (
+    <form className="eledger-salary-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}
+      aria-label={t('Salary claim editor','বেতনের দাবি সম্পাদনা')}>
+      <div className="eledger-salary-editor-heading">
+        <strong>{activeId === 'new' ? t('New salary claim','নতুন বেতনের দাবি') : t('Edit salary claim','বেতনের দাবি সম্পাদনা')}</strong>
+        <LedgerTip label={t('Date guidance','তারিখ নির্দেশনা')}>
+          {t('Enter the date printed on the supporting challan or certificate. Do not assume today is the deduction date.','চালান বা সনদে লেখা তারিখ দিন। আজকের তারিখকে কর্তনের তারিখ ধরে নেবেন না।')}
+        </LedgerTip>
+      </div>
+      <div className="eledger-salary-editor-fields">
+        <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
+        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
+          <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option><option value="OTHER">{t('Other','অন্যান্য')}</option>
+        </LedgerSelect>
+        <LedgerInput label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} required value={draft.reference} onValueChange={(value) => change('reference', value)}/>
+        <LedgerInput label={t('Challan / Certificate Date','চালান / সনদের তারিখ')} required type="date" value={draft.date} onValueChange={(value) => change('date', value)}/>
+        <LedgerInput label={t('Challan / Certificate Amount','চালান / সনদের অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.documentAmount} onValueChange={(value) => change('documentAmount', value)}/>
+        <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.claimedAmount} onValueChange={(value) => change('claimedAmount', value)}/>
+        <LedgerInput label={t('Bank Name','ব্যাংকের নাম')} value={draft.bank} onValueChange={(value) => change('bank', value)}/>
+        <LedgerInput label={t('Branch Name','শাখার নাম')} value={draft.branch} onValueChange={(value) => change('branch', value)}/>
+      </div>
+      <div className="eledger-form-actions">
+        <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>
+        <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{t('Save claim','দাবি সংরক্ষণ')}</button>
+      </div>
+    </form>
   );
 
   return (
@@ -147,6 +157,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         <button type="button" className="eledger-salary-add" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add new','নতুন যোগ করুন')}</button>
       </div>
       {error && <div role="alert" className="eledger-salary-error">{error}</div>}
+      {activeId !== null && renderEditor()}
       <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>
       <div className="eledger-salary-scroll">
         <table>
@@ -160,8 +171,8 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <th scope="col">{t('Action','কাজ')}</th>
           </tr></thead>
           <tbody>
-            {entries.map((entry, index) => activeId === entry.id ? renderEditor(entry.id) : (
-              <tr key={entry.id}>
+            {entries.map((entry, index) => (
+              <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
                 <td className="eledger-salary-row-index">{index + 1}</td>
                 <td>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
                 <td>{entry.claimEvidence?.paymentDocumentType
@@ -178,7 +189,6 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 </div></td>
               </tr>
             ))}
-            {activeId === 'new' && renderEditor('new')}
             {entries.length === 0 && activeId === null && <tr><td colSpan={9} className="eledger-salary-empty">{t('No salary claims recorded for this taxpayer and year. Use Add new to create a local claim.','এই করদাতা ও করবর্ষে কোনো বেতনের দাবি রেকর্ড নেই। স্থানীয় দাবি যোগ করতে নতুন যোগ করুন চাপুন।')}</td></tr>}
           </tbody>
         </table>
