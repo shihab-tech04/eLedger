@@ -10,10 +10,11 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
+import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
+import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { Receipt, ShieldCheck, Building, Sparkles } from 'lucide-react';
 
@@ -30,10 +31,10 @@ export const SourceTaxView: React.FC = () => {
   } = useLedger();
 
   // All 10 Source Tax routes
-  const sourceTaxRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Source Tax');
+  const sourceTaxRoutes = getVisibleRoutesByGroup('Source Tax', entries.map((entry) => entry.routeId));
 
   // Active route
-  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Source Tax');
+  const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'Source Tax', entries.map((entry) => entry.routeId));
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
 
@@ -201,6 +202,16 @@ export const SourceTaxView: React.FC = () => {
           routeId={currentRoute.id}
           defaultSection={currentRoute.statutorySection}
           title={currentRoute.title}
+        />
+      )}
+
+      {currentRoute.id === 'commercial-source' && (
+        <SystemLookupPanel
+          routeId={currentRoute.id}
+          category="SOURCE_TAX"
+          defaultSection={currentRoute.statutorySection}
+          lookupPlaceholder="Unique Key (Transaction No.)"
+          helperText="Enter the commercial vehicle transaction key to check the available reference record."
         />
       )}
 

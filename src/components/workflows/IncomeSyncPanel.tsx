@@ -26,6 +26,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
   const [items, setItems] = useState<IncomeSyncItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [sanchayapatraShares, setSanchayapatraShares] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchItems = useCallback(async () => {
@@ -52,11 +53,20 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
     setSyncingId(item.id);
     setMessage(null);
     try {
-      const res = await syncIncomeItem(item.id, defaultSection);
+      const claimedAmount = routeId === 'sanchayapatra'
+        ? Number(sanchayapatraShares[item.id] ?? item.calculatedTaxCredit)
+        : undefined;
+      if (routeId === 'sanchayapatra' &&
+          (claimedAmount === undefined || !Number.isFinite(claimedAmount) || claimedAmount <= 0 || claimedAmount > item.calculatedTaxCredit)) {
+        setMessage({ type: 'error', text: 'Enter your positive share of the TDS, not exceeding the total deducted.' });
+        setSyncingId(null);
+        return;
+      }
+      const res = await syncIncomeItem(item.id, defaultSection, claimedAmount);
       if (res.success) {
         setMessage({
           type: 'success',
-          text: `Successfully synced tax credit of ${formatCurrencyBDT(item.calculatedTaxCredit)} into ledger.`,
+          text: `Recorded ${formatCurrencyBDT(claimedAmount ?? item.calculatedTaxCredit)} in the ledger for verification.`,
         });
         await fetchItems();
       } else {
@@ -148,6 +158,20 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
                     <span className="text-sm font-bold text-emerald-800 font-mono">
                       {formatCurrencyBDT(item.calculatedTaxCredit)}
                     </span>
+                    {routeId === 'sanchayapatra' && !item.isSyncedToLedger && (
+                      <label className="block mt-2 text-[11px] text-slate-600">
+                        Your TDS Claim (৳)
+                        <input
+                          type="number"
+                          min="0.01"
+                          max={item.calculatedTaxCredit}
+                          step="any"
+                          value={sanchayapatraShares[item.id] ?? String(item.calculatedTaxCredit)}
+                          onChange={(event) => setSanchayapatraShares((previous) => ({ ...previous, [item.id]: event.target.value }))}
+                          className="block mt-1 w-32 rounded border border-slate-300 bg-white px-2 py-1 text-right font-mono text-xs"
+                        />
+                      </label>
+                    )}
                   </div>
 
                   {item.isSyncedToLedger ? (

@@ -1,7 +1,7 @@
 /**
  * Single Claim Workflow Panel
  * Supports Workflow Pattern #7: Single Claim
- * Used for Carry-Forward / Prior-Return adjustments (Sec 70 / 215)
+ * Used for the prior-year Section 163 carry-forward tax adjustment.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -82,7 +82,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         routeId: 'carry-forward',
         referenceNo: assessmentOrderNo.trim(),
         sourceEntity: assessingCircle.trim(),
-        sectionCode: 'Sec 70/215',
+        sectionCode: 'Sec 163',
         grossAmount: amount,
         taxDeducted: amount,
         date: new Date().toISOString().split('T')[0],
@@ -106,14 +106,14 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         <div className="flex items-center space-x-2">
           <SlidersHorizontal className="w-4 h-4 text-emerald-700" />
           <h4 className="text-sm font-semibold text-slate-800">
-            Single Claim Workflow: Prior-Return Carry-Forward Adjustment
+            Adjustment of Carry-Forward Tax under Section 163
           </h4>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-            Statutory Rule: Sec 70 / 215
+            Section 163
           </span>
         </div>
         <p className="text-xs text-slate-500 mt-0.5">
-          Adjust unabsorbed minimum tax credits or verified business loss carry-forward determined in prior assessment orders.
+          Record the prior-year minimum-tax adjustment supported by the relevant assessment and payment evidence.
         </p>
       </div>
 
@@ -161,7 +161,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             onChange={(e) => setLossOrCreditType(e.target.value)}
             className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
           >
-            {CARRY_FORWARD_CLASSIFICATIONS.map((classification) => (
+            {(existingClaim ? CARRY_FORWARD_CLASSIFICATIONS : CARRY_FORWARD_CLASSIFICATIONS.slice(0, 1)).map((classification) => (
               <option key={classification} value={classification}>{classification}</option>
             ))}
           </select>

@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
+import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
@@ -26,8 +26,8 @@ export const PaymentsView: React.FC = () => {
     taxpayer,
   } = useLedger();
 
-  const paymentRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Payment');
-  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Payment');
+  const paymentRoutes = getVisibleRoutesByGroup('Payment', entries.map((entry) => entry.routeId));
+  const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'Payment', entries.map((entry) => entry.routeId));
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
@@ -93,14 +93,14 @@ export const PaymentsView: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                  Tax Payments & Treasury Challans
+                  Tax Paid with Return & Environmental Surcharge
                 </h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Sec 171 & Sec 173
+                  Section 173 & Surcharge
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600">
-                Self-assessment tax paid on return of income (Sec 173) and quarterly advance tax installments (Sec 171)
+                Tax paid with the return and environmental surcharge are separate ledger records.
               </p>
             </div>
           </div>
@@ -169,7 +169,7 @@ export const PaymentsView: React.FC = () => {
       </div>
 
       {/* Treasury A-Challan Lookup Panel */}
-      <SystemLookupPanel
+      {currentRoute.supportsLookup && <SystemLookupPanel
         routeId={currentRoute.id}
         category="PAYMENT"
         defaultSection={currentRoute.statutorySection}
@@ -179,7 +179,18 @@ export const PaymentsView: React.FC = () => {
             : 'e.g. ACHALLAN-Q1-2026-5541'
         }
         helperText="Check local A-Challan reference examples; national treasury verification is not connected."
-      />
+      />}
+
+      {currentRoute.id === 'environmental-surcharge' && (
+        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
+          <h4 className="text-sm font-semibold text-slate-800">Environmental Surcharge</h4>
+          <p className="text-xs text-slate-600 mt-2">
+            {routeEntries.length === 0
+              ? 'No environmental surcharge has been transferred for the selected taxpayer and assessment year.'
+              : 'Recorded environmental surcharge appears below.'} Surcharge liability must first be established in Tax & Payment.
+          </p>
+        </div>
+      )}
 
       {/* Inline Editable Table (Requirement #6) */}
       <InlineEditableTable
@@ -190,7 +201,8 @@ export const PaymentsView: React.FC = () => {
         onSaveNewEntry={handleSaveNewEntry}
         onUpdateEntry={handleUpdateEntry}
         onDeleteEntry={handleDeleteEntry}
-        allowAdd={true}
+        allowAdd={currentRoute.supportsManualEntry}
+        allowEditDelete={currentRoute.supportsManualEntry}
       />
     </div>
   );

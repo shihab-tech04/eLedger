@@ -142,7 +142,7 @@ export const LedgerGuideView: React.FC = () => {
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
             <span className="text-xs font-bold text-emerald-800 block">7. Single Claim Pattern</span>
             <p className="text-xs text-slate-600 mt-1">
-              Prior return unabsorbed minimum tax and loss carry-forward (Sec 70/215) with dedicated assessment order tracking.
+              Section 163 prior-year minimum-tax adjustment with assessment and payment evidence tracking.
             </p>
           </div>
 

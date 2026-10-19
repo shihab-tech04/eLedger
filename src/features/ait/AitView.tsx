@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
+import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
@@ -27,10 +27,10 @@ export const AitView: React.FC = () => {
     taxpayer,
   } = useLedger();
 
-  const aitRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'AIT');
+  const aitRoutes = getVisibleRoutesByGroup('AIT', entries.map((entry) => entry.routeId));
 
   // Check if activeRouteId is in AIT, otherwise default to first
-  const currentRoute = getActiveRouteForGroup(activeRouteId, 'AIT');
+  const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'AIT', entries.map((entry) => entry.routeId));
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
@@ -97,7 +97,7 @@ export const AitView: React.FC = () => {
       };
     } else {
       return {
-        placeholder: 'e.g. SEC154-AUCTION-2026-001',
+        placeholder: 'Enter Section 154 Challan No.',
         helper: 'Check sample Section 154 challan references stored locally; external verification is not connected.',
       };
     }
@@ -124,7 +124,7 @@ export const AitView: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600">
-                Advance tax collected by BRTA on commercial and private vehicles, and specialized transactions under Sec 154
+                Private-car tax, general advance-tax challans and Section 120 import claims
               </p>
             </div>
           </div>
@@ -193,13 +193,20 @@ export const AitView: React.FC = () => {
       </div>
 
       {/* System Lookup Panel with Fail-Closed Validation */}
-      <SystemLookupPanel
+      {currentRoute.supportsLookup && <SystemLookupPanel
         routeId={currentRoute.id}
         category="AIT"
         defaultSection={currentRoute.statutorySection}
         lookupPlaceholder={lookupProps.placeholder}
         helperText={lookupProps.helper}
-      />
+      />}
+
+      {currentRoute.id === 'ait-import' && (
+        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
+          <h4 className="text-sm font-semibold text-slate-800">AIT Import (120) — TDS Details</h4>
+          <p className="text-xs text-slate-600 mt-1">Enter an import reference below. Source Tax Import and AIT Import are recorded separately and cannot establish verified credit without a source match.</p>
+        </div>
+      )}
 
       {/* Inline Editable Table (Requirement #6) */}
       <InlineEditableTable

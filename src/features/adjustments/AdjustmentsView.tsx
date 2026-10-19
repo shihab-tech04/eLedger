@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY, getActiveRouteForGroup } from '../../domain/routeRegistry.ts';
+import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
@@ -26,8 +26,8 @@ export const AdjustmentsView: React.FC = () => {
     taxpayer,
   } = useLedger();
 
-  const adjustmentRoutes = ROUTE_REGISTRY.filter((r) => r.group === 'Adjustment');
-  const currentRoute = getActiveRouteForGroup(activeRouteId, 'Adjustment');
+  const adjustmentRoutes = getVisibleRoutesByGroup('Adjustment', entries.map((entry) => entry.routeId));
+  const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'Adjustment', entries.map((entry) => entry.routeId));
 
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
   const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
@@ -100,7 +100,7 @@ export const AdjustmentsView: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600">
-                Adjustment of refund orders (Sec 214) and unabsorbed tax credit carry-forward (Sec 70/215)
+                Refund adjustment and separate carry-forward tax adjustment under Section 163
               </p>
             </div>
           </div>

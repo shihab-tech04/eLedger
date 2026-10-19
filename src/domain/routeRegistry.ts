@@ -11,7 +11,7 @@
  * Total: 18 routes
  */
 
-import { RouteRegistryEntry } from './models.ts';
+import { LedgerRouteId, RouteRegistryEntry } from './models.ts';
 
 export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
   // --- SOURCE TAX (10 Routes) ---
@@ -193,7 +193,7 @@ export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
     statutorySection: 'Sec 154 (ITA 2023)',
     workflow: 'SYSTEM_LOOKUP',
     status: 'CONFIRMED',
-    description: 'Advance income tax collected at source on specified trade licenses, auctions, and specialized transactions.',
+    description: 'General advance income tax deposited against the current return, evidenced by an income-tax challan.',
     supportsManualEntry: true,
     supportsIncomeSync: false,
     supportsLookup: true,
@@ -223,7 +223,7 @@ export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
     statutorySection: 'Sec 171 (ITA 2023)',
     workflow: 'SYSTEM_LOOKUP',
     status: 'CONFIRMED',
-    description: 'Quarterly advance tax installments deposited via Treasury Challan during the income year.',
+    description: 'Historical recovery category retained for existing saved entries; Section 171 is not independently established as a quarterly AIT claim route by the October 8 screenshots.',
     supportsManualEntry: true,
     supportsIncomeSync: false,
     supportsLookup: true,
@@ -277,8 +277,98 @@ export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
   },
 ];
 
+/**
+ * Current eLedger route crosswalk from the authenticated October 8 screenshots.
+ * The original registry is retained for existing browser records and prior
+ * recovery tests. A legacy route is only offered in the UI when it already
+ * contains saved records; financial entries are never silently reclassified.
+ *
+ * 10 Source Tax + 3 AIT + 2 Payment/Surcharge + 2 Adjustment + 1 Status.
+ */
+const screenshotRoutes: RouteRegistryEntry[] = [
+  {
+    id: 'source-ltu', group: 'Source Tax', title: 'Source Tax (LTU)',
+    bengaliTitle: 'বৃহৎ করদাতা ইউনিট উৎস কর', statutorySection: 'Sec 129 / 130 (as applicable)',
+    workflow: 'MANUAL_ENTRY', status: 'CONFIRMED',
+    description: 'LTU section, challan and claim details as shown in the current-year ledger reference.',
+    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
+  },
+  {
+    id: 'commercial-source', group: 'Source Tax', title: 'Commercial Vehicle',
+    bengaliTitle: 'বাণিজ্যিক যানবাহনের উৎসে কর', statutorySection: 'Sec 138 (ITA 2023)',
+    workflow: 'SYSTEM_LOOKUP', status: 'CONFIRMED',
+    description: 'Commercial vehicle transaction-key claim; legally distinct from private-car Section 153.',
+    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: true, supportsImport: false,
+  },
+  {
+    id: 'ait-import', group: 'AIT', title: 'AIT Import (120)',
+    bengaliTitle: 'আমদানি অগ্রিম কর', statutorySection: 'Sec 120 (ITA 2023)',
+    workflow: 'SYSTEM_RECORDS_IMPORT', status: 'CONFIRMED',
+    description: 'Import advance-tax claim is separate from the Source Tax Import (120) route.',
+    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
+  },
+  {
+    id: 'environmental-surcharge', group: 'Payment', title: 'Environmental Surcharge',
+    bengaliTitle: 'পরিবেশ সারচার্জ', statutorySection: 'Applicable surcharge provision',
+    workflow: 'MANUAL_ENTRY', status: 'CONFIRMED',
+    description: 'A separate surcharge bucket; assessment of liability originates in Tax & Payment.',
+    supportsManualEntry: false, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
+  },
+];
+
+const currentRouteOrder = [
+  'salary-ibas', 'salary-others', 'bank-fi', 'dividend', 'service-payment',
+  'sanchayapatra', 'system-import', 'source-ltu', 'commercial-source', 'other-tds',
+  'car-ait', 'sec-154', 'ait-import', 'sec-173', 'environmental-surcharge',
+  'refund', 'carry-forward', 'tax-payment-status',
+] as const satisfies readonly LedgerRouteId[];
+
+export const CURRENT_ROUTE_REGISTRY: RouteRegistryEntry[] = currentRouteOrder.map((id) => {
+  const route = screenshotRoutes.find((item) => item.id === id) ?? ROUTE_REGISTRY.find((item) => item.id === id);
+  if (!route) throw new Error(`Missing eLedger route: ${id}`);
+  if (id === 'carry-forward') {
+    return {
+      ...route,
+      title: 'Adjustment of Carry-Forward Tax (163)',
+      bengaliTitle: 'ধারা ১৬৩ অনুসারে কর সমন্বয়',
+      statutorySection: 'Sec 163 (ITA 2023)',
+      description: 'Prior-period Section 163 tax adjustment, subject to matching prior-return evidence.',
+    };
+  }
+  return route;
+});
+
+export function getCurrentRoutesByGroup(group: RouteRegistryEntry['group']): RouteRegistryEntry[] {
+  return CURRENT_ROUTE_REGISTRY.filter((route) => route.group === group);
+}
+
+/** Keep historical routes editable only when they hold the current taxpayer's saved entries. */
+export function getVisibleRoutesByGroup(
+  group: RouteRegistryEntry['group'],
+  savedRouteIds: readonly LedgerRouteId[],
+): RouteRegistryEntry[] {
+  const activeRoutes = getCurrentRoutesByGroup(group);
+  const activeIds = new Set(activeRoutes.map((route) => route.id));
+  return [
+    ...activeRoutes,
+    ...ROUTE_REGISTRY.filter((route) =>
+      route.group === group && !activeIds.has(route.id) && savedRouteIds.includes(route.id)
+    ),
+  ];
+}
+
+export function getActiveVisibleRouteForGroup(
+  id: LedgerRouteId,
+  group: RouteRegistryEntry['group'],
+  savedRouteIds: readonly LedgerRouteId[],
+): RouteRegistryEntry {
+  return getVisibleRoutesByGroup(group, savedRouteIds).find((route) => route.id === id)
+    ?? getCurrentRoutesByGroup(group)[0];
+}
+
 export function getRouteById(id: string): RouteRegistryEntry | undefined {
-  return ROUTE_REGISTRY.find((r) => r.id === id);
+  return CURRENT_ROUTE_REGISTRY.find((r) => r.id === id)
+    ?? ROUTE_REGISTRY.find((r) => r.id === id);
 }
 
 export function getRoutesByGroup(group: RouteRegistryEntry['group']): RouteRegistryEntry[] {

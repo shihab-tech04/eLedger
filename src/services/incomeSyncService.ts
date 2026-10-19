@@ -76,7 +76,8 @@ export class IncomeSyncService {
     itemId: string,
     sectionCode: string,
     expectedTin: string,
-    expectedAssessmentYear: AssessmentYear
+    expectedAssessmentYear: AssessmentYear,
+    claimedAmount?: number,
   ): Promise<{ success: boolean; entry?: LedgerEntry; error?: string }> {
     const items = this.loadItems();
     const itemIndex = items.findIndex((i) => i.id === itemId);
@@ -87,6 +88,17 @@ export class IncomeSyncService {
     const item = items[itemIndex];
     if (item.taxpayerTin !== expectedTin || item.assessmentYear !== expectedAssessmentYear) {
       return { success: false, error: 'Taxpayer or assessment year does not match the selected context.' };
+    }
+
+    // Public NBR guidance requires the joint Sanchayapatra holder to claim
+    // only their own share, not the full instrument-level withholding.
+    // Do not accept user-adjusted credit on unrelated income categories.
+    const recordedClaim = claimedAmount ?? item.calculatedTaxCredit;
+    if (!Number.isFinite(item.calculatedTaxCredit) || item.calculatedTaxCredit <= 0 ||
+        !Number.isFinite(recordedClaim) || recordedClaim <= 0 ||
+        recordedClaim > item.calculatedTaxCredit ||
+        (item.routeId !== 'sanchayapatra' && claimedAmount !== undefined && recordedClaim !== item.calculatedTaxCredit)) {
+      return { success: false, error: 'Claimed tax must be positive and cannot exceed the source-recorded TDS.' };
     }
 
     const existing = await ledgerRepository.getEntries(expectedTin, expectedAssessmentYear);
@@ -106,13 +118,13 @@ export class IncomeSyncService {
       sourceEntity: item.payerName,
       sectionCode: sectionCode || 'Sec 102',
       grossAmount: item.reportedGrossIncome,
-      taxDeducted: item.calculatedTaxCredit,
+      taxDeducted: recordedClaim,
       date: item.syncDate,
       status: 'SYNCED',
       workflow: 'SYNC_FROM_INCOME',
       isManual: false,
       externalVerified: false,
-      remarks: `Synchronized from eReturn Income Head: ${item.sourceHead}`,
+      remarks: `Synchronized from eReturn Income Head: ${item.sourceHead}${item.routeId === 'sanchayapatra' ? ` | Instrument TDS: ${item.calculatedTaxCredit} | Taxpayer claim: ${recordedClaim}` : ''}`,
     });
 
     // Ledger entries are the source of truth for the synced state. Avoid a

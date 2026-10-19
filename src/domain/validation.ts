@@ -69,7 +69,16 @@ export function validateLedgerEntry(
         e.assessmentYear === entry.assessmentYear &&
         // A treasury challan cannot support separate claims under both
         // Section 171 and Section 173 in the same taxpayer/year context.
-        (e.routeId === entry.routeId || (entry.category === 'PAYMENT' && e.category === 'PAYMENT')) &&
+        (
+          e.routeId === entry.routeId ||
+          (entry.category === 'PAYMENT' && e.category === 'PAYMENT') ||
+          // The old ledger exposes Section 120 under both Source Tax and AIT.
+          // A single customs payment cannot be silently claimed twice.
+          (['system-import', 'ait-import'].includes(e.routeId) &&
+            ['system-import', 'ait-import'].includes(entry.routeId ?? '')) ||
+          (['commercial-vehicle', 'commercial-source'].includes(e.routeId) &&
+            ['commercial-vehicle', 'commercial-source'].includes(entry.routeId ?? ''))
+        ) &&
         sameLedgerReference(e.referenceNo, entry.referenceNo!)
     );
 
