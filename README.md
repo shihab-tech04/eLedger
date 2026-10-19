@@ -40,14 +40,15 @@ eReturn Portal → Tax & Payment → Update Tax Payment Status → eLedger → T
 
 | Group | Route Count | Confirmed | Provisional |
 |---|:---:|:---:|:---:|
-| **Source Tax** | 10 | 10 | 0 |
+| **Source Tax** | 10 | 8 | 2 |
 | **Advance Income Tax (AIT)** | 3 | 3 | 0 |
 | **Payments** | 2 | 2 | 0 |
 | **Adjustments** | 2 | 2 | 0 |
 | **Tax Payment Status** | 1 | 1 | 0 |
-| **Total** | **18** | **18** | **0** |
+| **Total** | **18** | **16** | **2** |
 
 See [`docs/ROUTE_MATRIX.md`](docs/ROUTE_MATRIX.md) for the recovered mapping inventory; statutory labels remain subject to source verification.
+The two provisional Source Tax routes are **Contractor & Supply of Goods** and **House Property Rental TDS**. The count of 18 describes functional route identities, not 18 certified legal mappings.
 
 ---
 
@@ -119,4 +120,5 @@ considering the site live.
 - [`docs/PHASE9_UI_DATA_SAFETY.md`](docs/PHASE9_UI_DATA_SAFETY.md) — Responsive entry/reconciliation and corrupt browser record protections.
 - [`docs/PHASE10_LOCAL_WORKFLOWS.md`](docs/PHASE10_LOCAL_WORKFLOWS.md) — Atomic Section 120 CSV import and local surcharge handoff with authority boundaries.
 - [`docs/PHASE11_FINAL_ACCEPTANCE.md`](docs/PHASE11_FINAL_ACCEPTANCE.md) — Final safety, recovery and 18-route acceptance evidence, with remaining official-system dependencies.
+- [`docs/PHASE7_FINAL_RECOVERY_CERTIFICATION_2026-10-19.md`](docs/PHASE7_FINAL_RECOVERY_CERTIFICATION_2026-10-19.md) — Original-UI recovery final cross-flow audit and evidence limits.
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Executed verification and deployment results across recovery checkpoints.
