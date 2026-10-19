@@ -30,6 +30,13 @@ button, select, input, textarea { font: inherit; }
 .eledger-form-field { display: flex; flex-direction: column; min-width: 0; gap: 5px; color: #344760; font-size: 12px; font-weight: 600; }
 .eledger-evidence-fields { border-color: var(--el-border); background: #f7fafc; }
 .eledger-form-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.eledger-entry-editor { padding: 16px 20px; border-bottom: 1px solid var(--el-border); background: #f5faff; }
+.eledger-entry-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.eledger-entry-editor-heading strong { font-size: 14px; font-weight: 700; }
+.eledger-entry-editor-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.eledger-entry-editor .eledger-evidence-fields { margin-top: 14px; }
+.eledger-entry-error { padding: 9px 11px; margin-bottom: 12px; background: #fff2f3; border: 1px solid #f0c7cc; border-radius: 7px; color: #9d223e; font-size: 12px; }
+.eledger-entry-empty { padding: 19px 20px; color: var(--el-muted); font-size: 13px; }
 .eledger-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--el-control-radius); font-size: 12px; font-weight: 650; cursor: pointer; }
 .eledger-button-primary { background: var(--el-blue); color: #fff; }
 .eledger-button-primary:hover { background: #075b94; }
@@ -287,6 +294,8 @@ button, select, input, textarea { font: inherit; }
 .eledger-source-record-list { min-width: 0; max-width: 100%; }
 .eledger-source-record-list thead { background: #f6f8fa; color: #5e6c80; }
 .eledger-ledger-table :where(input:not([type="checkbox"]),select,textarea) { min-height: 38px; border-color: var(--el-control-border); border-radius: var(--el-control-radius); font-size: 13px; }
+.eledger-ledger-table table { min-width: 1000px; }
+.eledger-ledger-table :where(td.text-right,th.text-right) { white-space: nowrap; }
 .eledger-ledger-table :where(input,select,textarea):focus { border-color: var(--el-blue); }
 .eledger-ledger-table :where(th) { font-size: 12px; line-height: 1.4; text-transform: none; letter-spacing: 0; }
 .eledger-ledger-table :where(button.bg-emerald-700,button.bg-emerald-600,button.bg-amber-600) { background: var(--el-blue); }
@@ -408,8 +417,11 @@ button, select, input, textarea { font: inherit; }
   .eledger-source-mobile-routes button.is-active { color: #0874b4; background: #e9f5fc; border-color: #b5dbee; font-weight: 750; }
   .eledger-salary-table table { min-width: 1140px; }
   .eledger-salary-editor-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .eledger-entry-editor-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 670px) {
+  .eledger-entry-editor { padding: 13px; }
+  .eledger-entry-editor-fields { grid-template-columns: 1fr; }
   .eledger-salary-editor { padding: 13px; }
   .eledger-salary-editor-fields { grid-template-columns: 1fr; gap: 11px; }
   .eledger-form-actions .eledger-button { flex: 1; }
@@ -450,6 +462,11 @@ button, select, input, textarea { font: inherit; }
   .eledger-salary-toolbar { gap: 7px; }
   .eledger-salary-stat { padding-right: 7px; }
   .eledger-salary-add { gap: 4px; padding: 8px 7px; font-size: 10px; }
+}
+@media (min-width: 361px) and (max-width: 400px) {
+  .eledger-summary-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .eledger-summary-card { min-height: 154px; }
+  .eledger-summary-amount { font-size: 19px; }
 }
 @media (max-width: 350px) {
   .eledger-header-controls { flex-wrap: nowrap; gap: 4px; }
