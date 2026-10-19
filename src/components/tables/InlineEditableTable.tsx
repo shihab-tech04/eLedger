@@ -105,6 +105,7 @@ export const MobileRowEditor: React.FC<{
 
 export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   entries,
+  category,
   routeId,
   defaultSection,
   onSaveNewEntry,
@@ -328,7 +329,10 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
             Recorded Ledger Entries ({entries.length})
           </h3>
           <span className="text-xs text-slate-500 font-normal">
-            Tax Deducted at Source / Credit Records
+            {category === 'AIT' ? 'Advance Income Tax claims'
+              : category === 'PAYMENT' ? 'Tax payment records'
+              : category === 'ADJUSTMENT' ? 'Adjustment claims'
+              : 'Tax Deducted at Source / Credit Records'}
           </span>
         </div>
 
@@ -512,7 +516,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                   <p className="text-sm">No ledger entries recorded for this section.</p>
                   {allowAdd && (
                     <p className="text-xs text-slate-500 mt-1">
-                      Click <strong>Add Entry</strong> above to insert a new source deduction.
+                      Click <strong>Add Entry</strong> above to insert a new ledger claim.
                     </p>
                   )}
                 </td>

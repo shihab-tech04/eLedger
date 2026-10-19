@@ -172,7 +172,7 @@ button, select, input { font: inherit; }
 .eledger-dashboard-verification-note strong { color: #203655; }
 
 /* September 21 Source Tax recovery — salary document rows and local iBAS++ view. */
-.eledger-source-page { max-width: 1560px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.eledger-source-page { max-width: 1560px; min-width: 0; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .eledger-source-title { margin-bottom: 3px; }
 .eledger-source-title-line { display: flex; align-items: center; gap: 4px; }
 .eledger-source-title h1 { color: #1b273f; font-size: 28px; line-height: 1.28; font-weight: 750; letter-spacing: -.45px; }
@@ -248,7 +248,29 @@ button, select, input { font: inherit; }
 .eledger-source-record-summary strong { margin-left: 8px; color: #0773b6; font-size: 14px; }
 .eledger-source-record-summary small { color: #8190a5; font-size: 10px; }
 .eledger-source-record-list > div:last-child { box-shadow: none; border-color: #dce5ef; border-radius: 10px; }
+.eledger-source-record-list { min-width: 0; max-width: 100%; }
 .eledger-source-record-list thead { background: #f6f8fa; color: #5e6c80; }
+
+/* AIT continues the same original white-card, blue-accent document language. */
+.eledger-ait-page { max-width: 1560px; min-width: 0; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.eledger-ait-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 20px; padding: 16px 20px; background: #fff; border: 1px solid #dce5ef; border-radius: 10px; }
+.eledger-ait-summary > div { display: flex; flex-direction: column; gap: 5px; min-width: 125px; padding-right: 20px; border-right: 1px solid #dfe7ef; }
+.eledger-ait-summary > div:nth-child(2) { min-width: 75px; border-right: 0; }
+.eledger-ait-summary span { color: #64768f; font-size: 11px; }
+.eledger-ait-summary strong { color: #0871b5; font-size: 18px; font-weight: 800; }
+.eledger-ait-summary p { flex: 1 1 280px; font-size: 11px; line-height: 1.5; color: #657b90; }
+.eledger-ait-lookup { border: 1px solid #dce5ee; border-radius: 10px; overflow: hidden; background: #fff; }
+.eledger-ait-lookup > header { display: flex; align-items: flex-start; gap: 9px; padding: 14px 18px; border-bottom: 1px solid #e3eaf1; color: #0974b6; }
+.eledger-ait-lookup > header div { display: flex; flex-direction: column; gap: 4px; }
+.eledger-ait-lookup > header strong { color: #1b2b46; font-size: 13px; }
+.eledger-ait-lookup > header span { color: #718397; font-size: 11px; }
+.eledger-ait-lookup > div { border: 0; border-radius: 0; box-shadow: none; margin: 0; padding: 18px; }
+.eledger-ait-lookup form button[type="submit"] { background: #0875b5; }
+.eledger-ait-lookup form input:focus { border-color: #0b78bb; }
+.eledger-ait-records { min-width: 0; max-width: 100%; }
+.eledger-ait-records > div { border-color: #dce5ef; box-shadow: none; border-radius: 10px; max-width: 100%; }
+.eledger-ait-records thead { background: #f6f8fa; color: #5c6f83; }
+.eledger-ait-integrity { color: #758398; font-size: 10px; }
 
 /* Route forms retain their tested controls while adopting the historic page treatment. */
 .eledger-feature-header { border: 0; box-shadow: none; border-radius: 0; padding: 3px 0 10px; background: transparent; }
@@ -279,6 +301,8 @@ button, select, input { font: inherit; }
   .eledger-summary-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 960px) {
+  html, body { overflow-x: hidden; }
+  .eledger-app { overflow-x: clip; }
   .eledger-header-main { height: auto; min-height: 70px; align-items: center; gap: 12px; padding: 11px 18px; }
   .eledger-brand { flex-basis: auto; flex-shrink: 0; padding: 0; border-right: 0; margin-right: auto; }
   .eledger-header-controls { padding: 0; gap: 10px; }
@@ -353,6 +377,10 @@ button, select, input { font: inherit; }
   .eledger-salary-stat strong { font-size: 15px; }
   .eledger-salary-add { padding: 8px; font-size: 11px; }
   .eledger-salary-disclaimer { padding: 9px 12px; }
+  .eledger-ait-page { gap: 12px; }
+  .eledger-ait-summary { padding: 12px; gap: 11px; }
+  .eledger-ait-summary > div { min-width: 95px; padding-right: 10px; }
+  .eledger-ait-summary strong { font-size: 15px; }
 }
 @media (max-width: 400px) {
   .eledger-summary-cards { grid-template-columns: 1fr 1fr; }
