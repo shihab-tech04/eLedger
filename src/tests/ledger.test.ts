@@ -46,7 +46,7 @@ import { ExternalLookupService, getLocalReferenceExamples } from '../services/ex
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { IncomeSyncService } from '../services/incomeSyncService.ts';
 import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
-import { InlineEditableTable, MobileRowEditor } from '../components/tables/InlineEditableTable.tsx';
+import { InlineEditableTable, MobileRowEditor, getTableFieldLabels } from '../components/tables/InlineEditableTable.tsx';
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from '../components/tables/ClaimEvidenceFields.tsx';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimEvidence.ts';
 import { localDateInputValue } from '../domain/localDate.ts';
@@ -564,6 +564,51 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
       assert.equal(modified.externalVerified, false);
       assert.equal(modified.taxpayerTin, '123456789012');
     });
+  });
+});
+
+describe('eLedger — Final Workflow UX Audit', () => {
+  const translate = (english: string) => english;
+
+  it('keeps assessment-year selection accessible when its visible label is hidden on narrow screens', () => {
+    const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(Header)));
+    assert.match(html, /aria-label="Assessment Year"/);
+    assert.match(html, /id="ay-select"/);
+  });
+
+  it('does not instruct users to save a claim on the read-only iBAS++ screen', () => {
+    const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(LedgerGuideView)));
+    assert.match(html, /Salary \(iBAS\+\+\) shows read-only local payroll records/);
+    assert.match(html, /Where Add Entry is available/);
+  });
+
+  it('uses truthful workflow-specific headers and edit labels in every credit group', () => {
+    const source = getTableFieldLabels('SOURCE_TAX', translate);
+    const ait = getTableFieldLabels('AIT', translate);
+    const payment = getTableFieldLabels('PAYMENT', translate);
+    const adjustment = getTableFieldLabels('ADJUSTMENT', translate);
+    assert.equal(source.taxDeducted, 'Tax Deducted (৳)');
+    assert.equal(ait.taxDeducted, 'AIT Claimed (৳)');
+    assert.equal(payment.taxDeducted, 'Tax Paid (৳)');
+    assert.equal(payment.sourceEntity, 'Receiving Authority / Bank');
+    assert.equal(adjustment.taxDeducted, 'Adjusted Amount (৳)');
+    assert.equal(adjustment.sourceEntity, 'Issuing Authority / Circle');
+
+    for (const [category, expected] of [
+      ['SOURCE_TAX', 'Tax Deducted (৳)'], ['AIT', 'AIT Claimed (৳)'],
+      ['PAYMENT', 'Tax Paid (৳)'], ['ADJUSTMENT', 'Adjusted Amount (৳)'],
+    ] as const) {
+      const html = renderToStaticMarkup(React.createElement(InlineEditableTable, {
+        entries: [], category, routeId: category === 'PAYMENT' ? 'sec-173'
+          : category === 'ADJUSTMENT' ? 'refund' : category === 'AIT' ? 'car-ait' : 'other-tds',
+        defaultSection: 'Sec 173', onSaveNewEntry: async () => ({ success: true }),
+        onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
+      }));
+      assert.ok(html.includes(expected));
+      assert.match(html, /Swipe the table sideways/);
+    }
   });
 });
 
