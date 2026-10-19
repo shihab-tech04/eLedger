@@ -16,6 +16,10 @@
 }
 body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif; }
 button, select, input { font: inherit; }
+.eledger-app :where(button, a, input, select, textarea):focus-visible { outline: 2px solid #076fb3; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .eledger-app *, .eledger-app *::before, .eledger-app *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
 .eledger-app { min-height: 100vh; background: var(--el-bg); color: var(--el-text); }
 .eledger-header { position: relative; z-index: 40; background: #fff; border-bottom: 1px solid var(--el-border); }
 .eledger-header-main { height: var(--el-header-height); display: flex; align-items: stretch; padding: 0; }
@@ -111,10 +115,10 @@ button, select, input { font: inherit; }
 .eledger-summary-card.ait .eledger-summary-symbol { background: #f0f8ff; color: #0772be; border: 1px solid #dcedf8; }
 .eledger-summary-card.other .eledger-summary-symbol { background: #fffaf0; color: #ed8c16; border: 1px solid #fbe9be; }
 .eledger-summary-card.total .eledger-summary-symbol { background: #eaf5ff; color: #076dae; border: 1px solid #cfe2f1; }
-.eledger-summary-count { color: #697992; font-size: 10.5px; line-height: 1.5; text-align: right; }
-.eledger-summary-card .eledger-card-label { color: #728097; font-size: 10px; font-weight: 800; letter-spacing: .6px; line-height: 1.45; text-transform: uppercase; }
+.eledger-summary-count { color: #697992; font-size: 11px; line-height: 1.5; text-align: right; }
+.eledger-summary-card .eledger-card-label { color: #63728b; font-size: 11px; font-weight: 800; letter-spacing: .5px; line-height: 1.45; text-transform: uppercase; }
 .eledger-summary-amount { display: block; margin-top: 8px; color: #1b263d; font-size: clamp(20px,1.7vw,25px); font-weight: 800; line-height: 1.16; letter-spacing: -.7px; }
-.eledger-summary-caption { color: #7c8da7; font-size: 10.5px; margin-top: 9px; }
+.eledger-summary-caption { color: #697b96; font-size: 11px; margin-top: 9px; }
 .eledger-ledger-composition { background: #fff; border: 1px solid #dce5ed; border-radius: 12px; margin-top: 20px; padding: 17px 20px 16px; }
 .eledger-composition-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .eledger-composition-heading h2,.eledger-category-heading h2,.eledger-dashboard-quick-actions h2 { color: #1e2a42; font-size: 13px; font-weight: 800; }
@@ -223,6 +227,7 @@ button, select, input { font: inherit; }
 .eledger-salary-bank-fields { display: flex; flex-direction: column; gap: 7px; }
 .eledger-salary-empty { padding: 25px 14px !important; color: #7b8a9e !important; text-align: center; }
 .eledger-salary-disclaimer { font-size: 10px; color: #6e8095; padding: 10px 20px; border-top: 1px solid #eaf0f4; }
+.eledger-salary-mobile-hint { display: none; }
 .eledger-ibas-workflow { display: flex; flex-direction: column; gap: 16px; }
 .eledger-ibas-search-row { display: flex; justify-content: flex-end; margin-top: -12px; }
 .eledger-ibas-search-row button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid #0070b9; border-radius: 8px; color: #066bad; background: #fff; font-size: 12px; font-weight: 750; cursor: pointer; }
@@ -318,6 +323,7 @@ button, select, input { font: inherit; }
   .eledger-route-tabs { display: block; }
 }
 @media (max-width: 670px) {
+  .eledger-salary-mobile-hint { display: block; padding: 9px 12px; border-bottom: 1px solid #e2eaf2; background: #f0f8fe; color: #415d76; font-size: 12px; line-height: 1.5; }
   .eledger-header-main { flex-wrap: wrap; }
   .eledger-header-controls { flex: 1 1 100%; width: 100%; margin-left: 0; justify-content: space-between; flex-wrap: wrap; border-top: 1px solid #edf1f6; padding-top: 9px; }
   .eledger-assessment { font-size: 11px; }
@@ -387,7 +393,7 @@ button, select, input { font: inherit; }
   .eledger-summary-card { min-height: 150px; flex-direction: column; }
   .eledger-summary-amount { font-size: 18px; }
   .eledger-summary-card .eledger-card-label { min-height: 29px; }
-  .eledger-summary-count { font-size: 9px; }
+  .eledger-summary-count { font-size: 10px; }
   .eledger-salary-toolbar { gap: 7px; }
   .eledger-salary-stat { padding-right: 7px; }
   .eledger-salary-add { gap: 4px; padding: 8px 7px; font-size: 10px; }
