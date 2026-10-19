@@ -61,6 +61,11 @@ export const SourceTaxView: React.FC = () => {
   const heading = isIbas ? 'iBAS++ (Salary) TDS' : isSalaryOthers ? 'Salary (Others)' : currentRoute.title;
   const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
     isIbas ? 'Local iBAS++ payroll references — not connected to CGA' : currentRoute.statutorySection;
+  const localizedCaption = language === 'bn'
+    ? isSalaryOthers ? 'বেতন · ধারা ৮৬'
+      : isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই'
+      : currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
+    : caption;
 
   return (
     <div className="eledger-source-page">
@@ -70,7 +75,7 @@ export const SourceTaxView: React.FC = () => {
             onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
           <h1>{language === 'bn' ? currentRoute.bengaliTitle : heading}</h1>
         </div>
-        <p>{language === 'bn' && isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই' : caption}</p>
+        <p>{localizedCaption}</p>
       </header>
 
       {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
