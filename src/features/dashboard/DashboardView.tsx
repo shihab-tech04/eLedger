@@ -169,7 +169,7 @@ export const DashboardView: React.FC = () => {
                 <span><strong>{t('Review Tax Payment Status','কর পরিশোধের অবস্থা দেখুন')}</strong><small>{t('Review all tax and adjustments together','সব কর ও সমন্বয় একসঙ্গে দেখুন')}</small></span><FileCheck2 size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('source-tax')}>
-                <span><strong>{t('Update Source Tax','উৎস কর হালনাগাদ করুন')}</strong><small>{t('Start with Salary (iBAS++)','বেতন (iBAS++) থেকে শুরু করুন')}</small></span><ArrowRight size={16}/>
+                <span><strong>{t('Update Source Tax','উৎস কর হালনাগাদ করুন')}</strong><small>{t('Choose a category with an available entry workflow','রেকর্ড যোগের সুযোগ আছে এমন খাত বেছে নিন')}</small></span><ArrowRight size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('ait')}>
                 <span><strong>{t('Update AIT','অগ্রিম কর হালনাগাদ করুন')}</strong><small>{t('Start with AIT on Car','গাড়ির অগ্রিম কর দিয়ে শুরু করুন')}</small></span><ArrowRight size={16}/>

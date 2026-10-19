@@ -110,6 +110,12 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addEntry = async (
     entryData: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
+    if (entryData.taxpayerTin !== taxpayer.tin || entryData.assessmentYear !== assessmentYear) {
+      return { success: false, validation: {
+        isValid: false,
+        errors: { context: 'Taxpayer or assessment year changed. Review the selected context and try again.' },
+      } };
+    }
     const contextualEntry = { ...entryData, taxpayerTin: taxpayer.tin, assessmentYear };
     const validation = validateLedgerEntry(contextualEntry, entries);
     if (!validation.isValid) {

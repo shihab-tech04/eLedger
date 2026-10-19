@@ -69,7 +69,8 @@ export const Header: React.FC = () => {
         <div className="eledger-header-controls">
           <label htmlFor="ay-select" className="eledger-assessment">
             <strong>{language === 'en' ? 'Assessment Year :' : 'করবর্ষ :'}</strong>
-            <select id="ay-select" value={assessmentYear} onChange={(event) => setAssessmentYear(event.target.value as AssessmentYear)}>
+            <select id="ay-select" aria-label={language === 'en' ? 'Assessment Year' : 'করবর্ষ'}
+              value={assessmentYear} onChange={(event) => setAssessmentYear(event.target.value as AssessmentYear)}>
               <option value="2026-2027">2026-2027</option>
               <option value="2025-2026">2025-2026</option>
               <option value="2024-2025">2024-2025</option>

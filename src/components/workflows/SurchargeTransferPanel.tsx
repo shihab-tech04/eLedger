@@ -31,6 +31,8 @@ export const SurchargeTransferPanel: React.FC<{
       setReference('');
       setAmount('');
       setSuccess(t('Surcharge recorded as a pending local claim. This is not a verified tax payment.','সারচার্জ স্থানীয় যাচাই অপেক্ষমাণ দাবি হিসেবে রেকর্ড হয়েছে। এটি যাচাইকৃত কর পরিশোধ নয়।'));
+    } catch {
+      setError(t('The local surcharge record could not be saved. No payment was transmitted.','স্থানীয় সারচার্জ রেকর্ড সংরক্ষণ হয়নি। কোনো অর্থ পরিশোধ করা হয়নি।'));
     } finally {
       setBusy(false);
     }
