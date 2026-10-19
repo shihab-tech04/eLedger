@@ -147,6 +147,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         <button type="button" className="eledger-salary-add" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add new','নতুন যোগ করুন')}</button>
       </div>
       {error && <div role="alert" className="eledger-salary-error">{error}</div>}
+      <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>
       <div className="eledger-salary-scroll">
         <table>
           <thead><tr>
