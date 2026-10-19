@@ -11,16 +11,16 @@ export const LedgerGuideView: React.FC = () => {
   const fiscalStart = fiscalEnd - 1;
   const stepList = bn ? [
     'বাম পাশের মেনু থেকে ‘উৎস কর দাবি’ নির্বাচন করুন।',
-    'উৎস করের ধরন নির্বাচন করুন। যেমন, iBAS++ বেতন হলে ‘বেতন (iBAS++)’ নির্বাচন করুন।',
-    'সঠিক চালান বা সনদের তথ্য দিয়ে ‘যোগ করুন’ এবং ‘সংরক্ষণ’ ব্যবহার করুন। স্থানীয়ভাবে সংরক্ষিত দাবি নিজে থেকেই যাচাইকৃত হয় না।',
+    'উৎস করের ধরন নির্বাচন করুন। ‘বেতন (iBAS++)’ তথ্য কেবল দেখার জন্য; নিজে তথ্য যোগ করতে ‘অন্যান্য বেতন’ বা প্রযোজ্য খাত বেছে নিন।',
+    'যেসব খাতে ‘রেকর্ড যোগ করুন’ চালু আছে, সেসব খাতে সঠিক চালান বা সনদের তথ্য দিয়ে সংরক্ষণ করুন। স্থানীয় দাবি নিজে থেকেই যাচাইকৃত হয় না।',
     'পরিবর্তন করতে সংশ্লিষ্ট সারির ‘সম্পাদনা’ বোতাম ব্যবহার করুন; সংরক্ষণের আগে অঙ্ক ও তথ্য পরীক্ষা করুন।',
     'ভুল সারি মুছতে ‘মুছুন’ ব্যবহার করুন। মুছে ফেলা রেকর্ড স্থানীয় লেজার থেকে সরানো হয়।',
     'উৎস কর, অগ্রিম কর ও সমন্বয় যোগ করার পরে ‘কর পরিশোধের অবস্থা’ খুলে মোট রেকর্ডকৃত অঙ্ক মিলিয়ে নিন।',
     'ফেরত দাখিলের বাকি কাজের জন্য ‘ই-রিটার্নে যান’ লিংক ব্যবহার করুন। এই প্রোটোটাইপ নিজে কোনো কর জমা দেয় না।',
   ] : [
     "Click 'Claim Source Tax' in the menu at the left to update your source tax payments.",
-    "Select your source tax category. For example, for an iBAS++ pay bill, select 'Salary (iBAS++)'.",
-    "Enter the supported challan or certificate details and use Add Entry and Save. Locally recorded claims do not become verified automatically.",
+    "Select your source tax category. Salary (iBAS++) shows read-only local payroll records; choose Salary (Others) or another eligible route to enter a manual claim.",
+    "Where Add Entry is available, enter the supported challan or certificate details and save. Locally recorded claims do not become verified automatically.",
     "To change a saved source-tax figure, use the Edit icon in its row, check the values and save your changes.",
     "To remove an incorrect ledger row, use its Delete control; this removes the local record.",
     "When you finish recording source taxes and AIT, open Tax Payment Status to reconcile the recorded amounts and adjustments.",
