@@ -392,3 +392,59 @@ button, select, input { font: inherit; }
   .eledger-salary-stat { padding-right: 7px; }
   .eledger-salary-add { gap: 4px; padding: 8px 7px; font-size: 10px; }
 }
+
+/* September 20 custom eLedger Tax Payment Status — six rows, light sheet, recorded footer. */
+.eledger-payment-scrim { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 18px; background: #18233d85; }
+.eledger-payment-dialog { display: flex; flex-direction: column; width: min(1042px,100%); max-height: min(90vh,900px); min-height: 0; overflow: hidden; background: #fff; border-radius: 19px; box-shadow: 0 22px 85px #0c24442c; color: #202d45; }
+.eledger-payment-header { display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; gap: 20px; padding: 22px 26px 20px; background: #fff; border-bottom: 1px solid #e0e7ef; }
+.eledger-payment-header h2 { font-weight: 800; font-size: 19px; line-height: 1.4; letter-spacing: -.4px; }
+.eledger-payment-header p { margin-top: 6px; color: #8090a7; font-size: 13px; line-height: 1.45; }
+.eledger-payment-close { display: grid; place-items: center; width: 43px; height: 43px; flex-shrink: 0; border: 1px solid #dbe4ef; border-radius: 12px; color: #72839a; background: #f8fafc; cursor: pointer; }
+.eledger-payment-close:hover,.eledger-payment-close:focus-visible { background: #e9f4fb; color: #116ca7; outline-offset: 2px; }
+.eledger-payment-scroll { min-height: 0; flex: 1; overflow-y: auto; background: #f7f9fc; padding: 22px; }
+.eledger-payment-panel { border: 1px solid #dce5ee; border-radius: 13px; overflow: hidden; background: #fff; }
+.eledger-payment-panel-heading { padding: 20px 21px 17px; border-bottom: 1px solid #e4eaf1; }
+.eledger-payment-panel-heading h3 { font-size: 16px; font-weight: 800; color: #1f2d43; }
+.eledger-payment-panel-heading p { margin-top: 6px; font-size: 12px; color: #8391a8; }
+.eledger-payment-columns { display: flex; justify-content: space-between; padding: 14px 21px; text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: .4px; color: #8190a4; border-bottom: 1px solid #e4eaf1; }
+.eledger-payment-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 55px; padding: 16px 21px; border-bottom: 1px solid #e7edf4; color: #253148; font-size: 13px; text-align: left; }
+.eledger-payment-row:last-child { border-bottom: 0; }
+.eledger-payment-row > strong { font-weight: 650; }
+.eledger-payment-expandable { width: 100%; min-height: 75px; background: #fff; cursor: pointer; }
+.eledger-payment-expandable:hover,.eledger-payment-expandable:focus-visible { background: #f7fbff; }
+.eledger-payment-row-title { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.eledger-payment-row-title > span:last-child { display: flex; flex-direction: column; gap: 4px; }
+.eledger-payment-row-title strong { font-weight: 750; }
+.eledger-payment-row-title small { font-size: 11px; color: #8b9aad; }
+.eledger-payment-chevron { flex: 0 0 30px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 6px; background: #ecf6fc; color: #1170ad; }
+.eledger-payment-amount { margin-left: auto; font-weight: 750; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.eledger-payment-subrows { background: #f8fbfd; border-bottom: 1px solid #e4edf5; padding: 5px 21px 10px 63px; }
+.eledger-payment-subrow { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(82px,auto); align-items: center; gap: 12px; min-height: 36px; font-size: 11px; color: #607087; border-bottom: 1px solid #e9eff5; }
+.eledger-payment-subrow:last-child { border-bottom: 0; }
+.eledger-payment-subrow strong { color: #264362; text-align: right; font-variant-numeric: tabular-nums; }
+.eledger-payment-subcount { color: #9aa8b9; white-space: nowrap; }
+.eledger-payment-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; min-height: 73px; padding: 15px 26px; border-top: 1px solid #dfe6ee; background: #fff; }
+.eledger-payment-footer > div > strong { font-size: 13px; font-weight: 800; }
+.eledger-payment-footer p { color: #8797ab; font-size: 12px; margin-top: 4px; }
+.eledger-payment-footer small { display: block; color: #7d8ca1; font-size: 10px; margin-top: 5px; }
+.eledger-payment-total { color: #0873b4; font-size: 24px; font-weight: 800; letter-spacing: -.6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 670px) {
+  .eledger-payment-scrim { padding: 9px; align-items: center; }
+  .eledger-payment-dialog { max-height: calc(100dvh - 18px); border-radius: 13px; }
+  .eledger-payment-header { padding: 15px; }
+  .eledger-payment-header h2 { font-size: 17px; }
+  .eledger-payment-header p { font-size: 11px; }
+  .eledger-payment-close { width: 35px; height: 35px; }
+  .eledger-payment-scroll { padding: 11px; }
+  .eledger-payment-panel-heading { padding: 15px 12px; }
+  .eledger-payment-columns { padding: 12px; }
+  .eledger-payment-row { padding: 13px 12px; font-size: 11px; }
+  .eledger-payment-row-title { gap: 7px; }
+  .eledger-payment-chevron { width: 27px; height: 27px; flex-basis: 27px; }
+  .eledger-payment-subrows { padding-left: 12px; padding-right: 12px; }
+  .eledger-payment-subrow { grid-template-columns: minmax(0,1fr) auto; }
+  .eledger-payment-subcount { display: none; }
+  .eledger-payment-footer { padding: 12px 15px; gap: 12px; align-items: flex-start; }
+  .eledger-payment-total { font-size: 18px; }
+  .eledger-payment-footer p { font-size: 10px; }
+}
