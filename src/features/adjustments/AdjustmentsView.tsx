@@ -12,13 +12,14 @@ import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, ChevronLeft } from 'lucide-react';
 
 export const AdjustmentsView: React.FC = () => {
   const {
     entries,
     activeRouteId,
     setActiveRouteId,
+    setActiveNavTab,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -84,7 +85,7 @@ export const AdjustmentsView: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+      <div className="eledger-feature-header bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-lg bg-emerald-800 text-white">
@@ -93,14 +94,15 @@ export const AdjustmentsView: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                  Prior Return & Refund Adjustments
+                  <button type="button" className="eledger-route-back" aria-label="Back to dashboard" onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={22}/></button>
+                  {currentRoute.title}
                 </h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                   2 Adjustment Routes
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600">
-                Refund adjustment and separate carry-forward tax adjustment under Section 163
+                {currentRoute.description}
               </p>
             </div>
           </div>
@@ -120,7 +122,7 @@ export const AdjustmentsView: React.FC = () => {
       </div>
 
       {/* 2 Route Tabs */}
-      <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
+      <div className="eledger-route-tabs bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {adjustmentRoutes.map((route) => {
             const count = filterEntriesByRoute(entries, route.id).length;
@@ -151,7 +153,7 @@ export const AdjustmentsView: React.FC = () => {
       </div>
 
       {/* Active Route Banner */}
-      <div className="bg-emerald-950 text-emerald-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-emerald-900">
+      <div className="eledger-route-overview bg-emerald-950 text-emerald-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-emerald-900">
         <div>
           <div className="flex items-center space-x-2">
             <h3 className="text-sm sm:text-base font-bold text-white">

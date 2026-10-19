@@ -56,6 +56,7 @@ import { SYNC_STORAGE_KEY } from '../services/incomeSyncService.ts';
 import { LedgerProvider } from '../context/LedgerContext.tsx';
 import { Header } from '../components/layout/Header.tsx';
 import { DashboardView } from '../features/dashboard/DashboardView.tsx';
+import { Sidebar } from '../components/navigation/Sidebar.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1570,5 +1571,44 @@ describe('eLedger — Phase 8 Historic Claim Evidence Parity', () => {
     assert.match(summary, /Claim evidence \(2 fields\)/);
     assert.match(summary, /CHALLAN/);
     assert.equal(renderToStaticMarkup(React.createElement(ClaimEvidenceSummary, { routeId: 'service-payment' })), '');
+  });
+});
+
+describe('eLedger — Historical UI restoration guardrails', () => {
+  it('renders the reference-style compact left rail, grouped route families, and a contextual light masthead', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(Header), React.createElement(Sidebar)));
+    assert.match(markup, /eledger-header/);
+    assert.match(markup, /NATIONAL BOARD OF REVENUE/);
+    assert.match(markup, /eledger-sidebar/);
+    assert.match(markup, /CLAIM SOURCE TAX/);
+    assert.match(markup, /Salary/);
+    assert.match(markup, /Financial Assets/);
+    assert.match(markup, /Service &amp; Professional/);
+    assert.match(markup, /Trade &amp; Other/);
+    assert.match(markup, /OTHER TAX CREDITS/);
+    assert.match(markup, /eledger-nav-nested|source-category/);
+    assert.match(markup, /AIT Import \(120\)/);
+    assert.match(markup, /Environmental Surcharge/);
+    assert.match(markup, /Carry forward tax u\/s 163/);
+    assert.match(markup, /Tax Payment Status/);
+    assert.match(markup, /Download Local Backup/);
+    assert.doesNotMatch(markup, /bg-emerald-950/);
+    assert.equal(getCurrentRoutesByGroup('Source Tax').length, 10);
+    assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
+  });
+
+  it('uses the archived dashboard hierarchy without replacing verified totals with recorded sums', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(DashboardView)));
+    assert.match(markup, /eledger-welcome/);
+    assert.match(markup, /eledger-summary-cards/);
+    assert.match(markup, /Other Tax Credits/);
+    assert.match(markup, /Verified Tax Credit/);
+    assert.match(markup, /Ledger progress/);
+    assert.match(markup, /Recent ledger activity/);
+    assert.match(markup, /Quick actions/);
+    assert.match(markup, /Only externally confirmed amounts/);
+    assert.doesNotMatch(markup, /18 Functional Routes Directory/);
   });
 });

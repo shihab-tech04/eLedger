@@ -14,13 +14,14 @@ import { InlineEditableTable } from '../../components/tables/InlineEditableTable
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
-import { Car } from 'lucide-react';
+import { Car, ChevronLeft } from 'lucide-react';
 
 export const AitView: React.FC = () => {
   const {
     entries,
     activeRouteId,
     setActiveRouteId,
+    setActiveNavTab,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -111,7 +112,7 @@ export const AitView: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
+      <div className="eledger-feature-header bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-lg bg-emerald-800 text-white">
@@ -120,14 +121,15 @@ export const AitView: React.FC = () => {
             <div>
               <div className="flex items-center space-x-2">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                  Advance Income Tax (AIT)
+                  <button type="button" className="eledger-route-back" aria-label="Back to dashboard" onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={22}/></button>
+                  {currentRoute.title}
                 </h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
                   3 AIT Categories
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-600">
-                Private-car tax, general advance-tax challans and Section 120 import claims
+                {currentRoute.description}
               </p>
             </div>
           </div>
@@ -147,7 +149,7 @@ export const AitView: React.FC = () => {
       </div>
 
       {/* 3 Route Tabs */}
-      <div className="bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
+      <div className="eledger-route-tabs bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
         <div className="flex items-center space-x-2 overflow-x-auto">
           {aitRoutes.map((route) => {
             const count = filterEntriesByRoute(entries, route.id).length;
@@ -178,7 +180,7 @@ export const AitView: React.FC = () => {
       </div>
 
       {/* Active Route Banner */}
-      <div className="bg-emerald-950 text-emerald-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-emerald-900">
+      <div className="eledger-route-overview bg-emerald-950 text-emerald-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-emerald-900">
         <div>
           <div className="flex items-center space-x-2">
             <h3 className="text-sm sm:text-base font-bold text-white">
