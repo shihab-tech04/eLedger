@@ -130,3 +130,12 @@ export function formatCurrencyBDT(amount: number): string {
     maximumFractionDigits: 2,
   })}`;
 }
+
+/** Historical payment-status cells use Indian digit grouping without a currency suffix. */
+export function formatLedgerAmount(amount: number): string {
+  if (!Number.isFinite(amount)) return '0';
+  return amount.toLocaleString('en-IN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}

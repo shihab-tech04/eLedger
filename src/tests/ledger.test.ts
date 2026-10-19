@@ -30,6 +30,7 @@ import {
   filterEntriesByRoute,
   groupEntriesByRoute,
   formatCurrencyBDT,
+  formatLedgerAmount,
 } from '../domain/calculations.ts';
 import {
   validateLedgerEntry,
@@ -61,6 +62,9 @@ import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
+import { PaymentsView } from '../features/payments/PaymentsView.tsx';
+import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
+import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1700,5 +1704,59 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.deepEqual(getClaimEvidenceFields('sec-154').slice(0, 2).map((field) => field.key), [
       'paymentDocumentType', 'documentAmount',
     ]);
+  });
+
+  it('restores the six September payment-status rows and recorded-total footer', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(TaxPaymentStatusModal, { isOpen: true, onClose: () => {} })));
+    assert.match(markup, /Tax Payment Status/);
+    assert.match(markup, /Review all current Ledger tax, AIT and adjustments together/);
+    assert.match(markup, /Payment breakdown/);
+    assert.match(markup, /Expand Source Tax or AIT/);
+    assert.match(markup, /aria-expanded="false"/);
+    assert.match(markup, /Advance Income Tax \(AIT\)/);
+    assert.match(markup, /Tax Paid With Return/);
+    assert.match(markup, /Environmental Surcharge/);
+    assert.match(markup, /Adjustment of Tax Refund/);
+    assert.match(markup, /Adjustment of carry forward tax u\/s 163/);
+    assert.match(markup, /All amounts currently recorded in this Ledger/);
+    assert.match(markup, /Separately authority-verified credit/);
+    assert.match(markup, /eledger-payment-total/);
+    assert.doesNotMatch(markup, /Verified Tax Payments &amp; Deductions|Tax Payment Status &amp; Reconciliation/);
+    assert.doesNotMatch(markup, /eledger-route-overview/);
+    assert.equal(renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(TaxPaymentStatusModal, { isOpen: false, onClose: () => {} }))), '');
+  });
+
+  it('reconciles six payment buckets to the recorded Ledger total without including fake verified credit', () => {
+    const sample = INITIAL_LEDGER_ENTRIES.filter((entry) => entry.assessmentYear === '2026-2027' &&
+      entry.taxpayerTin === DEFAULT_TAXPAYERS[0].tin);
+    const amount = calculateCategoryTotals(sample);
+    const sixBuckets = amount.sourceTaxTotal + amount.aitTotal + amount.taxPaidWithReturnTotal +
+      amount.environmentalSurchargeTotal + amount.refundAdjustmentTotal + amount.carryForward163Total;
+    const recorded = amount.sourceTaxTotal + amount.aitTotal + amount.paymentsTotal + amount.adjustmentsTotal;
+    assert.equal(sixBuckets, recorded);
+    assert.ok(recorded > amount.grandTotalCredits);
+    assert.equal(formatLedgerAmount(150000), '1,50,000');
+    assert.equal(formatLedgerAmount(12.75), '12.75');
+    assert.equal(formatLedgerAmount(Number.NaN), '0');
+  });
+
+  it('restores direct Payment and Adjustment pages without dark concept banners', () => {
+    const payment = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(PaymentsView)));
+    assert.match(payment, /Tax Paid with Return \(173\)/);
+    assert.match(payment, /Total Recorded Payment/);
+    assert.match(payment, /A-Challan reference lookup/);
+    assert.match(payment, /national treasury verification is not connected/);
+    assert.match(payment, /Recorded tax payments/);
+    assert.doesNotMatch(payment, /eledger-route-overview/);
+    const adjustments = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(AdjustmentsView)));
+    assert.match(adjustments, /Adjustment of Tax Refund/);
+    assert.match(adjustments, /Total Recorded Adjustment/);
+    assert.match(adjustments, /Recorded tax adjustments/);
+    assert.match(adjustments, /not government-authorized credits/);
+    assert.doesNotMatch(adjustments, /eledger-route-overview/);
   });
 });
