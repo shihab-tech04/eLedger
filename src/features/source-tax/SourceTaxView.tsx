@@ -11,7 +11,7 @@
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
-import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
+import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
@@ -46,6 +46,7 @@ export const SourceTaxView: React.FC = () => {
     taxDeducted: number;
     date: string;
     remarks?: string;
+    claimEvidence?: ClaimEvidence;
   }) => {
     const res = await addEntry({
       taxpayerTin: taxpayer.tin,
@@ -63,6 +64,7 @@ export const SourceTaxView: React.FC = () => {
       isManual: true,
       externalVerified: false,
       remarks: entryData.remarks,
+      claimEvidence: entryData.claimEvidence,
     });
 
     if (res.success) {
@@ -232,6 +234,7 @@ export const SourceTaxView: React.FC = () => {
 
       {/* Requirement #6: Inline Editable Table with Add Entry inserting row directly inside */}
       <InlineEditableTable
+        key={currentRoute.id}
         entries={routeEntries}
         category="SOURCE_TAX"
         routeId={currentRoute.id}

@@ -9,7 +9,7 @@
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
-import { LedgerRouteId, LedgerEntry } from '../../domain/models.ts';
+import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
@@ -43,6 +43,7 @@ export const AitView: React.FC = () => {
     taxDeducted: number;
     date: string;
     remarks?: string;
+    claimEvidence?: ClaimEvidence;
   }) => {
     const res = await addEntry({
       taxpayerTin: taxpayer.tin,
@@ -60,6 +61,7 @@ export const AitView: React.FC = () => {
       isManual: true,
       externalVerified: false,
       remarks: entryData.remarks,
+      claimEvidence: entryData.claimEvidence,
     });
 
     if (res.success) {
@@ -210,6 +212,7 @@ export const AitView: React.FC = () => {
 
       {/* Inline Editable Table (Requirement #6) */}
       <InlineEditableTable
+        key={currentRoute.id}
         entries={routeEntries}
         category="AIT"
         routeId={currentRoute.id}

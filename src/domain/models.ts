@@ -64,6 +64,27 @@ export type VerificationStatus =
   | 'DISPUTED'
   | 'SYNCED';
 
+/**
+ * Route-specific claim document metadata. This is an evidence *description*,
+ * not an uploaded government document or a verification attestation.
+ * Old entries without this field remain readable and editable.
+ */
+export interface ClaimEvidence {
+  paymentDocumentType?: 'CHALLAN' | 'CERTIFICATE' | 'OTHER';
+  depositingAuthority?: string;
+  documentAmount?: number;
+  paymentMode?: string;
+  bankName?: string;
+  branchName?: string;
+  taxZone?: string;
+  taxCircle?: string;
+  paymentPurpose?: string;
+  savingsScheme?: string;
+  savingsRegistration?: string;
+  savingsIssueDate?: string;
+  attachmentFileName?: string;
+}
+
 export interface LedgerEntry {
   id: string;
   taxpayerTin: string;
@@ -83,6 +104,7 @@ export interface LedgerEntry {
   // Reserved for future server-attested verification. Never set by local adapters.
   verificationAuthority?: 'AUTHORITATIVE';
   remarks?: string;
+  claimEvidence?: ClaimEvidence;
   createdAt: string;
   updatedAt: string;
 }
