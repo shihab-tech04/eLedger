@@ -1,356 +1,150 @@
-/**
- * Dashboard View (Landing Page)
- * Central Hub of NBR eReturn Ledger
- */
-
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { CURRENT_ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
-import { formatCurrencyBDT, groupEntriesByRoute } from '../../domain/calculations.ts';
-import { LedgerRouteId } from '../../domain/models.ts';
+import type { LedgerRouteId } from '../../domain/models.ts';
 import {
-  Receipt,
-  Car,
-  CreditCard,
-  SlidersHorizontal,
-  FileCheck2,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
+  ArrowRight, BookOpen, CheckCircle2, ChevronRight, CircleAlert,
+  FileCheck2, FileText, Landmark, ReceiptText, ShieldCheck, WalletCards,
 } from 'lucide-react';
 
+const amount = (value: number) => `৳ ${value.toLocaleString('en-IN', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})}`;
+
 export const DashboardView: React.FC = () => {
-  const {
-    taxpayer,
-    assessmentYear,
-    totals,
-    entries,
-    setActiveNavTab,
-    setActiveRouteId,
-    setIsStatusModalOpen,
-  } = useLedger();
+  const { taxpayer, assessmentYear, entries, totals, setActiveNavTab,
+    setActiveRouteId, setIsStatusModalOpen } = useLedger();
 
-  const grouped = groupEntriesByRoute(entries);
-  const confirmedRoutes = CURRENT_ROUTE_REGISTRY.filter((route) => route.status === 'CONFIRMED').length;
-  const provisionalRoutes = CURRENT_ROUTE_REGISTRY.length - confirmedRoutes;
+  const recordedRoutes = new Set(entries.map((entry) => entry.routeId));
+  const visibleRoutes = CURRENT_ROUTE_REGISTRY.filter((route) => route.group !== 'Tax Payment Status');
+  const usedRoutes = visibleRoutes.filter((route) => recordedRoutes.has(route.id)).length;
+  const progressPercent = Math.round((usedRoutes / visibleRoutes.length) * 100);
+  const pendingEntries = entries.filter((entry) => !(
+    entry.status === 'VERIFIED' && entry.externalVerified &&
+    entry.verificationAuthority === 'AUTHORITATIVE' && !entry.isManual
+  ));
 
-  const navigateToRoute = (routeId: LedgerRouteId, group: string) => {
+  const goToRoute = (routeId: LedgerRouteId, group: string) => {
     setActiveRouteId(routeId);
     if (group === 'Source Tax') setActiveNavTab('source-tax');
     else if (group === 'AIT') setActiveNavTab('ait');
     else if (group === 'Payment') setActiveNavTab('payments');
     else if (group === 'Adjustment') setActiveNavTab('adjustments');
-    else if (group === 'Tax Payment Status') setIsStatusModalOpen(true);
+    else setIsStatusModalOpen(true);
   };
 
+  const cards = [
+    { id: 'source', label: 'Source Tax', value: totals.sourceTaxTotal, count: totals.sourceTaxCount,
+      caption: 'recorded claims', className: 'source', icon: ReceiptText, action: () => setActiveNavTab('source-tax') },
+    { id: 'ait', label: 'Advance Income Tax (AIT)', value: totals.aitTotal, count: totals.aitCount,
+      caption: 'recorded claims', className: 'ait', icon: FileText, action: () => setActiveNavTab('ait') },
+    { id: 'other', label: 'Other Tax Credits', value: totals.paymentsTotal + totals.adjustmentsTotal,
+      count: totals.paymentsCount + totals.adjustmentsCount, caption: 'recorded payments and adjustments',
+      className: 'payment', icon: WalletCards, action: () => setActiveNavTab('payments') },
+    { id: 'verified', label: 'Verified Tax Credit', value: totals.grandTotalCredits,
+      count: entries.length - pendingEntries.length, caption: 'externally confirmed records',
+      className: 'verified', icon: ShieldCheck, action: () => setIsStatusModalOpen(true) },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Welcome & Ecosystem Context Banner */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                Taxpayer Ledger Dashboard
-              </h2>
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                Active Return Cycle
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-600">
-              Taxpayer: <strong className="text-slate-800">{taxpayer.name}</strong> (TIN: <span className="font-mono">{taxpayer.tin}</span>) • {taxpayer.circle}, {taxpayer.taxesZone}
-            </p>
-            <p className="text-xs text-slate-500">
-              System Journey: <strong>eReturn → Tax & Payment → Update Tax Payment Status → eLedger → Tax Payment Status → eReturn</strong>
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setIsStatusModalOpen(true)}
-              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs sm:text-sm font-semibold shadow-sm transition-colors"
-            >
-              <FileCheck2 className="w-4 h-4" />
-              <span>Review Tax Payment Status</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 4 Core Summary Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Source Tax */}
-        <div
-          onClick={() => setActiveNavTab('source-tax')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('source-tax'); } }}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Source Tax (TDS)
-            </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100 transition-colors">
-              <Receipt className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-900">
-              {formatCurrencyBDT(totals.sourceTaxTotal)}
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-              <span>{totals.sourceTaxCount} recorded claims</span>
-              <span className="font-medium text-emerald-700 group-hover:underline flex items-center">
-                Manage <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Advance Income Tax (AIT) */}
-        <div
-          onClick={() => setActiveNavTab('ait')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('ait'); } }}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Advance Tax (AIT)
-            </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100 transition-colors">
-              <Car className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-900">
-              {formatCurrencyBDT(totals.aitTotal)}
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-              <span>{totals.aitCount} recorded claims</span>
-              <span className="font-medium text-emerald-700 group-hover:underline flex items-center">
-                Manage <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Payments */}
-        <div
-          onClick={() => setActiveNavTab('payments')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('payments'); } }}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Tax Payments
-            </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100 transition-colors">
-              <CreditCard className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-900">
-              {formatCurrencyBDT(totals.paymentsTotal)}
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-              <span>{totals.paymentsCount} treasury challans</span>
-              <span className="font-medium text-emerald-700 group-hover:underline flex items-center">
-                Manage <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Adjustments */}
-        <div
-          onClick={() => setActiveNavTab('adjustments')}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('adjustments'); } }}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Adjustments
-            </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 group-hover:bg-emerald-100 transition-colors">
-              <SlidersHorizontal className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <div className="text-xl sm:text-2xl font-bold font-mono text-emerald-900">
-              {formatCurrencyBDT(totals.adjustmentsTotal)}
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-500 mt-1">
-              <span>{totals.adjustmentsCount} prior adjustments</span>
-              <span className="font-medium text-emerald-700 group-hover:underline flex items-center">
-                Manage <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Grand Total Credit Bar */}
-      <div className="bg-slate-900 text-white rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm border border-slate-800">
+    <div className="eledger-dashboard">
+      <div className="eledger-breadcrumb"><span>Dashboard</span></div>
+      <section className="eledger-welcome">
         <div>
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold block">
-            Verified Tax Payments & Deductions (AY {assessmentYear})
-          </span>
-          <p className="text-xs text-slate-300 mt-0.5">
-            Recorded and pending entries are excluded until external verification is confirmed.
-          </p>
+          <span className="eledger-eyebrow">Welcome to</span>
+          <h1>eReturn Ledger</h1>
+          <p>Review, claim and reconcile your tax payments and credits for Assessment Year {assessmentYear}.</p>
+          <div className="eledger-context-line"><Landmark size={15}/><span>{taxpayer.name} · TIN {taxpayer.tin}</span></div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="text-right">
-            <span className="text-2xl sm:text-3xl font-bold font-mono text-emerald-400">
-              {formatCurrencyBDT(totals.grandTotalCredits)}
-            </span>
-            <span className="text-[11px] text-slate-400 block">
-              {totals.totalRecordsCount} total ledger items
-            </span>
-          </div>
-          <button
-            onClick={() => setIsStatusModalOpen(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors"
-          >
-            Reconcile
-          </button>
+        <div className="eledger-hero-art" aria-hidden="true">
+          <div className="eledger-hero-document"><FileText size={48}/><div className="eledger-hero-lines"><i/><i/><i/></div></div>
+          <div className="eledger-hero-check"><ShieldCheck size={35}/></div>
         </div>
-      </div>
+      </section>
 
-      {/* 18 Functional Routes Inventory & Status Matrix */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-200">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">
-              18 Functional Routes Directory & Ledger Inventory
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Source Tax (10) • AIT (3) • Payments (2) • Adjustments (2) • Reconciliation (1)
-            </p>
-          </div>
-          <div className="flex items-center space-x-2 text-xs">
-            <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
-              Confirmed ({confirmedRoutes})
-            </span>
-            {provisionalRoutes > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-medium border border-amber-200">
-              Provisional ({provisionalRoutes})
-            </span>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-          {CURRENT_ROUTE_REGISTRY.map((route) => {
-            const data = grouped[route.id];
-            const count = data ? data.entries.length : 0;
-            const amount = data ? data.totalTax : 0;
-
-            return (
-              <div
-                key={route.id}
-                onClick={() => navigateToRoute(route.id, route.group)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigateToRoute(route.id, route.group); } }}
-                className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
-                    <span className="font-semibold text-emerald-800">{route.group}</span>
-                    <span className="font-mono text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">
-                      {route.statutorySection}
-                    </span>
-                  </div>
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-800">
-                    {route.title}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                    {route.description}
-                  </p>
-                </div>
-
-                <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">
-                    {count} {count === 1 ? 'entry' : 'entries'}
-                  </span>
-                  <span className={`font-mono ${count > 0 ? 'font-bold text-emerald-800' : 'text-slate-400'}`}>
-                    {formatCurrencyBDT(amount)}
-                  </span>
-                </div>
+      <section className="eledger-summary-cards" aria-label="Tax records summary">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.id} role="button" tabIndex={0} onClick={card.action}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); card.action(); }
+              }} className={`eledger-summary-card ${card.className}`}>
+              <div className="eledger-summary-symbol"><Icon size={25}/></div>
+              <div className="eledger-summary-details"><span className="eledger-card-label">{card.label}</span>
+                <strong>{amount(card.value)}</strong>
+                <span>{card.count} {card.caption}</span>
               </div>
-            );
-          })}
-        </div>
+              <ChevronRight className="eledger-summary-arrow" size={18}/>
+            </div>
+          );
+        })}
+      </section>
+
+      <div className="eledger-dashboard-grid">
+        <section className="eledger-dashboard-panel eledger-progress-panel">
+          <div className="eledger-panel-heading"><h2>Ledger progress</h2><span>{visibleRoutes.length} categories</span></div>
+          <div className="eledger-progress-body">
+            <div className="eledger-progress-ring" style={{ '--progress': `${progressPercent}%` } as React.CSSProperties}>
+              <div><strong>{usedRoutes} of {visibleRoutes.length}</strong><span>Categories with records</span></div>
+            </div>
+            <div className="eledger-progress-legend">
+              <div><span className="eledger-dot has-records"/>With records <strong>{usedRoutes}</strong></div>
+              <div><span className="eledger-dot empty"/>No records yet <strong>{visibleRoutes.length - usedRoutes}</strong></div>
+              <button type="button" onClick={() => setActiveNavTab('source-tax')}>View source tax categories <ArrowRight size={16}/></button>
+            </div>
+          </div>
+        </section>
+
+        <section className="eledger-dashboard-panel eledger-actions-panel">
+          <div className="eledger-panel-heading"><h2>Items needing attention</h2><span className="eledger-count-badge">{pendingEntries.length}</span></div>
+          {pendingEntries.length === 0 ? (
+            <div className="eledger-empty-attention"><CheckCircle2 size={23}/><div><strong>No pending records</strong><span>Newly entered claims appear here until independently verified.</span></div></div>
+          ) : (
+            <div className="eledger-attention-list">
+              {pendingEntries.slice(0, 4).map((entry) => {
+                const route = CURRENT_ROUTE_REGISTRY.find((item) => item.id === entry.routeId);
+                return <button type="button" key={entry.id} onClick={() => goToRoute(entry.routeId, route?.group ?? 'Source Tax')}>
+                  <span className="eledger-attention-icon"><CircleAlert size={19}/></span>
+                  <span className="eledger-attention-copy"><strong>{route?.title ?? entry.routeId}</strong><small>{entry.referenceNo} · {entry.status.replaceAll('_', ' ')}</small></span>
+                  <ChevronRight size={17}/>
+                </button>;
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="eledger-dashboard-panel eledger-activity-panel">
+          <div className="eledger-panel-heading"><h2>Recent ledger activity</h2><span>{entries.length} records</span></div>
+          {entries.length === 0 ? (
+            <div className="eledger-empty-activity">No ledger entries have been recorded for this taxpayer and assessment year.</div>
+          ) : (
+            <div className="eledger-activity-scroll"><table>
+              <thead><tr><th>Date</th><th>Reference</th><th>Category</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>{[...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6).map((entry) => (
+                <tr key={entry.id}><td>{entry.date}</td><td>{entry.referenceNo}</td>
+                  <td>{CURRENT_ROUTE_REGISTRY.find((item) => item.id === entry.routeId)?.title ?? entry.category}</td>
+                  <td>{amount(entry.taxDeducted)}</td><td><span className="eledger-record-status">{entry.status.replaceAll('_', ' ')}</span></td></tr>
+              ))}</tbody>
+            </table></div>
+          )}
+        </section>
+
+        <section className="eledger-dashboard-panel eledger-quick-panel">
+          <div className="eledger-panel-heading"><h2>Quick actions</h2></div>
+          <div className="eledger-quick-grid">
+            <button type="button" onClick={() => setActiveNavTab('source-tax')}><ReceiptText size={24}/><span><strong>Claim Source Tax</strong><small>Review deductions and income records</small></span></button>
+            <button type="button" onClick={() => setActiveNavTab('ait')}><FileCheck2 size={24}/><span><strong>Claim Advance Tax</strong><small>Vehicle, challan and import claims</small></span></button>
+            <button type="button" onClick={() => setIsStatusModalOpen(true)}><ShieldCheck size={24}/><span><strong>Tax Payment Status</strong><small>Review reconciled credits</small></span></button>
+            <button type="button" onClick={() => setActiveNavTab('ledger-guide')}><BookOpen size={24}/><span><strong>Ledger Guide</strong><small>How the ledger categories work</small></span></button>
+          </div>
+        </section>
       </div>
 
-      {/* Recent Ledger Entries Table Summary */}
-      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-          <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-700" />
-            <h3 className="text-sm font-bold text-slate-900">
-              Active Ledger Transactions for {assessmentYear} ({entries.length} items)
-            </h3>
-          </div>
-          <span className="text-xs text-slate-500">
-            Isolated to TIN {taxpayer.tin}
-          </span>
-        </div>
-
-        {entries.length === 0 ? (
-          <p className="text-xs text-slate-400 py-6 text-center">
-            No ledger transactions recorded yet for this assessment year.
-          </p>
-        ) : (
-          <div className="overflow-x-auto mt-3">
-            <table className="w-full text-left text-xs text-slate-700">
-              <thead className="bg-slate-100 text-slate-600 uppercase text-[10px] font-semibold">
-                <tr>
-                  <th className="px-3 py-2">Reference</th>
-                  <th className="px-3 py-2">Entity</th>
-                  <th className="px-3 py-2">Category</th>
-                  <th className="px-3 py-2 text-right">Tax Credit (৳)</th>
-                  <th className="px-3 py-2">Date</th>
-                  <th className="px-3 py-2 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {entries.slice(0, 6).map((entry) => (
-                  <tr key={entry.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 font-mono font-medium text-slate-900">
-                      {entry.referenceNo}
-                    </td>
-                    <td className="px-3 py-2 text-slate-700 truncate max-w-xs">
-                      {entry.sourceEntity}
-                    </td>
-                    <td className="px-3 py-2 text-slate-500 text-[11px]">
-                      {entry.category.replace('_', ' ')}
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono font-semibold text-emerald-800">
-                      {formatCurrencyBDT(entry.taxDeducted)}
-                    </td>
-                    <td className="px-3 py-2 text-slate-500">{entry.date}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        {entry.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <div className="eledger-info-bar"><CircleAlert size={19}/><span>
+        Only externally confirmed amounts are included in verified tax credits. Current verified amount: <strong>{amount(totals.grandTotalCredits)}</strong>.
+      </span><button type="button" onClick={() => setIsStatusModalOpen(true)}>View breakdown <ArrowRight size={16}/></button></div>
     </div>
   );
 };
