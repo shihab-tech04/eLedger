@@ -15,9 +15,11 @@ import { AitView } from './features/ait/AitView.tsx';
 import { PaymentsView } from './features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from './features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from './components/modals/TaxPaymentStatusModal.tsx';
-import { LanguageProvider } from './context/LanguageContext.tsx';
+import { LanguageProvider, useLedgerCopy, useLedgerLanguage } from './context/LanguageContext.tsx';
 
 const AppContent: React.FC = () => {
+  const t = useLedgerCopy();
+  const { language } = useLedgerLanguage();
   const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen, loadError } = useLedger();
   // Discard unsaved form/lookup state when the route or taxpayer context changes.
   const workflowKey = `${taxpayer.tin}:${assessmentYear}:${activeRouteId}`;
@@ -49,14 +51,13 @@ const AppContent: React.FC = () => {
         <div className="eledger-stage">
           {loadError && (
             <div role="alert" className="eledger-load-error">
-              <strong>Saved ledger unavailable.</strong> {loadError} No saved records were overwritten.
-              Use Download Local Backup in the header to preserve original browser data before recovery.
+              <strong>{t('Saved ledger unavailable.','সংরক্ষিত লেজার পাওয়া যাচ্ছে না।')}</strong> {loadError} {t('No saved records were overwritten. Use Download Local Backup in the header to preserve original browser data before recovery.','কোনো সংরক্ষিত রেকর্ড পরিবর্তন হয়নি। পুনরুদ্ধারের আগে হেডারের স্থানীয় ব্যাকআপ ডাউনলোড ব্যবহার করুন।')}
             </div>
           )}
-          <main className="eledger-main">{renderActiveView()}</main>
+          <main className="eledger-main" lang={language}>{renderActiveView()}</main>
           <footer className="eledger-footer">
-            <span>National Board of Revenue • eReturn Ledger</span>
-            <span>Assessment year: {assessmentYear}</span>
+            <span>{t('National Board of Revenue • eReturn Ledger','জাতীয় রাজস্ব বোর্ড • ই-রিটার্ন লেজার')}</span>
+            <span>{t('Assessment year:','করবর্ষ:')} {assessmentYear}</span>
           </footer>
         </div>
       </div>

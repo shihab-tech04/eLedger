@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
+import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { LedgerRouteId, RouteRegistryEntry } from '../../domain/models.ts';
 import { ArrowRight, BookOpen, CarFront, ChevronRight, FileCheck2, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react';
@@ -29,6 +30,9 @@ const routeName = (route: RouteRegistryEntry) => dashboardTitles[route.id] ?? ro
 
 export const DashboardView: React.FC = () => {
   const { entries, totals, setActiveNavTab, setActiveRouteId, setIsStatusModalOpen } = useLedger();
+  const t = useLedgerCopy();
+  const { language } = useLedgerLanguage();
+  const name = (route: RouteRegistryEntry) => language === 'bn' ? route.bengaliTitle : routeName(route);
   const recordedRouteIds = entries.map((entry) => entry.routeId);
   const sourceRoutes = getVisibleRoutesByGroup('Source Tax', recordedRouteIds);
   const aitRoutes = getVisibleRoutesByGroup('AIT', recordedRouteIds);
@@ -64,13 +68,13 @@ export const DashboardView: React.FC = () => {
   };
 
   const cards = [
-    { id: 'source', label: 'Source Tax', value: sourceTotal, count: `${sourceRoutes.length} categories`,
-      caption: `${sourcePct.toFixed(1)}% of Ledger total`, icon: ReceiptText, action: () => setActiveNavTab('source-tax') },
-    { id: 'ait', label: 'Advance Income Tax (AIT)', value: aitTotal, count: `${aitRoutes.length} categories`,
-      caption: `${aitPct.toFixed(1)}% of Ledger total`, icon: CarFront, action: () => setActiveNavTab('ait') },
-    { id: 'other', label: 'Other Tax & Adjustments', value: otherTotal, count: `${otherRoutes.length} categories`,
-      caption: `${otherPct.toFixed(1)}% of Ledger total`, icon: ShieldCheck, action: () => setActiveNavTab('payments') },
-    { id: 'total', label: 'Ledger Total', value: ledgerTotal, count: 'Current Ledger data',
+    { id: 'source', label: t('Source Tax','উৎস কর'), value: sourceTotal, count: `${sourceRoutes.length} ${t('categories','খাত')}`,
+      caption: `${sourcePct.toFixed(1)}% ${t('of Ledger total','লেজার মোটের')}`, icon: ReceiptText, action: () => setActiveNavTab('source-tax') },
+    { id: 'ait', label: t('Advance Income Tax (AIT)','অগ্রিম আয়কর (AIT)'), value: aitTotal, count: `${aitRoutes.length} ${t('categories','খাত')}`,
+      caption: `${aitPct.toFixed(1)}% ${t('of Ledger total','লেজার মোটের')}`, icon: CarFront, action: () => setActiveNavTab('ait') },
+    { id: 'other', label: t('Other Tax & Adjustments','অন্যান্য কর ও সমন্বয়'), value: otherTotal, count: `${otherRoutes.length} ${t('categories','খাত')}`,
+      caption: `${otherPct.toFixed(1)}% ${t('of Ledger total','লেজার মোটের')}`, icon: ShieldCheck, action: () => setActiveNavTab('payments') },
+    { id: 'total', label: t('Ledger Total','লেজারে মোট'), value: ledgerTotal, count: t('Current Ledger data','বর্তমান লেজারের তথ্য'),
       caption: '', icon: FileCheck2, action: () => setIsStatusModalOpen(true) },
   ];
 
@@ -78,16 +82,16 @@ export const DashboardView: React.FC = () => {
     <section className={`eledger-category-panel eledger-category-${key}`} aria-label={title}>
       <header className="eledger-category-heading">
         <div><h2>{title}</h2><p>{subtitle}</p></div>
-        <div className="eledger-category-heading-total"><strong>{amount(total)}</strong><small>{routes.length} categories</small></div>
+        <div className="eledger-category-heading-total"><strong>{amount(total)}</strong><small>{routes.length} {t('categories','খাত')}</small></div>
       </header>
       <div className="eledger-category-list">
         {routes.map((route) => {
           const value = routeAmounts.get(route.id) ?? 0;
           return (
             <button type="button" key={route.id} onClick={() => goToRoute(route)}
-              aria-label={`Open ${routeName(route)}: ${amount(value)}`}>
-              <span className="eledger-category-name">{routeName(route)}{value === 0 && key === 'ait' &&
-                <small>No amount currently recorded</small>}</span>
+              aria-label={`${t('Open','খুলুন')} ${name(route)}: ${amount(value)}`}>
+              <span className="eledger-category-name">{name(route)}{value === 0 && key === 'ait' &&
+                <small>{t('No amount currently recorded','এখনো কোনো অঙ্ক রেকর্ড হয়নি')}</small>}</span>
               <strong className={value === 0 ? 'is-empty' : ''}>{amount(value)}</strong>
               <ArrowRight size={15} aria-hidden="true"/>
             </button>
@@ -102,15 +106,15 @@ export const DashboardView: React.FC = () => {
       <header className="eledger-dashboard-heading">
         <div>
           <span className="eledger-dashboard-eyebrow">ERETURN LEDGER</span>
-          <h1>Dashboard</h1>
-          <p>See the current Ledger tax, AIT, adjustments and total amount at a glance.</p>
+          <h1>{t('Dashboard','ড্যাশবোর্ড')}</h1>
+          <p>{t('See the current Ledger tax, AIT, adjustments and total amount at a glance.','বর্তমান লেজারে উৎস কর, অগ্রিম কর, সমন্বয় ও মোট অঙ্ক একনজরে দেখুন।')}</p>
         </div>
         <button type="button" className="eledger-dashboard-status-button" onClick={() => setIsStatusModalOpen(true)}>
-          <FileCheck2 size={16} aria-hidden="true"/>View Tax Payment Status
+          <FileCheck2 size={16} aria-hidden="true"/>{t('View Tax Payment Status','কর পরিশোধের অবস্থা দেখুন')}
         </button>
       </header>
 
-      <section className="eledger-summary-cards" aria-label="Tax records summary">
+      <section className="eledger-summary-cards" aria-label={t('Tax records summary','কর রেকর্ডের সারাংশ')}>
         {cards.map((card) => {
           const Icon = card.icon;
           return (
@@ -127,64 +131,64 @@ export const DashboardView: React.FC = () => {
         })}
       </section>
 
-      <section className="eledger-ledger-composition" aria-label="Ledger composition">
+      <section className="eledger-ledger-composition" aria-label={t('Ledger composition','লেজারের বিন্যাস')}>
         <div className="eledger-composition-heading">
-          <div><h2>Ledger composition</h2>
-            <p>{recordedCategories} of {allRoutes.length} categories currently have an amount recorded.</p>
+          <div><h2>{t('Ledger composition','লেজারের বিন্যাস')}</h2>
+            <p>{language === 'bn' ? `${allRoutes.length}টি খাতের মধ্যে ${recordedCategories}টিতে অঙ্ক রেকর্ড আছে।` : `${recordedCategories} of ${allRoutes.length} categories currently have an amount recorded.`}</p>
           </div>
           {emptyRoutes.length > 0 && <button type="button" onClick={() => goToRoute(emptyRoutes[0])}>
-            {emptyRoutes.length} {emptyRoutes.length === 1 ? 'category has' : 'categories have'} no amount
+            {language === 'bn' ? `${emptyRoutes.length}টি খাতে কোনো অঙ্ক নেই` : `${emptyRoutes.length} ${emptyRoutes.length === 1 ? 'category has' : 'categories have'} no amount`}
             <ArrowRight size={15} aria-hidden="true"/>
           </button>}
         </div>
         <svg className="eledger-composition-bar" viewBox="0 0 100 10" preserveAspectRatio="none" role="img"
-          aria-label={`Source Tax ${sourcePct.toFixed(1)}%, AIT ${aitPct.toFixed(1)}%, other tax and adjustments ${otherPct.toFixed(1)}%`}>
+          aria-label={`${t('Source Tax','উৎস কর')} ${sourcePct.toFixed(1)}%, AIT ${aitPct.toFixed(1)}%, ${t('other tax and adjustments','অন্যান্য কর ও সমন্বয়')} ${otherPct.toFixed(1)}%`}>
           <rect className="eledger-bar-empty" x="0" y="0" width="100" height="10"/>
           <rect className="eledger-bar-source" x="0" y="0" width={sourcePct} height="10"/>
           <rect className="eledger-bar-ait" x={sourcePct} y="0" width={aitPct} height="10"/>
           <rect className="eledger-bar-other" x={sourcePct + aitPct} y="0" width={otherPct} height="10"/>
         </svg>
         <div className="eledger-composition-legend">
-          <div><span className="eledger-composition-dot source"/>Source Tax <strong>{sourcePct.toFixed(1)}%</strong></div>
+          <div><span className="eledger-composition-dot source"/>{t('Source Tax','উৎস কর')} <strong>{sourcePct.toFixed(1)}%</strong></div>
           <div><span className="eledger-composition-dot ait"/>AIT <strong>{aitPct.toFixed(1)}%</strong></div>
-          <div><span className="eledger-composition-dot other"/>Other tax &amp; adjustments <strong>{otherPct.toFixed(1)}%</strong></div>
+          <div><span className="eledger-composition-dot other"/>{t('Other tax & adjustments','অন্যান্য কর ও সমন্বয়')} <strong>{otherPct.toFixed(1)}%</strong></div>
         </div>
       </section>
 
       <div className="eledger-dashboard-columns">
-        {categoryPanel('Source Tax categories', 'Current claimed amount for each source-tax category.', sourceRoutes, sourceTotal, 'source')}
+        {categoryPanel(t('Source Tax categories','উৎস করের খাতসমূহ'), t('Current claimed amount for each source-tax category.','প্রতিটি উৎস কর খাতে বর্তমান দাবিকৃত অঙ্ক।'), sourceRoutes, sourceTotal, 'source')}
         <div className="eledger-dashboard-middle">
-          {categoryPanel('AIT categories', 'Current AIT amounts by available category.', aitRoutes, aitTotal, 'ait')}
-          {categoryPanel('Other tax & adjustments', 'Tax paid with return, surcharge and adjustments.', otherRoutes, otherTotal, 'other')}
+          {categoryPanel(t('AIT categories','অগ্রিম করের খাতসমূহ'), t('Current AIT amounts by available category.','প্রতিটি অগ্রিম কর খাতে বর্তমান অঙ্ক।'), aitRoutes, aitTotal, 'ait')}
+          {categoryPanel(t('Other tax & adjustments','অন্যান্য কর ও সমন্বয়'), t('Tax paid with return, surcharge and adjustments.','রিটার্নের সঙ্গে প্রদত্ত কর, সারচার্জ ও সমন্বয়।'), otherRoutes, otherTotal, 'other')}
         </div>
         <aside className="eledger-dashboard-aside">
           <section className="eledger-dashboard-quick-actions">
-            <header><h2>Quick actions</h2><span>LEDGER</span></header>
+            <header><h2>{t('Quick actions','দ্রুত কাজ')}</h2><span>LEDGER</span></header>
             <div className="eledger-dashboard-action-list">
               <button type="button" className="is-featured" onClick={() => setIsStatusModalOpen(true)}>
-                <span><strong>Review Tax Payment Status</strong><small>Review all tax and adjustments together</small></span><FileCheck2 size={16}/>
+                <span><strong>{t('Review Tax Payment Status','কর পরিশোধের অবস্থা দেখুন')}</strong><small>{t('Review all tax and adjustments together','সব কর ও সমন্বয় একসঙ্গে দেখুন')}</small></span><FileCheck2 size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('source-tax')}>
-                <span><strong>Update Source Tax</strong><small>Start with Salary (iBAS++)</small></span><ArrowRight size={16}/>
+                <span><strong>{t('Update Source Tax','উৎস কর হালনাগাদ করুন')}</strong><small>{t('Start with Salary (iBAS++)','বেতন (iBAS++) থেকে শুরু করুন')}</small></span><ArrowRight size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('ait')}>
-                <span><strong>Update AIT</strong><small>Start with AIT on Car</small></span><ArrowRight size={16}/>
+                <span><strong>{t('Update AIT','অগ্রিম কর হালনাগাদ করুন')}</strong><small>{t('Start with AIT on Car','গাড়ির অগ্রিম কর দিয়ে শুরু করুন')}</small></span><ArrowRight size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('ledger-guide')}>
-                <span className="eledger-action-with-icon"><BookOpen size={16}/><strong>Ledger Guide</strong></span><ArrowRight size={16}/>
+                <span className="eledger-action-with-icon"><BookOpen size={16}/><strong>{t('Ledger Guide','লেজার নির্দেশিকা')}</strong></span><ArrowRight size={16}/>
               </button>
             </div>
           </section>
           <div className="eledger-dashboard-next-step">
-            <span>NEXT STEP</span>
-            <p>Review your recorded categories and reconcile their payment status before returning.</p>
-            <button type="button" onClick={() => setIsStatusModalOpen(true)}>Open payment status <ChevronRight size={15}/></button>
+            <span>{t('NEXT STEP','পরবর্তী ধাপ')}</span>
+            <p>{t('Review your recorded categories and reconcile their payment status before returning.','রিটার্নে ফেরার আগে সব রেকর্ডকৃত খাত ও কর পরিশোধের অবস্থা মিলিয়ে নিন।')}</p>
+            <button type="button" onClick={() => setIsStatusModalOpen(true)}>{t('Open payment status','কর পরিশোধের অবস্থা খুলুন')} <ChevronRight size={15}/></button>
           </div>
         </aside>
       </div>
       <div className="eledger-dashboard-verification-note">
         <WalletCards size={16} aria-hidden="true"/>
-        Recorded ledger amounts are not necessarily verified credits. Independently authorized verified credit:
+        {t('Recorded ledger amounts are not necessarily verified credits. Independently authorized verified credit:','রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়। কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত ক্রেডিট:')}
         <strong>৳ {amount(totals.grandTotalCredits)}</strong>.
       </div>
     </div>

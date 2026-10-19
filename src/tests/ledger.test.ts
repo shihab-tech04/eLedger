@@ -58,6 +58,7 @@ import { LedgerProvider } from '../context/LedgerContext.tsx';
 import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { Header } from '../components/layout/Header.tsx';
 import { DashboardView } from '../features/dashboard/DashboardView.tsx';
+import { LedgerGuideView } from '../features/ledger-guide/LedgerGuideView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
@@ -1758,5 +1759,51 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(adjustments, /Recorded tax adjustments/);
     assert.match(adjustments, /not government-authorized credits/);
     assert.doesNotMatch(adjustments, /eledger-route-overview/);
+  });
+
+  it('restores the September Ledger Guide article and protects against fictitious online confirmation', () => {
+    const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(LedgerGuideView)));
+    assert.match(html, /eledger-guide-heading/);
+    assert.match(html, /eReturn LEDGER/);
+    assert.match(html, /between 1 July 2025 to 30 June 2026/);
+    assert.match(html, /Search Option/);
+    assert.match(html, /You may want to know/);
+    assert.match(html, /eledger-guide-info/);
+    assert.match(html, /no live government verification connection/);
+    assert.doesNotMatch(html, /Reusable Workflow Architecture|bg-slate-900/);
+  });
+
+  it('switches core document screens to Bengali without changing recorded amounts', () => {
+    const renderBn = (...children: React.ReactNode[]) => renderToStaticMarkup(React.createElement(
+      LanguageProvider, { initialLanguage: 'bn' }, React.createElement(LedgerProvider, null, ...children)));
+    const guide = renderBn(React.createElement(LedgerGuideView));
+    assert.match(guide, /১ জুলাই 2025 থেকে ৩০ জুন 2026/);
+    assert.match(guide, /আপনি জেনে রাখতে পারেন/);
+    const dashboard = renderBn(React.createElement(DashboardView));
+    assert.match(dashboard, /লেজারের বিন্যাস/);
+    assert.match(dashboard, /রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়/);
+    const status = renderBn(React.createElement(TaxPaymentStatusModal, { isOpen: true, onClose: () => {} }));
+    assert.match(status, /কর পরিশোধের বিস্তারিত/);
+    assert.match(status, /ধারা ১৬৩ অনুসারে পূর্ববর্তী কর সমন্বয়/);
+    assert.match(status, /কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত ক্রেডিট/);
+    const salary = renderBn(React.createElement(SalaryOthersTable, { entries: [], defaultSection: 'Sec 86',
+      onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true }));
+    assert.match(salary, /জমাদানকারী কর্তৃপক্ষ/);
+    assert.match(salary, /নতুন যোগ করুন/);
+  });
+
+  it('localizes all route headings and supplies keyboard-friendly labels to reconciliation and carry-forward forms', () => {
+    const renderBn = (component: React.ReactElement) => renderToStaticMarkup(React.createElement(
+      LanguageProvider, { initialLanguage: 'bn' }, React.createElement(LedgerProvider, null, component)));
+    assert.match(renderBn(React.createElement(SourceTaxView)), /বেতন ও আইবাস\+\+ উৎস কর/);
+    assert.match(renderBn(React.createElement(AitView)), /ব্যক্তিগত গাড়ির অগ্রিম কর/);
+    assert.match(renderBn(React.createElement(PaymentsView)), /ধারা ১৭৩ এর অধীনে নিয়মিত কর/);
+    assert.match(renderBn(React.createElement(AdjustmentsView)), /ফেরত সমন্বয়/);
+    const dialog = renderBn(React.createElement(TaxPaymentStatusModal, { isOpen: true, onClose: () => {} }));
+    assert.match(dialog, /aria-modal="true"/);
+    assert.match(dialog, /lang="bn"/);
+    assert.match(dialog, /aria-expanded="false"/);
   });
 });

@@ -394,6 +394,29 @@ button, select, input { font: inherit; }
 }
 
 /* September 20 custom eLedger Tax Payment Status — six rows, light sheet, recorded footer. */
+.eledger-guide { width: 100%; border: 1px solid #dce5ee; background: #fff; border-radius: 12px; overflow: hidden; }
+.eledger-guide-heading { padding: 20px 24px; min-height: 77px; display: flex; align-items: center; border-bottom: 1px solid #dee7ef; }
+.eledger-guide-heading h1 { font-size: 26px; font-weight: 800; line-height: 1.25; letter-spacing: -.4px; color: #1c2940; }
+.eledger-guide-content { padding: 21px 24px 20px; font-size: 13px; line-height: 1.7; color: #26344e; }
+.eledger-guide-content h2 { font-weight: 800; font-size: 14px; color: #1c2940; line-height: 1.5; }
+.eledger-guide-content ul { list-style-type: disc; padding-left: 23px; }
+.eledger-guide-content li { margin-top: 10px; padding-left: 1px; }
+.eledger-guide-emphasis { font-weight: 800; color: #202b40; margin-top: 17px; }
+.eledger-guide-search { margin-top: 26px; border-top: 1px solid #d9e5ef; padding-top: 21px; }
+.eledger-guide-search p { margin-top: 6px; }
+.eledger-guide-info { margin-top: 28px; border: 1px solid #cce5f6; border-radius: 7px; background: #f3faff; padding: 14px 17px 18px; color: #405e7e; }
+.eledger-guide-info h3 { color: #066cab; font-size: 13px; font-weight: 750; }
+.eledger-guide-info li { margin-top: 9px; }
+main[lang="bn"] .eledger-guide-content { font-size: 14px; line-height: 1.9; }
+main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
+.eledger-sidebar[lang="bn"] .eledger-side-link { line-height: 1.55; }
+@media (max-width: 670px) {
+  .eledger-guide-heading { padding: 16px; min-height: 64px; }
+  .eledger-guide-heading h1 { font-size: 22px; }
+  .eledger-guide-content { padding: 15px; font-size: 12px; }
+  .eledger-guide-content h2 { font-size: 13px; }
+  .eledger-guide-info { padding: 12px; }
+}
 .eledger-payment-scrim { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; padding: 18px; background: #18233d85; }
 .eledger-payment-dialog { display: flex; flex-direction: column; width: min(1042px,100%); max-height: min(90vh,900px); min-height: 0; overflow: hidden; background: #fff; border-radius: 19px; box-shadow: 0 22px 85px #0c24442c; color: #202d45; }
 .eledger-payment-header { display: flex; align-items: flex-start; justify-content: space-between; flex-shrink: 0; gap: 20px; padding: 22px 26px 20px; background: #fff; border-bottom: 1px solid #e0e7ef; }

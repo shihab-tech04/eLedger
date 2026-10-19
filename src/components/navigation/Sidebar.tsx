@@ -110,17 +110,17 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       <div className="eledger-mobile-nav">
-        <button type="button" onClick={() => setMobileOpen(true)} aria-label="Open ledger menu">
+        <button type="button" onClick={() => setMobileOpen(true)} aria-label={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}>
           <Menu size={19}/><span>{bn ? 'মেনু' : 'Menu'}</span>
         </button>
         <span>eReturn Ledger</span>
       </div>
-      {mobileOpen && <button type="button" aria-label="Close ledger menu"
+      {mobileOpen && <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'}
         className="eledger-sidebar-scrim" onClick={() => setMobileOpen(false)}/>}
-      <aside className={'eledger-sidebar ' + (mobileOpen ? 'is-open' : '')} aria-label="eLedger navigation">
+      <aside className={'eledger-sidebar ' + (mobileOpen ? 'is-open' : '')} aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
         <div className="eledger-sidebar-mobile-heading">
           <span>eReturn Ledger</span>
-          <button type="button" aria-label="Close ledger menu" onClick={() => setMobileOpen(false)}><X size={20}/></button>
+          <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
           <button type="button" className="eledger-side-link eledger-home-link" onClick={() => navigate('dashboard')}>
@@ -187,7 +187,7 @@ export const Sidebar: React.FC = () => {
             <button type="button" onClick={() => navigate('ledger-guide')}>{bn ? 'প্রশ্নোত্তর' : 'FAQs'}</button>
           </div>
           <a className="eledger-helpline" href="tel:09643717171">
-            <PhoneCall size={16}/><span><strong>09643717171</strong><small>Taxes Helpline</small></span>
+            <PhoneCall size={16}/><span><strong>09643717171</strong><small>{bn ? 'কর সহায়তা' : 'Taxes Helpline'}</small></span>
           </a>
         </div>
       </aside>
