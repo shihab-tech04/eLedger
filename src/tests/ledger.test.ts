@@ -630,6 +630,7 @@ describe('eLedger — Phase 9 Mobile and Data-Safety Regression', () => {
     assert.match(mobile, /Depositing Authority/);
     assert.match(mobile, /Save Entry/);
     assert.match(mobile, /Cancel/);
+    assert.match(mobile, /w-\[calc\(100vw-3\.5rem\)\]/);
   });
 
   it('formats a local browser calendar day without a UTC conversion', () => {

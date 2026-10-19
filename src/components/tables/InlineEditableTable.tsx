@@ -59,11 +59,13 @@ export const MobileRowEditor: React.FC<{
   onEvidenceChange: (evidence: ClaimEvidence) => void;
   routeId: LedgerRouteId;
   isEdit: boolean;
-}> = ({ values, onFieldChange, onSave, onCancel, evidence, onEvidenceChange, routeId, isEdit }) => (
+  error?: string | null;
+}> = ({ values, onFieldChange, onSave, onCancel, evidence, onEvidenceChange, routeId, isEdit, error }) => (
   <tr className={`sm:hidden ${isEdit ? 'bg-amber-50' : 'bg-emerald-50'}`}>
     <td colSpan={8} className="p-0">
-      <div className={`sticky left-0 w-[calc(100vw-2rem)] max-w-full p-3 border-y-2 ${isEdit ? 'border-amber-500' : 'border-emerald-500'}`}>
+      <div className={`sticky left-0 w-[calc(100vw-3.5rem)] max-w-full p-3 border-y-2 ${isEdit ? 'border-amber-500' : 'border-emerald-500'}`}>
         <p className="text-sm font-semibold text-slate-800 mb-3">{isEdit ? 'Edit ledger entry' : 'New ledger entry'}</p>
+        {error && <p role="alert" className="text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2 mb-3">{error}</p>}
         <div className="grid grid-cols-1 gap-3">
           {([
             ['referenceNo', 'Reference / Challan No', 'text'],
@@ -491,6 +493,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 onEvidenceChange={setNewClaimEvidence}
                 routeId={routeId}
                 isEdit={false}
+                error={newRowError}
               />
               {hasEvidenceFields && (
                 <tr className="hidden sm:table-row bg-emerald-50/70 border-b-2 border-emerald-500">
@@ -621,6 +624,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       onEvidenceChange={setEditClaimEvidence}
                       routeId={routeId}
                       isEdit
+                      error={editRowError}
                     />
                     {hasEvidenceFields && (
                       <tr className="hidden sm:table-row bg-amber-50/70 border-b-2 border-amber-500">

@@ -5,7 +5,7 @@ This is an additive recovery checkpoint on the Phase 8 application. It does not 
 ## Changes
 
 - The expandable Tax Payment Status route breakdown stacks the record count and amount beneath a readable route name on small screens, without changing the desktop reconciliation footer or six financial buckets.
-- Inline Add Entry and Edit retain their table placement on desktop. On narrow screens the active table row includes a labeled, single-column mobile editor with Save, Cancel and its route-specific claim evidence together in the visible area. Saved rows continue to scroll horizontally when necessary.
+- Inline Add Entry and Edit retain their table placement on desktop. On narrow screens the active table row includes a labeled, single-column mobile editor with Save, Cancel, inline validation feedback and its route-specific claim evidence together in the visible area. Its width is constrained to the table's visible phone viewport. Saved rows continue to scroll horizontally when necessary.
 - Optional `claimEvidence` accepts only schema-recognized field names and primitive values of the correct kind. Nulls, arrays, nested objects, wrong numeric/text types, and malformed persisted fields are rejected before they can reach the disclosure renderer.
 - A failed storage read leaves the original browser value intact; no automatic fallback write erases saved records.
 - The header no longer offers a global reset shortcut that could silently erase multiple taxpayer/year contexts.
