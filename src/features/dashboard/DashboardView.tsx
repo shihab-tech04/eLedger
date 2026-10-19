@@ -1,150 +1,192 @@
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { CURRENT_ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
-import type { LedgerRouteId } from '../../domain/models.ts';
-import {
-  ArrowRight, BookOpen, CheckCircle2, ChevronRight, CircleAlert,
-  FileCheck2, FileText, Landmark, ReceiptText, ShieldCheck, WalletCards,
-} from 'lucide-react';
+import { getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
+import type { LedgerRouteId, RouteRegistryEntry } from '../../domain/models.ts';
+import { ArrowRight, BookOpen, CarFront, ChevronRight, FileCheck2, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react';
 
-const amount = (value: number) => `৳ ${value.toLocaleString('en-IN', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})}`;
+/** The reference dashboard uses Bangladeshi digit grouping without a currency prefix. */
+const amount = (value: number) => value.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const percent = (part: number, total: number) => total > 0 ? (part / total) * 100 : 0;
+
+const dashboardTitles: Partial<Record<LedgerRouteId, string>> = {
+  'salary-ibas': 'Salary (iBAS++)',
+  'salary-others': 'Salary (Others)',
+  'bank-fi': 'Bank/FI Interest/Profit',
+  dividend: 'Dividend',
+  'service-payment': 'Service Payment',
+  sanchayapatra: 'Sanchayapatra',
+  'system-import': 'Import',
+  'commercial-source': 'Commercial Vehicle',
+  'other-tds': 'Others',
+  'car-ait': 'AIT on Car',
+  'sec-154': 'AIT (154)',
+  'sec-173': 'Tax Paid with Return (173)',
+  refund: 'Adjustment of Tax Refund',
+  'carry-forward': 'Adjustment of carry forward tax u/s 163',
+};
+
+const routeName = (route: RouteRegistryEntry) => dashboardTitles[route.id] ?? route.title;
 
 export const DashboardView: React.FC = () => {
-  const { taxpayer, assessmentYear, entries, totals, setActiveNavTab,
-    setActiveRouteId, setIsStatusModalOpen } = useLedger();
+  const { entries, totals, setActiveNavTab, setActiveRouteId, setIsStatusModalOpen } = useLedger();
+  const recordedRouteIds = entries.map((entry) => entry.routeId);
+  const sourceRoutes = getVisibleRoutesByGroup('Source Tax', recordedRouteIds);
+  const aitRoutes = getVisibleRoutesByGroup('AIT', recordedRouteIds);
+  const otherRoutes = [
+    ...getVisibleRoutesByGroup('Payment', recordedRouteIds),
+    ...getVisibleRoutesByGroup('Adjustment', recordedRouteIds),
+  ];
+  const allRoutes = [...sourceRoutes, ...aitRoutes, ...otherRoutes];
+  const routeAmounts = new Map<LedgerRouteId, number>();
+  for (const entry of entries) {
+    const value = Number(entry.taxDeducted);
+    if (Number.isFinite(value)) {
+      routeAmounts.set(entry.routeId, (routeAmounts.get(entry.routeId) ?? 0) + value);
+    }
+  }
+  const sourceTotal = totals.sourceTaxTotal;
+  const aitTotal = totals.aitTotal;
+  const otherTotal = totals.paymentsTotal + totals.adjustmentsTotal;
+  // A recorded amount is not an authority-verified credit.
+  const ledgerTotal = sourceTotal + aitTotal + otherTotal;
+  const recordedCategories = allRoutes.filter((route) => (routeAmounts.get(route.id) ?? 0) !== 0).length;
+  const emptyRoutes = allRoutes.filter((route) => (routeAmounts.get(route.id) ?? 0) === 0);
+  const sourcePct = percent(sourceTotal, ledgerTotal);
+  const aitPct = percent(aitTotal, ledgerTotal);
+  const otherPct = percent(otherTotal, ledgerTotal);
 
-  const recordedRoutes = new Set(entries.map((entry) => entry.routeId));
-  const visibleRoutes = CURRENT_ROUTE_REGISTRY.filter((route) => route.group !== 'Tax Payment Status');
-  const usedRoutes = visibleRoutes.filter((route) => recordedRoutes.has(route.id)).length;
-  const progressPercent = Math.round((usedRoutes / visibleRoutes.length) * 100);
-  const pendingEntries = entries.filter((entry) => !(
-    entry.status === 'VERIFIED' && entry.externalVerified &&
-    entry.verificationAuthority === 'AUTHORITATIVE' && !entry.isManual
-  ));
-
-  const goToRoute = (routeId: LedgerRouteId, group: string) => {
-    setActiveRouteId(routeId);
-    if (group === 'Source Tax') setActiveNavTab('source-tax');
-    else if (group === 'AIT') setActiveNavTab('ait');
-    else if (group === 'Payment') setActiveNavTab('payments');
-    else if (group === 'Adjustment') setActiveNavTab('adjustments');
-    else setIsStatusModalOpen(true);
+  const goToRoute = (route: RouteRegistryEntry) => {
+    setActiveRouteId(route.id);
+    if (route.group === 'Source Tax') setActiveNavTab('source-tax');
+    else if (route.group === 'AIT') setActiveNavTab('ait');
+    else if (route.group === 'Payment') setActiveNavTab('payments');
+    else setActiveNavTab('adjustments');
   };
 
   const cards = [
-    { id: 'source', label: 'Source Tax', value: totals.sourceTaxTotal, count: totals.sourceTaxCount,
-      caption: 'recorded claims', className: 'source', icon: ReceiptText, action: () => setActiveNavTab('source-tax') },
-    { id: 'ait', label: 'Advance Income Tax (AIT)', value: totals.aitTotal, count: totals.aitCount,
-      caption: 'recorded claims', className: 'ait', icon: FileText, action: () => setActiveNavTab('ait') },
-    { id: 'other', label: 'Other Tax Credits', value: totals.paymentsTotal + totals.adjustmentsTotal,
-      count: totals.paymentsCount + totals.adjustmentsCount, caption: 'recorded payments and adjustments',
-      className: 'payment', icon: WalletCards, action: () => setActiveNavTab('payments') },
-    { id: 'verified', label: 'Verified Tax Credit', value: totals.grandTotalCredits,
-      count: entries.length - pendingEntries.length, caption: 'externally confirmed records',
-      className: 'verified', icon: ShieldCheck, action: () => setIsStatusModalOpen(true) },
+    { id: 'source', label: 'Source Tax', value: sourceTotal, count: `${sourceRoutes.length} categories`,
+      caption: `${sourcePct.toFixed(1)}% of Ledger total`, icon: ReceiptText, action: () => setActiveNavTab('source-tax') },
+    { id: 'ait', label: 'Advance Income Tax (AIT)', value: aitTotal, count: `${aitRoutes.length} categories`,
+      caption: `${aitPct.toFixed(1)}% of Ledger total`, icon: CarFront, action: () => setActiveNavTab('ait') },
+    { id: 'other', label: 'Other Tax & Adjustments', value: otherTotal, count: `${otherRoutes.length} categories`,
+      caption: `${otherPct.toFixed(1)}% of Ledger total`, icon: ShieldCheck, action: () => setActiveNavTab('payments') },
+    { id: 'total', label: 'Ledger Total', value: ledgerTotal, count: 'Current Ledger data',
+      caption: '', icon: FileCheck2, action: () => setIsStatusModalOpen(true) },
   ];
+
+  const categoryPanel = (title: string, subtitle: string, routes: RouteRegistryEntry[], total: number, key: string) => (
+    <section className={`eledger-category-panel eledger-category-${key}`} aria-label={title}>
+      <header className="eledger-category-heading">
+        <div><h2>{title}</h2><p>{subtitle}</p></div>
+        <div className="eledger-category-heading-total"><strong>{amount(total)}</strong><small>{routes.length} categories</small></div>
+      </header>
+      <div className="eledger-category-list">
+        {routes.map((route) => {
+          const value = routeAmounts.get(route.id) ?? 0;
+          return (
+            <button type="button" key={route.id} onClick={() => goToRoute(route)}
+              aria-label={`Open ${routeName(route)}: ${amount(value)}`}>
+              <span className="eledger-category-name">{routeName(route)}{value === 0 && key === 'ait' &&
+                <small>No amount currently recorded</small>}</span>
+              <strong className={value === 0 ? 'is-empty' : ''}>{amount(value)}</strong>
+              <ArrowRight size={15} aria-hidden="true"/>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
 
   return (
     <div className="eledger-dashboard">
-      <div className="eledger-breadcrumb"><span>Dashboard</span></div>
-      <section className="eledger-welcome">
+      <header className="eledger-dashboard-heading">
         <div>
-          <span className="eledger-eyebrow">Welcome to</span>
-          <h1>eReturn Ledger</h1>
-          <p>Review, claim and reconcile your tax payments and credits for Assessment Year {assessmentYear}.</p>
-          <div className="eledger-context-line"><Landmark size={15}/><span>{taxpayer.name} · TIN {taxpayer.tin}</span></div>
+          <span className="eledger-dashboard-eyebrow">ERETURN LEDGER</span>
+          <h1>Dashboard</h1>
+          <p>See the current Ledger tax, AIT, adjustments and total amount at a glance.</p>
         </div>
-        <div className="eledger-hero-art" aria-hidden="true">
-          <div className="eledger-hero-document"><FileText size={48}/><div className="eledger-hero-lines"><i/><i/><i/></div></div>
-          <div className="eledger-hero-check"><ShieldCheck size={35}/></div>
-        </div>
-      </section>
+        <button type="button" className="eledger-dashboard-status-button" onClick={() => setIsStatusModalOpen(true)}>
+          <FileCheck2 size={16} aria-hidden="true"/>View Tax Payment Status
+        </button>
+      </header>
 
       <section className="eledger-summary-cards" aria-label="Tax records summary">
         {cards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.id} role="button" tabIndex={0} onClick={card.action}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); card.action(); }
-              }} className={`eledger-summary-card ${card.className}`}>
-              <div className="eledger-summary-symbol"><Icon size={25}/></div>
-              <div className="eledger-summary-details"><span className="eledger-card-label">{card.label}</span>
-                <strong>{amount(card.value)}</strong>
-                <span>{card.count} {card.caption}</span>
+            <button type="button" className={`eledger-summary-card ${card.id}`} key={card.id} onClick={card.action}>
+              <div className="eledger-summary-upper">
+                <span className="eledger-summary-symbol"><Icon size={18} aria-hidden="true"/></span>
+                <span className="eledger-summary-count">{card.count}</span>
               </div>
-              <ChevronRight className="eledger-summary-arrow" size={18}/>
-            </div>
+              <span className="eledger-card-label">{card.label}</span>
+              <strong className="eledger-summary-amount">{amount(card.value)}</strong>
+              {card.caption && <span className="eledger-summary-caption">{card.caption}</span>}
+            </button>
           );
         })}
       </section>
 
-      <div className="eledger-dashboard-grid">
-        <section className="eledger-dashboard-panel eledger-progress-panel">
-          <div className="eledger-panel-heading"><h2>Ledger progress</h2><span>{visibleRoutes.length} categories</span></div>
-          <div className="eledger-progress-body">
-            <div className="eledger-progress-ring" style={{ '--progress': `${progressPercent}%` } as React.CSSProperties}>
-              <div><strong>{usedRoutes} of {visibleRoutes.length}</strong><span>Categories with records</span></div>
-            </div>
-            <div className="eledger-progress-legend">
-              <div><span className="eledger-dot has-records"/>With records <strong>{usedRoutes}</strong></div>
-              <div><span className="eledger-dot empty"/>No records yet <strong>{visibleRoutes.length - usedRoutes}</strong></div>
-              <button type="button" onClick={() => setActiveNavTab('source-tax')}>View source tax categories <ArrowRight size={16}/></button>
-            </div>
+      <section className="eledger-ledger-composition" aria-label="Ledger composition">
+        <div className="eledger-composition-heading">
+          <div><h2>Ledger composition</h2>
+            <p>{recordedCategories} of {allRoutes.length} categories currently have an amount recorded.</p>
           </div>
-        </section>
+          {emptyRoutes.length > 0 && <button type="button" onClick={() => goToRoute(emptyRoutes[0])}>
+            {emptyRoutes.length} {emptyRoutes.length === 1 ? 'category has' : 'categories have'} no amount
+            <ArrowRight size={15} aria-hidden="true"/>
+          </button>}
+        </div>
+        <svg className="eledger-composition-bar" viewBox="0 0 100 10" preserveAspectRatio="none" role="img"
+          aria-label={`Source Tax ${sourcePct.toFixed(1)}%, AIT ${aitPct.toFixed(1)}%, other tax and adjustments ${otherPct.toFixed(1)}%`}>
+          <rect className="eledger-bar-empty" x="0" y="0" width="100" height="10"/>
+          <rect className="eledger-bar-source" x="0" y="0" width={sourcePct} height="10"/>
+          <rect className="eledger-bar-ait" x={sourcePct} y="0" width={aitPct} height="10"/>
+          <rect className="eledger-bar-other" x={sourcePct + aitPct} y="0" width={otherPct} height="10"/>
+        </svg>
+        <div className="eledger-composition-legend">
+          <div><span className="eledger-composition-dot source"/>Source Tax <strong>{sourcePct.toFixed(1)}%</strong></div>
+          <div><span className="eledger-composition-dot ait"/>AIT <strong>{aitPct.toFixed(1)}%</strong></div>
+          <div><span className="eledger-composition-dot other"/>Other tax &amp; adjustments <strong>{otherPct.toFixed(1)}%</strong></div>
+        </div>
+      </section>
 
-        <section className="eledger-dashboard-panel eledger-actions-panel">
-          <div className="eledger-panel-heading"><h2>Items needing attention</h2><span className="eledger-count-badge">{pendingEntries.length}</span></div>
-          {pendingEntries.length === 0 ? (
-            <div className="eledger-empty-attention"><CheckCircle2 size={23}/><div><strong>No pending records</strong><span>Newly entered claims appear here until independently verified.</span></div></div>
-          ) : (
-            <div className="eledger-attention-list">
-              {pendingEntries.slice(0, 4).map((entry) => {
-                const route = CURRENT_ROUTE_REGISTRY.find((item) => item.id === entry.routeId);
-                return <button type="button" key={entry.id} onClick={() => goToRoute(entry.routeId, route?.group ?? 'Source Tax')}>
-                  <span className="eledger-attention-icon"><CircleAlert size={19}/></span>
-                  <span className="eledger-attention-copy"><strong>{route?.title ?? entry.routeId}</strong><small>{entry.referenceNo} · {entry.status.replaceAll('_', ' ')}</small></span>
-                  <ChevronRight size={17}/>
-                </button>;
-              })}
+      <div className="eledger-dashboard-columns">
+        {categoryPanel('Source Tax categories', 'Current claimed amount for each source-tax category.', sourceRoutes, sourceTotal, 'source')}
+        <div className="eledger-dashboard-middle">
+          {categoryPanel('AIT categories', 'Current AIT amounts by available category.', aitRoutes, aitTotal, 'ait')}
+          {categoryPanel('Other tax & adjustments', 'Tax paid with return, surcharge and adjustments.', otherRoutes, otherTotal, 'other')}
+        </div>
+        <aside className="eledger-dashboard-aside">
+          <section className="eledger-dashboard-quick-actions">
+            <header><h2>Quick actions</h2><span>LEDGER</span></header>
+            <div className="eledger-dashboard-action-list">
+              <button type="button" className="is-featured" onClick={() => setIsStatusModalOpen(true)}>
+                <span><strong>Review Tax Payment Status</strong><small>Review all tax and adjustments together</small></span><FileCheck2 size={16}/>
+              </button>
+              <button type="button" onClick={() => setActiveNavTab('source-tax')}>
+                <span><strong>Update Source Tax</strong><small>Start with Salary (iBAS++)</small></span><ArrowRight size={16}/>
+              </button>
+              <button type="button" onClick={() => setActiveNavTab('ait')}>
+                <span><strong>Update AIT</strong><small>Start with AIT on Car</small></span><ArrowRight size={16}/>
+              </button>
+              <button type="button" onClick={() => setActiveNavTab('ledger-guide')}>
+                <span className="eledger-action-with-icon"><BookOpen size={16}/><strong>Ledger Guide</strong></span><ArrowRight size={16}/>
+              </button>
             </div>
-          )}
-        </section>
-
-        <section className="eledger-dashboard-panel eledger-activity-panel">
-          <div className="eledger-panel-heading"><h2>Recent ledger activity</h2><span>{entries.length} records</span></div>
-          {entries.length === 0 ? (
-            <div className="eledger-empty-activity">No ledger entries have been recorded for this taxpayer and assessment year.</div>
-          ) : (
-            <div className="eledger-activity-scroll"><table>
-              <thead><tr><th>Date</th><th>Reference</th><th>Category</th><th>Amount</th><th>Status</th></tr></thead>
-              <tbody>{[...entries].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6).map((entry) => (
-                <tr key={entry.id}><td>{entry.date}</td><td>{entry.referenceNo}</td>
-                  <td>{CURRENT_ROUTE_REGISTRY.find((item) => item.id === entry.routeId)?.title ?? entry.category}</td>
-                  <td>{amount(entry.taxDeducted)}</td><td><span className="eledger-record-status">{entry.status.replaceAll('_', ' ')}</span></td></tr>
-              ))}</tbody>
-            </table></div>
-          )}
-        </section>
-
-        <section className="eledger-dashboard-panel eledger-quick-panel">
-          <div className="eledger-panel-heading"><h2>Quick actions</h2></div>
-          <div className="eledger-quick-grid">
-            <button type="button" onClick={() => setActiveNavTab('source-tax')}><ReceiptText size={24}/><span><strong>Claim Source Tax</strong><small>Review deductions and income records</small></span></button>
-            <button type="button" onClick={() => setActiveNavTab('ait')}><FileCheck2 size={24}/><span><strong>Claim Advance Tax</strong><small>Vehicle, challan and import claims</small></span></button>
-            <button type="button" onClick={() => setIsStatusModalOpen(true)}><ShieldCheck size={24}/><span><strong>Tax Payment Status</strong><small>Review reconciled credits</small></span></button>
-            <button type="button" onClick={() => setActiveNavTab('ledger-guide')}><BookOpen size={24}/><span><strong>Ledger Guide</strong><small>How the ledger categories work</small></span></button>
+          </section>
+          <div className="eledger-dashboard-next-step">
+            <span>NEXT STEP</span>
+            <p>Review your recorded categories and reconcile their payment status before returning.</p>
+            <button type="button" onClick={() => setIsStatusModalOpen(true)}>Open payment status <ChevronRight size={15}/></button>
           </div>
-        </section>
+        </aside>
       </div>
-
-      <div className="eledger-info-bar"><CircleAlert size={19}/><span>
-        Only externally confirmed amounts are included in verified tax credits. Current verified amount: <strong>{amount(totals.grandTotalCredits)}</strong>.
-      </span><button type="button" onClick={() => setIsStatusModalOpen(true)}>View breakdown <ArrowRight size={16}/></button></div>
+      <div className="eledger-dashboard-verification-note">
+        <WalletCards size={16} aria-hidden="true"/>
+        Recorded ledger amounts are not necessarily verified credits. Independently authorized verified credit:
+        <strong>৳ {amount(totals.grandTotalCredits)}</strong>.
+      </div>
     </div>
   );
 };
