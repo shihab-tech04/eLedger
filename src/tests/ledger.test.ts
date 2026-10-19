@@ -54,6 +54,7 @@ import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransfe
 import { createLocalLedgerBackup } from '../services/ledgerBackup.ts';
 import { SYNC_STORAGE_KEY } from '../services/incomeSyncService.ts';
 import { LedgerProvider } from '../context/LedgerContext.tsx';
+import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { Header } from '../components/layout/Header.tsx';
 import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
@@ -770,9 +771,11 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
 
 describe('eLedger — Phase 11 Recovery Acceptance and Raw Backup', () => {
   it('offers data backup instead of a destructive reset and gives dashboard route cards keyboard semantics', () => {
-    const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
-      React.createElement(Header), React.createElement(DashboardView)));
-    assert.match(html, /Download Local Backup/);
+    const html = renderToStaticMarkup(React.createElement(LanguageProvider, null,
+      React.createElement(LedgerProvider, null,
+        React.createElement(Header), React.createElement(DashboardView))));
+    assert.match(html, /eledger-taxpayer-button/);
+    assert.match(html, /Open profile menu/);
     assert.doesNotMatch(html, /Reset defaults/);
     assert.match(html, /role="button" tabIndex="0"/i);
   });
@@ -1575,27 +1578,36 @@ describe('eLedger — Phase 8 Historic Claim Evidence Parity', () => {
 });
 
 describe('eLedger — Historical UI restoration guardrails', () => {
-  it('renders the reference-style compact left rail, grouped route families, and a contextual light masthead', () => {
-    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
-      React.createElement(Header), React.createElement(Sidebar)));
+  it('restores the actual September custom eLedger header and flat source-tax navigation', () => {
+    const markup = renderToStaticMarkup(React.createElement(LanguageProvider, null,
+      React.createElement(LedgerProvider, null,
+        React.createElement(Header), React.createElement(Sidebar))));
     assert.match(markup, /eledger-header/);
     assert.match(markup, /NATIONAL BOARD OF REVENUE/);
+    assert.match(markup, /Assessment Year/);
+    assert.match(markup, /বাংলা/);
+    assert.match(markup, /English/);
     assert.match(markup, /eledger-sidebar/);
-    assert.match(markup, /CLAIM SOURCE TAX/);
-    assert.match(markup, /Salary/);
-    assert.match(markup, /Financial Assets/);
-    assert.match(markup, /Service &amp; Professional/);
-    assert.match(markup, /Trade &amp; Other/);
-    assert.match(markup, /OTHER TAX CREDITS/);
-    assert.match(markup, /eledger-nav-nested|source-category/);
-    assert.match(markup, /AIT Import \(120\)/);
+    assert.match(markup, /Home/);
+    assert.match(markup, /Dashboard/);
+    assert.match(markup, /Ledger Guide/);
+    assert.match(markup, /Claim Source Tax/);
+    assert.match(markup, /eledger-source-route-list/);
+    assert.match(markup, /Salary \(iBAS\+\+\)/);
+    assert.match(markup, /Salary \(Others\)/);
+    assert.match(markup, /Bank\/FI Interest\/Profit/);
+    assert.match(markup, /Sanchayapatra/);
+    assert.match(markup, /Commercial Vehicle/);
+    assert.match(markup, /Claim AIT/);
     assert.match(markup, /Environmental Surcharge/);
-    assert.match(markup, /Carry forward tax u\/s 163/);
+    assert.match(markup, /carry forward tax u\/s 163/);
     assert.match(markup, /Tax Payment Status/);
-    assert.match(markup, /Download Local Backup/);
+    assert.match(markup, /Need Help/);
+    assert.match(markup, /09643717171/);
     assert.doesNotMatch(markup, /bg-emerald-950/);
     assert.equal(getCurrentRoutesByGroup('Source Tax').length, 10);
     assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
+    assert.ok(getCurrentRoutesByGroup('AIT').some((route) => route.id === 'ait-import'));
   });
 
   it('uses the archived dashboard hierarchy without replacing verified totals with recorded sums', () => {

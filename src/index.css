@@ -1,65 +1,95 @@
 @import "tailwindcss";
 
-body {
-  font-family: 'Inter', 'Noto Sans Bengali', 'Hind Siliguri', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+/* Shared tokens extracted from the accepted September 2026 custom eLedger screenshots. */
+:root {
+  --el-bg: #f6f8fb;
+  --el-text: #1d2940;
+  --el-muted: #5f6e84;
+  --el-border: #dbe4ee;
+  --el-blue: #076fb3;
+  --el-blue-soft: #e8f3fa;
+  --el-green: #006a50;
+  --el-sidebar-width: 260px;
+  --el-header-height: 68px;
+  color: var(--el-text);
+  background: var(--el-bg);
 }
-
-/* Reference-aligned eReturn Ledger shell: light masthead and persistent navigation. */
-:root { color: #142449; background: #f5f9fc; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif; }
 button, select, input { font: inherit; }
-.eledger-app { min-height: 100vh; background: #f5f9fc; color: #15254a; }
-.eledger-header { position: relative; z-index: 40; background: #fff; border-bottom: 1px solid #dce5ef; box-shadow: 0 2px 12px #1e427a08; }
-.eledger-header-main { min-height: 78px; display: flex; align-items: center; gap: 24px; padding: 11px 25px; }
-.eledger-brand { display: flex; align-items: center; gap: 10px; flex: 0 0 234px; }
-.eledger-brand-mark { background: linear-gradient(145deg,#00604f,#007f69); color: #fff; font-size: 21px; font-weight: 800; border-radius: 10px; width: 44px; height: 44px; display: grid; place-items: center; letter-spacing: -.08em; }
-.eledger-brand-words { line-height: 1.08; display: flex; flex-direction: column; }
-.eledger-brand-words strong { font-size: 20px; letter-spacing: -.8px; color: #086147; }
-.eledger-brand-words span { font-size: 12px; letter-spacing: 1px; color: #516b96; font-weight: 700; }
-.eledger-agency { display: flex; align-items: center; gap: 11px; min-width: 0; }
-.eledger-agency-emblem { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #eaf5ed; color: #11724f; border: 2px solid #bedcc7; flex-shrink: 0; }
-.eledger-agency strong { display: block; font-size: 13px; color: #17294f; font-weight: 800; }
-.eledger-agency span { display: block; font-size: 11px; color: #6b7d9d; }
-.eledger-header-controls { display: flex; align-items: center; gap: 10px; margin-left: auto; white-space: nowrap; }
-.eledger-header-controls > label { font-size: 12px; color: #243457; font-weight: 650; }
-.eledger-header-controls > select { border: 1px solid #d4e1ef; border-radius: 8px; background: #fff; padding: 10px 29px 10px 12px; font-size: 12px; font-weight: 600; color: #182a50; }
-.eledger-header-divider { height: 30px; width: 1px; background: #dee5ed; margin: 0 3px; }
-.eledger-taxpayer-select { display: flex; align-items: center; gap: 8px; }
-.eledger-taxpayer-select > span { border-radius: 50%; width: 32px; height: 32px; flex-shrink: 0; display: grid; place-items: center; background: #1168bf; color: #fff; font-size: 11px; font-weight: 700; }
-.eledger-taxpayer-select select { max-width: 180px; padding: 6px 2px; color: #203054; font-size: 12px; font-weight: 650; background: transparent; border: 0; }
-.eledger-backup { border: 1px solid #dae5f1; border-radius: 8px; color: #1e5798; padding: 9px; cursor: pointer; }
-.eledger-backup:hover { background: #eef6ff; }
+.eledger-app { min-height: 100vh; background: var(--el-bg); color: var(--el-text); }
+.eledger-header { position: relative; z-index: 40; background: #fff; border-bottom: 1px solid var(--el-border); }
+.eledger-header-main { height: var(--el-header-height); display: flex; align-items: stretch; padding: 0; }
+.eledger-brand { display: flex; align-items: center; gap: 11px; flex: 0 0 var(--el-sidebar-width); padding: 0 20px; border-right: 1px solid var(--el-border); }
+.eledger-brand-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9px; background: var(--el-green); color: #fff; font-size: 17px; font-weight: 800; letter-spacing: -.06em; }
+.eledger-brand-words { line-height: 1.12; display: flex; flex-direction: column; gap: 3px; }
+.eledger-brand-words strong { font-size: 18px; color: var(--el-green); font-weight: 800; letter-spacing: -.45px; }
+.eledger-brand-words span { font-size: 11px; letter-spacing: 1px; color: #50617b; font-weight: 650; }
+.eledger-agency { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 2px; padding: 0 24px; }
+.eledger-agency strong { font-size: 12px; line-height: 1.25; color: var(--el-text); font-weight: 750; letter-spacing: .4px; }
+.eledger-agency span { font-size: 11px; line-height: 1.25; color: #617087; }
+.eledger-header-controls { display: flex; align-items: center; flex-shrink: 0; gap: 16px; padding: 0 22px 0 10px; white-space: nowrap; }
+.eledger-assessment { display: flex; align-items: center; gap: 5px; color: #24314a; font-size: 12px; }
+.eledger-assessment strong { font-size: 12px; font-weight: 700; }
+.eledger-assessment select { max-width: 108px; padding: 5px 17px 5px 0; border: 0; background: transparent; color: #1e2a40; font-size: 12px; cursor: pointer; }
+.eledger-language-switch { display: flex; border: 1px solid var(--el-border); padding: 2px; border-radius: 6px; background: #f6f8fb; }
+.eledger-language-switch button { color: #697a90; font-size: 12px; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+.eledger-language-switch button.is-active { background: #fff; color: var(--el-blue); font-weight: 700; box-shadow: 0 1px 3px #172c4017; }
+.eledger-header-popover { position: relative; }
+.eledger-notification-button { display: grid; place-items: center; width: 37px; height: 37px; border: 1px solid var(--el-border); border-radius: 8px; background: #fff; color: #596b82; cursor: pointer; }
+.eledger-notification-button:hover,.eledger-notification-button[aria-expanded="true"] { background: #f0f7fc; color: var(--el-blue); }
+.eledger-taxpayer-button { display: flex; align-items: center; gap: 10px; color: #26334a; cursor: pointer; text-align: left; }
+.eledger-taxpayer-avatar { display: grid; place-items: center; background: #09699f; color: #fff; width: 32px; height: 32px; flex: 0 0 32px; border-radius: 50%; font-size: 11px; font-weight: 750; }
+.eledger-taxpayer-identity { display: flex; flex-direction: column; min-width: 0; max-width: 180px; }
+.eledger-taxpayer-identity strong { font-size: 12px; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eledger-taxpayer-identity small { font-size: 11px; line-height: 1.35; color: #68788c; }
+.eledger-taxpayer-button > svg { color: #8b9bac; }
+.eledger-popover { position: absolute; right: 0; top: calc(100% + 12px); z-index: 70; background: #fff; border: 1px solid var(--el-border); box-shadow: 0 10px 30px #1d2b3e1e; border-radius: 9px; padding: 12px; color: var(--el-text); white-space: normal; }
+.eledger-notification-panel { min-width: 235px; font-size: 12px; }
+.eledger-notification-panel p { color: var(--el-muted); margin-top: 12px; }
+.eledger-profile-menu { width: 270px; max-height: min(60vh,420px); overflow-y: auto; }
+.eledger-profile-title { color: var(--el-muted); font-size: 11px; font-weight: 750; padding: 3px 8px 9px; }
+.eledger-profile-option,.eledger-profile-backup { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; font-size: 12px; text-align: left; padding: 9px 8px; border-radius: 5px; cursor: pointer; }
+.eledger-profile-option:hover,.eledger-profile-backup:hover { background: #edf6fd; }
+.eledger-profile-option svg { color: var(--el-blue); flex-shrink: 0; }
+.eledger-profile-backup { justify-content: flex-start; color: var(--el-blue); border-top: 1px solid var(--el-border); border-radius: 0; margin-top: 5px; padding-top: 13px; font-weight: 650; }
 .eledger-backup-error { color: #9d223e; background: #fff2f3; font-size: 12px; padding: 8px 25px; }
-.eledger-workspace { display: flex; align-items: stretch; min-height: calc(100vh - 78px); }
-.eledger-sidebar { background: #fff; border-right: 1px solid #dbe5ef; width: 260px; flex: 0 0 260px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; box-shadow: 2px 0 18px #164d7810; }
-.eledger-sidebar-links { padding: 18px 13px 13px; flex: 1; }
-.eledger-side-link { display: flex; align-items: center; gap: 13px; text-align: left; width: 100%; min-height: 41px; border-radius: 7px; padding: 9px 13px; color: #3c567d; font-size: 12.5px; font-weight: 540; border-left: 3px solid transparent; transition: background .15s,color .15s; cursor: pointer; }
-.eledger-side-link svg { flex-shrink: 0; color: #5675a5; }
-.eledger-side-link:hover { background: #f0f6fd; color: #0757ad; }
-.eledger-side-link.is-active { background: #e9f3fc; color: #0864bc; border-left-color: #0864bc; font-weight: 750; }
-.eledger-side-link.is-active svg { color: #0864bc; }
-.eledger-nav-group { margin-top: 13px; }
-.eledger-nav-heading { width: 100%; display: flex; justify-content: space-between; align-items: center; color: #2a4878; font-size: 11px; font-weight: 800; letter-spacing: .025em; padding: 10px 12px 5px; text-align: left; cursor: pointer; }
-.eledger-nav-heading:hover { color: #026ab6; }
-.eledger-nav-subitems { padding: 1px 0; }
-.eledger-side-link.subitem { min-height: 35px; padding: 7px 8px 7px 32px; font-size: 12px; border-radius: 5px; }
-.eledger-side-link.source-category { min-height: 40px; padding-left: 13px; }
-.eledger-side-link.source-category > span { flex: 1; }
-.eledger-side-link.source-category > svg:last-child { color: #8295b0; }
-.eledger-side-link.source-category.has-active-child { color: #075aa6; background: #f0f7fe; font-weight: 750; }
-.eledger-nav-nested { margin: 0 0 5px 18px; padding-left: 8px; border-left: 1px solid #dbe8f4; }
-.eledger-side-link.subitem.nested { min-height: 31px; padding: 6px 8px; font-size: 11.5px; }
-.eledger-side-link.status-link { margin-top: 13px; border-top: 1px solid #edf0f5; border-radius: 0; padding-top: 14px; }
-.eledger-sidebar-bottom { padding: 12px 18px 18px; border-top: 1px solid #edf1f5; }
-.eledger-return-link { display: flex; align-items: center; gap: 10px; border: 1px solid #8edbbf; background: #eefaf4; color: #06614d; border-radius: 7px; font-size: 12px; font-weight: 800; text-decoration: none; padding: 11px 12px; }
+.eledger-workspace { display: flex; align-items: stretch; min-height: calc(100vh - var(--el-header-height)); }
+.eledger-sidebar { background: #fff; border-right: 1px solid var(--el-border); width: var(--el-sidebar-width); flex: 0 0 var(--el-sidebar-width); display: flex; flex-direction: column; position: sticky; top: 0; height: calc(100vh - var(--el-header-height)); overflow: hidden; }
+.eledger-sidebar-links { padding: 15px 12px 10px; flex: 1 1 auto; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #cbd2dc transparent; }
+.eledger-side-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 35px; border-radius: 6px; padding: 8px 12px; color: #50617a; font-size: 12px; font-weight: 500; line-height: 1.45; text-align: left; transition: background .15s,color .15s; cursor: pointer; }
+.eledger-side-link > span:not(.eledger-source-dot) { flex: 1; }
+.eledger-side-link svg { flex-shrink: 0; color: #75869c; }
+.eledger-side-link:hover { background: #f2f7fa; color: #086aa8; }
+.eledger-side-link.is-active { background: var(--el-blue-soft); color: #066dac; font-weight: 650; }
+.eledger-side-link.is-active svg { color: #0675b8; }
+.eledger-home-link { color: #1b283e; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.eledger-home-link svg { color: #273650; }
+.eledger-nav-group { margin-top: 6px; }
+.eledger-group-toggle { min-height: 38px; }
+.eledger-group-toggle > svg:last-child { color: #56718c; margin-left: auto; }
+.eledger-source-route-list { margin: 2px 0 7px 15px; border-left: 1px solid #dce4ed; padding-left: 15px; }
+.eledger-route-link { min-height: 35px; padding: 8px 8px 8px 12px; gap: 11px; font-size: 12px; }
+.eledger-source-dot { display: inline-block; background: #c1c9d2; border-radius: 50%; width: 6px; height: 6px; flex: 0 0 6px; }
+.eledger-route-link.is-active .eledger-source-dot { background: #7eb8de; }
+.eledger-direct-credits { margin-top: 4px; }
+.eledger-direct-credits .eledger-side-link { min-height: 36px; }
+.eledger-status-link { margin-top: 5px; padding-top: 12px; border-top: 1px solid #eaf0f5; border-radius: 0; }
+.eledger-return-link { display: flex; align-items: center; gap: 9px; border: 1px solid #b1ead3; background: #effbf5; color: #00694d; border-radius: 6px; font-size: 12px; font-weight: 650; text-decoration: none; padding: 9px 12px; margin-top: 10px; }
 .eledger-return-link svg:last-child { margin-left: auto; }
-.eledger-return-link:hover { background: #dff6e9; }
-.eledger-help-box { display: flex; align-items: center; gap: 8px; color: #587196; padding: 16px 7px; font-size: 11px; width: 100%; text-align: left; cursor: pointer; }
-.eledger-help-box:hover { color: #0d66b0; }
-.eledger-sidebar-agency { display: flex; align-items: center; gap: 8px; padding-top: 12px; border-top: 1px solid #edf1f5; font-size: 11px; color: #607491; }
-.eledger-sidebar-agency svg:last-child { margin-left: auto; color: #169569; }
+.eledger-return-link:hover { background: #e1f6eb; }
+.eledger-sidebar-bottom { flex: 0 0 auto; padding: 11px 15px 12px; border-top: 1px solid var(--el-border); background: #fbfcfd; }
+.eledger-help-title,.eledger-guide-links { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #5b6d84; }
+.eledger-help-title { font-weight: 700; cursor: pointer; }
+.eledger-guide-links { margin: 9px 0 12px; font-size: 11px; }
+.eledger-guide-links button { cursor: pointer; }
+.eledger-guide-links button:hover { color: var(--el-blue); }
+.eledger-helpline { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--el-border); padding-top: 10px; color: #006ab3; text-decoration: none; }
+.eledger-helpline span { display: flex; flex-direction: column; line-height: 1.4; }
+.eledger-helpline strong { color: #22304b; font-size: 12px; }
+.eledger-helpline small { color: #77869b; font-size: 11px; }
 .eledger-sidebar-mobile-heading,.eledger-mobile-nav,.eledger-sidebar-scrim { display: none; }
 .eledger-stage { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.eledger-main { padding: 23px 26px 30px; flex: 1; }
+.eledger-main { padding: 28px 54px 30px; flex: 1; }
 .eledger-footer { border-top: 1px solid #e0e8f0; background: #fff; color: #8a97aa; font-size: 11px; padding: 13px 26px; display: flex; justify-content: space-between; gap: 12px; }
 .eledger-load-error { margin: 16px 26px 0; background: #fff1f2; border: 1px solid #fecaca; color: #8a1a2b; padding: 12px; border-radius: 8px; font-size: 13px; }
 
@@ -167,14 +197,15 @@ button, select, input { font: inherit; }
 .eledger-stage .text-emerald-700 { color: #0a71aa; }
 
 @media (max-width: 1270px) {
-  .eledger-brand { flex-basis: 190px; }
   .eledger-agency { display: none; }
+  .eledger-header-controls { margin-left: auto; }
   .eledger-summary-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 960px) {
-  .eledger-header-main { min-height: 70px; gap: 12px; padding: 12px 18px; }
-  .eledger-brand { flex-basis: auto; margin-right: auto; }
-  .eledger-sidebar { position: fixed; z-index: 55; top: 0; bottom: 0; left: 0; width: 270px; overflow-y: auto; transform: translateX(-101%); visibility: hidden; transition: transform .18s ease, visibility .18s; min-height: 100vh; }
+  .eledger-header-main { height: auto; min-height: 70px; align-items: center; gap: 12px; padding: 11px 18px; }
+  .eledger-brand { flex-basis: auto; flex-shrink: 0; padding: 0; border-right: 0; margin-right: auto; }
+  .eledger-header-controls { padding: 0; gap: 10px; }
+  .eledger-sidebar { position: fixed; z-index: 55; top: 0; bottom: 0; left: 0; width: 270px; height: 100vh; transform: translateX(-101%); visibility: hidden; transition: transform .18s ease, visibility .18s; }
   .eledger-sidebar.is-open { transform: translateX(0); visibility: visible; }
   .eledger-sidebar-mobile-heading { display: flex; align-items: center; justify-content: space-between; font-weight: 800; color: #08614d; padding: 17px 21px; border-bottom: 1px solid #e2eaf4; }
   .eledger-sidebar-mobile-heading button { color: #586f8e; cursor: pointer; }
@@ -187,13 +218,13 @@ button, select, input { font: inherit; }
 }
 @media (max-width: 670px) {
   .eledger-header-main { flex-wrap: wrap; }
-  .eledger-header-controls { flex: 1 1 100%; width: 100%; margin-left: 0; justify-content: space-between; border-top: 1px solid #edf1f6; padding-top: 8px; }
-  .eledger-header-controls > label { display: block; font-size: 11px; }
-  .eledger-header-controls > select { display: block; padding: 6px 8px; }
-  .eledger-header-divider { display: none; }
+  .eledger-header-controls { flex: 1 1 100%; width: 100%; margin-left: 0; justify-content: space-between; flex-wrap: wrap; border-top: 1px solid #edf1f6; padding-top: 9px; }
+  .eledger-assessment { font-size: 11px; }
+  .eledger-assessment strong { font-size: 11px; }
+  .eledger-assessment select { max-width: 100px; }
   .eledger-brand-mark { width: 37px; height: 37px; font-size: 17px; }
   .eledger-brand-words strong { font-size: 17px; } .eledger-brand-words span { font-size: 10px; }
-  .eledger-taxpayer-select select { max-width: 95px; }
+  .eledger-taxpayer-identity { max-width: 130px; }
   .eledger-main { padding: 17px 13px; }
   .eledger-welcome { min-height: 145px; padding: 0 0 15px; }
   .eledger-hero-art { display: none; }
@@ -206,18 +237,19 @@ button, select, input { font: inherit; }
   .eledger-footer { flex-direction: column; gap: 2px; }
 }
 @media (max-width: 400px) {
-  .eledger-header-controls { flex-wrap: wrap; gap: 6px; min-width: 0; }
-  .eledger-header-controls > label { font-size: 10px; }
-  .eledger-header-controls > select { max-width: 105px; padding: 6px 18px 6px 6px; }
-  .eledger-taxpayer-select { flex: 1 1 auto; min-width: 0; gap: 4px; justify-content: flex-end; }
-  .eledger-taxpayer-select > span { width: 28px; height: 28px; }
-  .eledger-taxpayer-select select { max-width: 68px; min-width: 0; }
+  .eledger-header-controls { gap: 7px; min-width: 0; }
+  .eledger-assessment strong { display: none; }
+  .eledger-assessment select { padding: 5px 13px 5px 0; }
+  .eledger-language-switch button { padding: 5px 7px; }
+  .eledger-notification-button { width: 32px; height: 32px; }
+  .eledger-taxpayer-identity { display: none; }
+  .eledger-taxpayer-avatar { width: 29px; height: 29px; flex-basis: 29px; }
+  .eledger-taxpayer-button { gap: 4px; }
   .eledger-summary-cards { grid-template-columns: 1fr; }
   .eledger-summary-card { flex-direction: row; min-height: 102px; }
   .eledger-summary-details strong { font-size: 21px; }
   .eledger-quick-grid { grid-template-columns: 1fr; }
   .eledger-header-main { padding: 10px; }
-  .eledger-backup { padding: 6px; }
   .eledger-progress-body { gap: 12px; }
   .eledger-progress-ring { width: 125px; height: 125px; flex-basis: 125px; }
   .eledger-progress-ring > div { width: 92px; height: 92px; }
