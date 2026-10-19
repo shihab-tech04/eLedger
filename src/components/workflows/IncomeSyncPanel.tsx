@@ -90,7 +90,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
         <div>
           <div className="flex items-center space-x-2">
             <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-              {t('Sync from eReturn Declared Income:','স্থানীয় ঘোষিত আয় থেকে সমন্বয়:')} {title}
+              {t('Sync declared income:','ঘোষিত আয় থেকে সমন্বয়:')} {title}
             </h4>
             <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200">
               {t('Workflow: Income Sync','কাজ: আয়ের রেকর্ড সমন্বয়')}
@@ -150,7 +150,7 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
                   </div>
                   <p className="text-xs text-slate-600">{item.sourceHead}</p>
                   <p className="text-[11px] text-slate-500">
-                    {t('Gross Reported:','ঘোষিত মোট অঙ্ক:')} {formatCurrencyBDT(item.reportedGrossIncome)} | {t('Date:','তারিখ:')} {item.syncDate}
+                    {t('Gross:','মোট অঙ্ক:')} {formatCurrencyBDT(item.reportedGrossIncome)} | {t('Imported:','আমদানি:')} {item.syncDate}
                   </p>
                 </div>
 
