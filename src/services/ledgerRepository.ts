@@ -15,6 +15,7 @@ export interface ILedgerRepository {
   getAllEntries(): Promise<LedgerEntry[]>;
   getEntryById(id: string): Promise<LedgerEntry | undefined>;
   addEntry(entry: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<LedgerEntry>;
+  addEntriesBatch(entries: Array<Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>>): Promise<LedgerEntry[]>;
   updateEntry(id: string, patch: Partial<LedgerEntry>): Promise<LedgerEntry>;
   deleteEntry(id: string): Promise<boolean>;
   resetToDefaults(): Promise<void>;
@@ -143,6 +144,35 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     all.push(newEntry);
     this.saveRaw(all);
     return newEntry;
+    });
+  }
+
+  /** Validate the entire batch against existing and staged rows before one atomic storage write. */
+  async addEntriesBatch(
+    entries: Array<Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>>
+  ): Promise<LedgerEntry[]> {
+    return this.serializeMutation(async () => {
+      if (!entries.length || entries.length > 100) throw new Error('Batch size must be 1 to 100 entries.');
+      const all = await this.getAllEntries();
+      const staged: LedgerEntry[] = [];
+      for (const [index, entry] of entries.entries()) {
+        const validation = validateLedgerEntry(entry, [...all, ...staged]);
+        if (!validation.isValid) {
+          throw new Error(`CSV row ${index + 2}: ${Object.values(validation.errors)[0]}`);
+        }
+        const now = new Date().toISOString();
+        staged.push({
+          ...entry,
+          status: 'PENDING_VERIFICATION',
+          externalVerified: false,
+          verificationAuthority: undefined,
+          id: `ledg-batch-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+      this.saveRaw([...all, ...staged]);
+      return staged;
     });
   }
 

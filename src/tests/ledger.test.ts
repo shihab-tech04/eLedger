@@ -49,6 +49,8 @@ import { InlineEditableTable, MobileRowEditor } from '../components/tables/Inlin
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from '../components/tables/ClaimEvidenceFields.tsx';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimEvidence.ts';
 import { localDateInputValue } from '../domain/localDate.ts';
+import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../domain/csvImport.ts';
+import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransferPanel.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -636,6 +638,127 @@ describe('eLedger — Phase 9 Mobile and Data-Safety Regression', () => {
   it('formats a local browser calendar day without a UTC conversion', () => {
     const date = new Date(2026, 9, 19, 0, 5);
     assert.equal(localDateInputValue(date), '2026-10-19');
+  });
+});
+
+describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
+  const context = { taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const, routeId: 'system-import' as const };
+  const headings = SECTION120_CSV_HEADERS.join(',');
+  const csv = `${headings}\nBOE-001,"Customs, Chattogram",Sec 120,120000,12000,2026-04-15\nBOE-002,Customs House,Sec 120,50000,5000,2026-05-01`;
+  const repository = () => {
+    const store = new Map<string, string>();
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key) => store.get(key) ?? null,
+      setItem: (key, value) => { store.set(key, value); },
+    });
+    return { repo, store };
+  };
+
+  it('parses UTF-8 CSV including quoted commas, escaped quotes and CRLF without trusting imported context fields', () => {
+    const result = parseSection120Csv(`\uFEFF${headings}\r\nBOE-001,"Port ""East"", Customs",Sec 120,120000.25,12000.50,2026-04-15\r\n`, context);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].sourceEntity, 'Port "East", Customs');
+    assert.equal(result[0].taxDeducted, 12000.5);
+    assert.equal(result[0].taxpayerTin, context.taxpayerTin);
+    assert.equal(result[0].assessmentYear, context.assessmentYear);
+    assert.equal(result[0].status, 'PENDING_VERIFICATION');
+    assert.equal(result[0].externalVerified, false);
+  });
+
+  it('rejects unexpected columns, incomplete quotes, malformed amounts and oversized batches', () => {
+    const invalid = [
+      'wrong,head\nA,B',
+      headings,
+      `${headings}\n"unclosed,x,y,100,10,2026-04-15`,
+      `${headings}\nBOE-1,X,Sec 120,10e8,100,2026-04-15`,
+      `${headings}\nBOE-1,X,Sec 120,100,10.123,2026-04-15`,
+      `${headings}\nBOE-1,X,Sec 120,100,10,2026-04-15,unapproved`,
+      `${headings}\n${Array(101).fill('A,B,C,100,10,2026-04-15').join('\n')}`,
+    ];
+    for (const value of invalid) assert.throws(() => parseSection120Csv(value, context), /CSV|rows|amount/i);
+  });
+
+  it('imports an entire valid local batch while leaving all imported claims unverified', async () => {
+    const { repo } = repository();
+    const before = (await repo.getAllEntries()).length;
+    const imported = await repo.addEntriesBatch(parseSection120Csv(csv, context));
+    assert.equal(imported.length, 2);
+    assert.equal((await repo.getAllEntries()).length, before + 2);
+    assert.deepEqual(imported.map((item) => item.status), ['PENDING_VERIFICATION', 'PENDING_VERIFICATION']);
+    assert.ok(imported.every((item) => !item.externalVerified));
+    assert.equal((await repo.getEntries('987654321098', '2026-2027')).some((row) => row.id === imported[0].id), false);
+  });
+
+  it('rejects duplicate references inside a batch, leaving original storage completely unchanged', async () => {
+    const { repo, store } = repository();
+    await repo.getAllEntries();
+    const original = store.get(LEDGER_STORAGE_KEY);
+    const repeated = parseSection120Csv(`${headings}\nBOE-DUP,X,Sec 120,100,10,2026-04-15\nBOE-DUP,Y,Sec 120,200,20,2026-04-16`, context);
+    await assert.rejects(repo.addEntriesBatch(repeated), /CSV row 3.*Duplicate/);
+    assert.equal(store.get(LEDGER_STORAGE_KEY), original);
+  });
+
+  it('prevents Section 120 dual claims across Source Tax and AIT, even through a batch', async () => {
+    const { repo, store } = repository();
+    await repo.addEntriesBatch(parseSection120Csv(csv, context));
+    const snapshot = store.get(LEDGER_STORAGE_KEY);
+    await assert.rejects(repo.addEntriesBatch(parseSection120Csv(csv, { ...context, routeId: 'ait-import' })), /Duplicate/);
+    assert.equal(store.get(LEDGER_STORAGE_KEY), snapshot);
+  });
+
+  it('rejects an invalid calendar date or amount in row two without partially saving row one', async () => {
+    const { repo, store } = repository();
+    await repo.getAllEntries();
+    const original = store.get(LEDGER_STORAGE_KEY);
+    const invalidDate = parseSection120Csv(`${headings}\nBOE-ONE,X,Sec 120,100,10,2026-04-15\nBOE-TWO,Y,Sec 120,100,10,2026-02-30`, context);
+    await assert.rejects(repo.addEntriesBatch(invalidDate), /CSV row 3.*calendar date/);
+    const invalidAmount = parseSection120Csv(`${headings}\nBOE-ONE,X,Sec 120,100,10,2026-04-15\nBOE-TWO,Y,Sec 120,100,150,2026-04-15`, context);
+    await assert.rejects(repo.addEntriesBatch(invalidAmount), /CSV row 3.*exceed/);
+    assert.equal(store.get(LEDGER_STORAGE_KEY), original);
+  });
+
+  it('does not mutate storage or issue fake credit on a batch storage-quota failure', async () => {
+    const state = { saved: '' };
+    const repo = new LocalStorageLedgerRepository({
+      getItem: () => state.saved || null,
+      setItem: (_key, value) => {
+        if (state.saved) throw new Error('quota exceeded');
+        state.saved = value;
+      },
+    });
+    await repo.getAllEntries();
+    const original = state.saved;
+    await assert.rejects(repo.addEntriesBatch(parseSection120Csv(csv, context)), /could not be saved/);
+    assert.equal(state.saved, original);
+    assert.equal((await repo.getAllEntries()).length, INITIAL_LEDGER_ENTRIES.length);
+  });
+
+  it('keeps an explicit local surcharge separate from regular tax and out of verified credits', async () => {
+    const { repo } = repository();
+    const item = await repo.addEntry({
+      taxpayerTin: context.taxpayerTin, assessmentYear: context.assessmentYear,
+      category: 'PAYMENT', routeId: 'environmental-surcharge',
+      referenceNo: 'SURCHARGE-LOCAL-1', sourceEntity: 'Tax & Payment — taxpayer-entered local stage',
+      sectionCode: 'Applicable surcharge provision', grossAmount: 850, taxDeducted: 850,
+      date: '2026-07-20', status: 'PENDING_VERIFICATION', workflow: 'MANUAL_ENTRY',
+      isManual: true, externalVerified: false,
+    });
+    assert.equal(item.status, 'PENDING_VERIFICATION');
+    const totals = calculateCategoryTotals(await repo.getEntries(context.taxpayerTin, context.assessmentYear));
+    assert.equal(totals.environmentalSurchargeTotal, 850);
+    assert.equal(totals.grandTotalCredits, 0);
+    await assert.rejects(repo.addEntry({
+      ...item, referenceNo: item.referenceNo,
+    }), /Duplicate/);
+  });
+
+  it('labels the surcharge handoff as a local pending simulation', () => {
+    const markup = renderToStaticMarkup(React.createElement(SurchargeTransferPanel, {
+      onRecord: async () => ({ success: true }),
+    }));
+    assert.match(markup, /Tax &amp; Payment/);
+    assert.match(markup, /does not calculate statutory surcharge rates/);
+    assert.match(markup, /Record Local Surcharge Transfer/);
   });
 });
 

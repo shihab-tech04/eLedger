@@ -40,12 +40,12 @@ eReturn Portal → Tax & Payment → Update Tax Payment Status → eLedger → T
 
 | Group | Route Count | Confirmed | Provisional |
 |---|:---:|:---:|:---:|
-| **Source Tax** | 10 | 8 | 2 |
+| **Source Tax** | 10 | 10 | 0 |
 | **Advance Income Tax (AIT)** | 3 | 3 | 0 |
 | **Payments** | 2 | 2 | 0 |
 | **Adjustments** | 2 | 2 | 0 |
 | **Tax Payment Status** | 1 | 1 | 0 |
-| **Total** | **18** | **16** | **2** |
+| **Total** | **18** | **18** | **0** |
 
 See [`docs/ROUTE_MATRIX.md`](docs/ROUTE_MATRIX.md) for the recovered mapping inventory; statutory labels remain subject to source verification.
 
@@ -117,4 +117,5 @@ considering the site live.
 - [`docs/PHASE6_FINAL_ACCEPTANCE.md`](docs/PHASE6_FINAL_ACCEPTANCE.md) — Final recovery acceptance checklist and remaining independent dependencies.
 - [`docs/PHASE8_CLAIM_EVIDENCE.md`](docs/PHASE8_CLAIM_EVIDENCE.md) — Historic screenshot-specific claim details and evidence boundaries.
 - [`docs/PHASE9_UI_DATA_SAFETY.md`](docs/PHASE9_UI_DATA_SAFETY.md) — Responsive entry/reconciliation and corrupt browser record protections.
+- [`docs/PHASE10_LOCAL_WORKFLOWS.md`](docs/PHASE10_LOCAL_WORKFLOWS.md) — Atomic Section 120 CSV import and local surcharge handoff with authority boundaries.
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Executed verification and deployment results across recovery checkpoints.

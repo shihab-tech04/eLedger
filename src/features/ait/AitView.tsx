@@ -12,6 +12,7 @@ import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../do
 import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
+import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { Car } from 'lucide-react';
 
@@ -206,9 +207,11 @@ export const AitView: React.FC = () => {
       {currentRoute.id === 'ait-import' && (
         <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
           <h4 className="text-sm font-semibold text-slate-800">AIT Import (120) — TDS Details</h4>
-          <p className="text-xs text-slate-600 mt-1">Enter an import reference below. Source Tax Import and AIT Import are recorded separately and cannot establish verified credit without a source match.</p>
+          <p className="text-xs text-slate-600 mt-1">Enter import references individually below or use the local CSV batch importer. Source Tax Import and AIT Import remain separate, and one Section 120 reference cannot be credited twice.</p>
         </div>
       )}
+
+      {currentRoute.id === 'ait-import' && <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-ait-import`} routeId="ait-import" />}
 
       {/* Inline Editable Table (Requirement #6) */}
       <InlineEditableTable

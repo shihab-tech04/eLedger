@@ -107,7 +107,7 @@ export const ROUTE_REGISTRY: RouteRegistryEntry[] = [
     statutorySection: 'Sec 120-136 (ITA 2023)',
     workflow: 'MANUAL_ENTRY',
     status: 'CONFIRMED',
-    description: 'Miscellaneous source deductions including prize money, auction, lottery, and environmental surcharge.',
+    description: 'Miscellaneous source deductions including prize money, auction and lottery; surcharge is a separate Payment route.',
     supportsManualEntry: true,
     supportsIncomeSync: false,
     supportsLookup: false,
@@ -305,14 +305,14 @@ const screenshotRoutes: RouteRegistryEntry[] = [
     bengaliTitle: 'আমদানি অগ্রিম কর', statutorySection: 'Sec 120 (ITA 2023)',
     workflow: 'SYSTEM_RECORDS_IMPORT', status: 'CONFIRMED',
     description: 'Import advance-tax claim is separate from the Source Tax Import (120) route.',
-    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
+    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: false, supportsImport: true,
   },
   {
     id: 'environmental-surcharge', group: 'Payment', title: 'Environmental Surcharge',
     bengaliTitle: 'পরিবেশ সারচার্জ', statutorySection: 'Applicable surcharge provision',
     workflow: 'MANUAL_ENTRY', status: 'CONFIRMED',
     description: 'A separate surcharge bucket; assessment of liability originates in Tax & Payment.',
-    supportsManualEntry: false, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
+    supportsManualEntry: true, supportsIncomeSync: false, supportsLookup: false, supportsImport: false,
   },
 ];
 

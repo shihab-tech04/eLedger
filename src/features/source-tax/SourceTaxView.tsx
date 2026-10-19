@@ -15,6 +15,7 @@ import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.t
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
+import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { Receipt, ShieldCheck, Building, Sparkles } from 'lucide-react';
 
@@ -227,10 +228,12 @@ export const SourceTaxView: React.FC = () => {
             </h4>
           </div>
           <p className="text-xs text-slate-600 mt-2">
-            Record customs clearance references below using Add Entry. Live ASYCUDA Bill-of-Entry imports are not connected.
+            Record customs clearance references below using Add Entry or the local CSV batch importer. Live ASYCUDA Bill-of-Entry imports are not connected.
           </p>
         </div>
       )}
+
+      {currentRoute.id === 'system-import' && <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-system-import`} routeId="system-import" />}
 
       {/* Requirement #6: Inline Editable Table with Add Entry inserting row directly inside */}
       <InlineEditableTable
