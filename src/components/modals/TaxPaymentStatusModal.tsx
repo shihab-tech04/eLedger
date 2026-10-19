@@ -64,20 +64,19 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
           return (
             <div
               key={route.id}
-              className={`flex items-center justify-between text-xs px-2.5 py-1.5 rounded ${
+              className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 text-xs px-2.5 py-2 sm:py-1.5 rounded ${
                 count > 0 ? 'bg-slate-50 text-slate-800 font-medium' : 'text-slate-400'
               }`}
             >
-              <div className="flex items-center space-x-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                <span>{route.title}</span>
-                <span className="text-[10px] text-slate-400 font-mono">({route.statutorySection})</span>
+              <div className="flex min-w-0 items-start gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0 mt-1"></span>
+                <span className="min-w-0 break-words">{route.title} <span className="text-[10px] text-slate-400 font-mono whitespace-nowrap">({route.statutorySection})</span></span>
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 pl-3.5 sm:pl-0 shrink-0">
                 <span className="text-slate-500 font-normal">
                   {count} {count === 1 ? 'record' : 'records'}
                 </span>
-                <span className={`w-28 text-right font-mono ${count > 0 ? 'font-semibold text-emerald-800' : 'text-slate-400'}`}>
+                <span className={`min-w-24 sm:w-28 text-right font-mono ${count > 0 ? 'font-semibold text-emerald-800' : 'text-slate-400'}`}>
                   {formatCurrencyBDT(totalTax)}
                 </span>
               </div>
@@ -99,7 +98,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
         {/* 1. Modal Header */}
         <div className="px-5 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 flex-shrink-0">
           <div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
               <h2 id="modal-headline" className="text-base sm:text-lg font-bold tracking-tight text-white">
                 Tax Payment Status & Reconciliation
               </h2>
@@ -115,7 +114,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
           {/* Close Action */}
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="p-1.5 flex-shrink-0 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />

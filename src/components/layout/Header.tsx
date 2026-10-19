@@ -6,7 +6,7 @@
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { AssessmentYear } from '../../domain/models.ts';
-import { Building2, Calendar, User, RefreshCw, FileText } from 'lucide-react';
+import { Building2, Calendar, User, FileText } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const {
@@ -15,7 +15,6 @@ export const Header: React.FC = () => {
     availableTaxpayers,
     assessmentYear,
     setAssessmentYear,
-    resetToDefaults,
   } = useLedger();
 
   return (
@@ -103,19 +102,6 @@ export const Header: React.FC = () => {
               <span>{taxpayer.circle}, {taxpayer.taxesZone}</span>
             </div>
 
-            {/* Reset data button */}
-            <button
-              onClick={() => {
-                if (window.confirm('Reset ledger data and income sync references to default baseline records?')) {
-                  resetToDefaults();
-                }
-              }}
-              title="Reset baseline records"
-              className="p-1.5 rounded hover:bg-emerald-700 text-emerald-300 hover:text-white transition-colors border border-transparent hover:border-emerald-600"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="sr-only">Reset defaults</span>
-            </button>
           </div>
         </div>
       </div>

@@ -31,6 +31,8 @@ export const DashboardView: React.FC = () => {
   } = useLedger();
 
   const grouped = groupEntriesByRoute(entries);
+  const confirmedRoutes = CURRENT_ROUTE_REGISTRY.filter((route) => route.status === 'CONFIRMED').length;
+  const provisionalRoutes = CURRENT_ROUTE_REGISTRY.length - confirmedRoutes;
 
   const navigateToRoute = (routeId: LedgerRouteId, group: string) => {
     setActiveRouteId(routeId);
@@ -224,11 +226,13 @@ export const DashboardView: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2 text-xs">
             <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-medium border border-emerald-200">
-              Confirmed (16)
+              Confirmed ({confirmedRoutes})
             </span>
+            {provisionalRoutes > 0 && (
             <span className="inline-flex items-center px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-medium border border-amber-200">
-              Provisional (2)
+              Provisional ({provisionalRoutes})
             </span>
+            )}
           </div>
         </div>
 

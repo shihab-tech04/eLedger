@@ -45,9 +45,10 @@ import { ExternalLookupService, getLocalReferenceExamples } from '../services/ex
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { IncomeSyncService } from '../services/incomeSyncService.ts';
 import { getPriorAssessmentYears, readCarryForwardDetails } from '../domain/carryForward.ts';
-import { InlineEditableTable } from '../components/tables/InlineEditableTable.tsx';
+import { InlineEditableTable, MobileRowEditor } from '../components/tables/InlineEditableTable.tsx';
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from '../components/tables/ClaimEvidenceFields.tsx';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimEvidence.ts';
+import { localDateInputValue } from '../domain/localDate.ts';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -546,6 +547,94 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
       assert.equal(modified.externalVerified, false);
       assert.equal(modified.taxpayerTin, '123456789012');
     });
+  });
+});
+
+describe('eLedger — Phase 9 Mobile and Data-Safety Regression', () => {
+  const serviceClaim: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'> = {
+    taxpayerTin: '123456789012', assessmentYear: '2026-2027',
+    category: 'SOURCE_TAX', routeId: 'service-payment',
+    referenceNo: 'P9-SAFE-REF', sourceEntity: 'Source Ltd',
+    sectionCode: 'Sec 89', grossAmount: 1000, taxDeducted: 100,
+    date: '2026-07-20', status: 'PENDING_VERIFICATION',
+    workflow: 'MANUAL_ENTRY', isManual: true, externalVerified: false,
+  };
+
+  it('rejects nested objects, arrays, nulls, and incorrect evidence value types', () => {
+    const invalid = [
+      { depositingAuthority: { unexpected: 'object' } },
+      { paymentPurpose: ['array'] },
+      { documentAmount: '500' },
+      { documentAmount: null },
+      { paymentDocumentType: 42 },
+      { depositingAuthority: null },
+      [],
+      null,
+    ];
+    for (const evidence of invalid) {
+      const result = validateLedgerEntry({ ...serviceClaim, claimEvidence: evidence as LedgerEntry['claimEvidence'] }, []);
+      assert.equal(result.isValid, false, `Malformed evidence accepted: ${JSON.stringify(evidence)}`);
+    }
+  });
+
+  it('refuses to load malformed persisted evidence without overwriting the user’s original record', async () => {
+    const record = {
+      ...serviceClaim, id: 'p9-user-record', createdAt: '2026-07-20T00:00:00Z', updatedAt: '2026-07-20T00:00:00Z',
+      claimEvidence: { depositingAuthority: { nested: 'corrupt' } },
+    };
+    const original = JSON.stringify([...INITIAL_LEDGER_ENTRIES, record]);
+    const store = new Map([[LEDGER_STORAGE_KEY, original]]);
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key) => store.get(key) ?? null,
+      setItem: (key, value) => { store.set(key, value); },
+    });
+    await assert.rejects(repo.getAllEntries(), /left unchanged/);
+    assert.equal(store.get(LEDGER_STORAGE_KEY), original);
+  });
+
+  it('allows valid optional evidence, preserving historic records without claim metadata', async () => {
+    const store = new Map<string, string>();
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key) => store.get(key) ?? null,
+      setItem: (key, value) => { store.set(key, value); },
+    });
+    const legacy = await repo.addEntry({ ...serviceClaim });
+    const newer = await repo.addEntry({
+      ...serviceClaim, referenceNo: 'P9-SAFE-REF-2',
+      claimEvidence: { paymentDocumentType: 'CHALLAN', documentAmount: 250, depositingAuthority: 'Bank' },
+    });
+    assert.equal((await repo.getEntryById(legacy.id))?.claimEvidence, undefined);
+    assert.equal((await repo.getEntryById(newer.id))?.claimEvidence?.documentAmount, 250);
+  });
+
+  it('keeps mobile add/edit controls and optional evidence within labeled inline table rows', () => {
+    const table = renderToStaticMarkup(React.createElement(InlineEditableTable, {
+      entries: [], category: 'SOURCE_TAX', routeId: 'service-payment', defaultSection: 'Sec 89',
+      onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    }));
+    const mobile = renderToStaticMarkup(React.createElement('table', null,
+      React.createElement('tbody', null,
+        React.createElement(MobileRowEditor, {
+          values: { referenceNo: '', sourceEntity: '', sectionCode: 'Sec 89', grossAmount: '', taxDeducted: '', date: '2026-10-19' },
+          onFieldChange: () => {}, onSave: () => {}, onCancel: () => {},
+          evidence: {}, onEvidenceChange: () => {}, routeId: 'service-payment', isEdit: false,
+        })
+      )
+    ));
+    assert.match(table, /Recorded Ledger Entries/);
+    assert.match(table, /Add Entry/);
+    assert.match(table, /overflow-x-auto/);
+    assert.match(mobile, /sticky left-0/);
+    assert.match(mobile, /New Reference \/ Challan No/);
+    assert.match(mobile, /Depositing Authority/);
+    assert.match(mobile, /Save Entry/);
+    assert.match(mobile, /Cancel/);
+  });
+
+  it('formats a local browser calendar day without a UTC conversion', () => {
+    const date = new Date(2026, 9, 19, 0, 5);
+    assert.equal(localDateInputValue(date), '2026-10-19');
   });
 });
 

@@ -120,32 +120,48 @@ export function validateLedgerEntry(
 
   // Screenshot-specific supporting fields are optional for legacy records,
   // but any newly supplied evidence must agree with its route and claim.
-  if (entry.claimEvidence && entry.routeId) {
-    const allowed = new Set(getClaimEvidenceFields(entry.routeId).map((field) => field.key));
-    const evidence = entry.claimEvidence;
-    for (const [key, value] of Object.entries(evidence)) {
-      if (!allowed.has(key as keyof typeof evidence)) {
-        errors.claimEvidence = `Evidence field '${key}' is not applicable to this ledger route.`;
+  if (entry.claimEvidence !== undefined) {
+    const evidence: unknown = entry.claimEvidence;
+    if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence) || !entry.routeId) {
+      errors.claimEvidence = 'Supporting evidence must be a record of valid fields.';
+    } else {
+      const allowed = new Map<string, ReturnType<typeof getClaimEvidenceFields>[number]>(
+        getClaimEvidenceFields(entry.routeId).map((field) => [field.key, field])
+      );
+      for (const [key, value] of Object.entries(evidence)) {
+        const definition = allowed.get(key);
+        if (!definition) {
+          errors.claimEvidence = `Evidence field '${key}' is not applicable to this ledger route.`;
+          continue;
+        }
+        if (definition.kind === 'number') {
+          if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+            errors[key] = 'Evidence amount must be a positive finite number.';
+          }
+        } else if (typeof value !== 'string') {
+          errors[key] = 'Evidence description must be text.';
+        } else if (value.length > 250) {
+          errors[key] = 'Evidence descriptions must be 250 characters or fewer.';
+          errors.claimEvidence = 'Evidence descriptions must be 250 characters or fewer.';
+        }
       }
-      if (typeof value === 'string' && value.length > 250) {
-        errors.claimEvidence = 'Evidence descriptions must be 250 characters or fewer.';
+      const typed = evidence as Record<string, unknown>;
+      if (typeof typed.paymentDocumentType === 'string' &&
+        !['CHALLAN', 'CERTIFICATE', 'OTHER'].includes(typed.paymentDocumentType)) {
+        errors.paymentDocumentType = 'Choose a valid challan / certificate document type.';
       }
-    }
-    if (evidence.paymentDocumentType && !['CHALLAN', 'CERTIFICATE', 'OTHER'].includes(evidence.paymentDocumentType)) {
-      errors.paymentDocumentType = 'Choose a valid challan / certificate document type.';
-    }
-    if (evidence.documentAmount !== undefined &&
-      (!Number.isFinite(evidence.documentAmount) || evidence.documentAmount <= 0 || evidence.documentAmount < taxDeducted)) {
-      errors.documentAmount = 'Document amount must cover the positive amount claimed.';
-    }
-    if (evidence.savingsIssueDate) {
-      const [year, month, day] = evidence.savingsIssueDate.split('-').map(Number);
-      const d = new Date(Date.UTC(year, month - 1, day));
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(evidence.savingsIssueDate) ||
-        d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
-        errors.savingsIssueDate = 'Enter a valid savings certificate issue date.';
-      } else if (entry.date && evidence.savingsIssueDate > entry.date) {
-        errors.savingsIssueDate = 'Savings certificate issue date cannot be later than deduction date.';
+      if (typeof typed.documentAmount === 'number' && typed.documentAmount < taxDeducted) {
+        errors.documentAmount = 'Document amount must cover the positive amount claimed.';
+      }
+      if (typeof typed.savingsIssueDate === 'string' && typed.savingsIssueDate) {
+        const [year, month, day] = typed.savingsIssueDate.split('-').map(Number);
+        const d = new Date(Date.UTC(year, month - 1, day));
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(typed.savingsIssueDate) ||
+          d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
+          errors.savingsIssueDate = 'Enter a valid savings certificate issue date.';
+        } else if (entry.date && typed.savingsIssueDate > entry.date) {
+          errors.savingsIssueDate = 'Savings certificate issue date cannot be later than deduction date.';
+        }
       }
     }
   }

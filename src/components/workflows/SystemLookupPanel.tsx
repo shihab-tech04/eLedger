@@ -12,6 +12,7 @@ import { LedgerRouteId, TaxCategory, ExternalLookupResult } from '../../domain/m
 import { externalLookupService, getLocalReferenceExamples } from '../../services/externalLookupService.ts';
 import { validateExternalLookupMatch } from '../../domain/validation.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
+import { localDateInputValue } from '../../domain/localDate.ts';
 import { Search, ShieldCheck, AlertOctagon, CheckCircle2 } from 'lucide-react';
 
 interface SystemLookupPanelProps {
@@ -129,7 +130,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
       sectionCode: defaultSection,
       grossAmount: lookupResult.grossAmount,
       taxDeducted: lookupResult.taxAmount,
-      date: lookupResult.paymentDate || new Date().toISOString().split('T')[0],
+      date: lookupResult.paymentDate || localDateInputValue(),
       status: lookupResult.authoritative ? 'VERIFIED' : 'PENDING_VERIFICATION',
       workflow: 'SYSTEM_LOOKUP',
       isManual: false,
