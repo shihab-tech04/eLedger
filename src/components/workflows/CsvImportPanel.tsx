@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../../domain/csvImport.ts';
+import { LedgerTip } from '../ui/LedgerForm.tsx';
 
 /** Local CSV entry is not an official customs/ASYCUDA data feed. */
 export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' }> = ({ routeId }) => {
@@ -47,12 +48,12 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
     <section className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs space-y-3">
       <div>
         <h4 className="text-sm font-semibold text-slate-800">{t('Section 120 — Local CSV Batch Import','ধারা ১২০ — স্থানীয় CSV আমদানি')}</h4>
-        <p className="text-xs text-slate-600 mt-1">
-          {t('Upload a CSV from your computer or paste its contents. This is a local entry aid, not a live ASYCUDA/NBR integration. All rows are saved together or none are saved; imported claims remain pending verification.','কম্পিউটার থেকে CSV বাছুন বা তথ্য পেস্ট করুন। এটি স্থানীয় রেকর্ড তৈরির সহায়তা, সরাসরি ASYCUDA/NBR সংযোগ নয়। সব সারি একসঙ্গে সংরক্ষণ হবে, নইলে কোনোটি নয়; দাবিগুলো যাচাই অপেক্ষমাণ থাকবে।')}
-        </p>
-        <p className="text-[11px] text-slate-500 mt-2">{t('Required header (exact spelling and order):','আবশ্যিক হেডার (হুবহু বানান ও ক্রম):')}</p>
-        <code className="block mt-1 text-[11px] text-emerald-900 whitespace-normal break-all">{SECTION120_CSV_HEADERS.join(',')}</code>
-        <p className="text-[11px] text-slate-500 mt-1">{t('1–100 data rows. Import is restricted to the selected TIN','১–১০০টি তথ্য সারি। আমদানি কেবল নির্বাচিত TIN')} {taxpayer.tin} {t('and AY','ও করবর্ষ')} {assessmentYear}{t('.','-এর জন্য।')}</p>
+        <p className="text-xs text-slate-600 mt-1">{t('Choose a CSV or paste rows. Claims stay pending verification.','CSV বাছুন বা সারি পেস্ট করুন। দাবিগুলো যাচাই অপেক্ষমাণ থাকবে।')}</p>
+        <LedgerTip label={t('CSV format and limits','CSV ফরম্যাট ও সীমা')}>
+          <p>{t('Use this exact column order:','এই ক্রমে কলাম ব্যবহার করুন:')}</p>
+          <code className="block my-1 break-all">{SECTION120_CSV_HEADERS.join(',')}</code>
+          <p>{t('1–100 rows; all-or-nothing local import for TIN','১–১০০টি সারি; নির্বাচিত TIN-এর জন্য একসঙ্গে স্থানীয় আমদানি')} {taxpayer.tin}, {t('AY','করবর্ষ')} {assessmentYear}. {t('No live customs verification.','সরাসরি কাস্টমস যাচাই নেই।')}</p>
+        </LedgerTip>
       </div>
       <label className="block text-xs text-slate-700 font-medium">
         <span className="block mb-1">{t('Choose a local CSV file (optional)','স্থানীয় CSV ফাইল বাছুন (ঐচ্ছিক)')}</span>
@@ -67,12 +68,12 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
           rows={4}
           spellCheck={false}
           placeholder={`${SECTION120_CSV_HEADERS.join(',')}\nBOE-2026-001,Customs House Chattogram,Sec 120,120000,12000,2026-04-15`}
-          className="block w-full p-2.5 text-xs font-mono bg-slate-50 border border-slate-300 rounded focus:border-emerald-600 outline-none"
+          className="eledger-control min-h-28"
         />
       </label>
       {feedback.error && <p role="alert" className="p-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded">{feedback.error}</p>}
       {feedback.success && <p role="status" className="p-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded">{feedback.success}</p>}
-      <button type="button" onClick={importRows} disabled={!csv.trim() || busy} className="px-4 py-2 text-xs font-semibold text-white bg-emerald-700 rounded hover:bg-emerald-800 disabled:opacity-50">
+      <button type="button" onClick={importRows} disabled={!csv.trim() || busy} className="eledger-button eledger-button-primary">
         {busy ? t('Importing…','আমদানি হচ্ছে…') : t('Import Pending CSV Claims','যাচাই অপেক্ষমাণ CSV দাবি আমদানি করুন')}
       </button>
     </section>
