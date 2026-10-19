@@ -15,6 +15,7 @@ import { getClaimEvidenceFields, normalizeClaimEvidence } from '../../domain/cla
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields.tsx';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
 
 interface InlineEditableTableProps {
   entries: LedgerEntry[];
@@ -84,8 +85,8 @@ export const getTableFieldLabels = (
         : t('Tax Deducted (৳)', 'কর্তিত কর (৳)'),
 });
 
-/** The same inline table row becomes a legible, labeled editor on phones. */
-export const MobileRowEditor: React.FC<{
+/** Full-width labeled editor shared by all manual ledger routes at every width. */
+export const LedgerEntryEditor: React.FC<{
   values: EditableRowFields;
   onFieldChange: (field: keyof EditableRowFields, value: string) => void;
   onSave: () => void;
@@ -100,48 +101,44 @@ export const MobileRowEditor: React.FC<{
   const t = useLedgerCopy();
   const labels = fieldLabels ?? getTableFieldLabels('SOURCE_TAX', t);
   return (
-  <tr className={`sm:hidden ${isEdit ? 'bg-amber-50' : 'bg-emerald-50'}`}>
-    <td colSpan={8} className="p-0">
-      <div className={`sticky left-0 w-[calc(100vw-3.5rem)] max-w-full p-3 border-y-2 ${isEdit ? 'border-amber-500' : 'border-emerald-500'}`}>
-        <p className="text-sm font-semibold text-slate-800 mb-3">{isEdit ? t('Edit ledger entry','লেজার রেকর্ড সম্পাদনা') : t('New ledger entry','নতুন লেজার রেকর্ড')}</p>
-        {error && <p role="alert" className="text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2 mb-3">{error}</p>}
-        <div className="grid grid-cols-1 gap-3">
-          {([
-            ['referenceNo', labels.referenceNo, 'text'],
-            ['sourceEntity', labels.sourceEntity, 'text'],
-            ['sectionCode', t('Section','ধারা'), 'text'],
-            ['grossAmount', labels.grossAmount, 'number'],
-            ['taxDeducted', labels.taxDeducted, 'number'],
-            ['date', t('Date','তারিখ'), 'date'],
-          ] as const).map(([field, label, type]) => (
-            <label key={field} className="block text-xs font-semibold text-slate-700">
-              <span className="block mb-1">{label}</span>
-              <input
-                type={type}
-                aria-label={`${isEdit ? t('Edit','সম্পাদনা') : t('New','নতুন')} ${label}`}
-                value={values[field]}
-                onChange={(event) => onFieldChange(field, event.target.value)}
-                min={type === 'number' ? '0' : undefined}
-                step={type === 'number' ? 'any' : undefined}
-                className="block w-full min-w-0 text-sm px-2.5 py-2 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-              />
-            </label>
-          ))}
-          {getClaimEvidenceFields(routeId).length > 0 && (
-            <ClaimEvidenceFields routeId={routeId} evidence={evidence} onChange={onEvidenceChange} />
-          )}
-        </div>
-        <div className="flex justify-end gap-2 mt-3">
-          <button onClick={onCancel} className="px-4 py-2 bg-slate-200 text-slate-700 rounded text-xs font-semibold">{t('Cancel','বাতিল')}</button>
-          <button onClick={onSave} className={`px-4 py-2 text-white rounded text-xs font-semibold ${isEdit ? 'bg-amber-600' : 'bg-emerald-700'}`}>
-            {isEdit ? t('Save Changes','পরিবর্তন সংরক্ষণ') : t('Save Entry','রেকর্ড সংরক্ষণ')}
-          </button>
-        </div>
+    <form className="eledger-entry-editor" aria-label={isEdit ? t('Edit ledger entry','লেজার রেকর্ড সম্পাদনা') : t('New ledger entry','নতুন লেজার রেকর্ড')}
+      onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+      <div className="eledger-entry-editor-heading">
+        <strong>{isEdit ? t('Edit ledger entry','লেজার রেকর্ড সম্পাদনা') : t('New ledger entry','নতুন লেজার রেকর্ড')}</strong>
+        <LedgerTip label={t('Date guidance','তারিখ নির্দেশনা')}>
+          {t('Enter the date from the supporting document, not today by default.','সহায়ক দলিলের তারিখ দিন; স্বয়ংক্রিয়ভাবে আজকের তারিখ নয়।')}
+        </LedgerTip>
       </div>
-    </td>
-  </tr>
+      {error && <p role="alert" className="eledger-entry-error">{error}</p>}
+      <div className="eledger-entry-editor-fields">
+        {([
+          ['referenceNo', labels.referenceNo, 'text'],
+          ['sourceEntity', labels.sourceEntity, 'text'],
+          ['sectionCode', t('Section','ধারা'), 'text'],
+          ['grossAmount', labels.grossAmount, 'number'],
+          ['taxDeducted', labels.taxDeducted, 'number'],
+          ['date', t('Date','তারিখ'), 'date'],
+        ] as const).map(([field, label, type], index) => (
+          <LedgerInput key={field} label={label} autoFocus={index === 0} required
+            type={type} aria-label={`${isEdit ? t('Edit','সম্পাদনা') : t('New','নতুন')} ${label}`}
+            value={values[field]} onValueChange={(value) => onFieldChange(field, value)}
+            min={type === 'number' ? '0.01' : undefined} step={type === 'number' ? 'any' : undefined}
+            className={type === 'number' ? 'is-number' : ''}/>
+        ))}
+      </div>
+      {getClaimEvidenceFields(routeId).length > 0 && (
+        <ClaimEvidenceFields routeId={routeId} evidence={evidence} onChange={onEvidenceChange} />
+      )}
+      <div className="eledger-form-actions">
+        <button type="button" onClick={onCancel} className="eledger-button eledger-button-secondary"><X size={16}/>{t('Cancel','বাতিল')}</button>
+        <button type="submit" className="eledger-button eledger-button-primary"><Check size={16}/>{isEdit ? t('Save Changes','পরিবর্তন সংরক্ষণ') : t('Save Entry','রেকর্ড সংরক্ষণ')}</button>
+      </div>
+    </form>
   );
 };
+
+// Retain the public export for existing integration/test consumers.
+export const MobileRowEditor = LedgerEntryEditor;
 
 export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   entries,
@@ -189,7 +186,6 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   });
   const [editRowError, setEditRowError] = useState<string | null>(null);
   const [editClaimEvidence, setEditClaimEvidence] = useState<ClaimEvidence>({});
-  const hasEvidenceFields = getClaimEvidenceFields(routeId).length > 0;
 
   // Start adding new inline row
   const handleStartAdd = () => {
@@ -397,27 +393,37 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
         )}
       </div>
 
-      {/* Inline Add Error Banner */}
-      {newRowError && (
-        <div className="bg-rose-50 border-b border-rose-200 px-4 py-2 text-xs text-rose-800 flex items-center space-x-1.5">
-          <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-          <span>{newRowError}</span>
-        </div>
-      )}
-
-      {/* Inline Edit Error Banner */}
-      {editRowError && (
+      {/* Delete errors remain visible even when no editor is open. */}
+      {editRowError && !editingRowId && (
         <div className="bg-rose-50 border-b border-rose-200 px-4 py-2 text-xs text-rose-800 flex items-center space-x-1.5">
           <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
           <span>{editRowError}</span>
         </div>
       )}
 
+      {isAddingRow && <LedgerEntryEditor
+        values={newRowData} onFieldChange={(field, value) => setNewRowData((previous) => ({ ...previous, [field]: value }))}
+        onSave={handleSaveAdd} onCancel={handleCancelAdd}
+        evidence={newClaimEvidence} onEvidenceChange={setNewClaimEvidence}
+        routeId={routeId} fieldLabels={fieldLabels} isEdit={false} error={newRowError}
+      />}
+      {editingRowId && <LedgerEntryEditor
+        values={editRowData} onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
+        onSave={() => handleSaveEdit(editingRowId)} onCancel={handleCancelEdit}
+        evidence={editClaimEvidence} onEvidenceChange={setEditClaimEvidence}
+        routeId={routeId} fieldLabels={fieldLabels} isEdit error={editRowError}
+      />}
+
+      {entries.length === 0 && !isAddingRow && <p className="eledger-entry-empty">
+        {t('No ledger entries yet.','এখনো কোনো লেজার রেকর্ড নেই।')}
+        {allowAdd && <span> {t('Use Add Entry to record a claim.','দাবি রেকর্ড করতে রেকর্ড যোগ করুন।')}</span>}
+      </p>}
+
       {/* Table responsive container */}
-      <p className="sm:hidden px-4 py-2 text-xs text-slate-600 bg-sky-50 border-b border-slate-200">
+      {entries.length > 0 && <p className="sm:hidden px-4 py-2 text-xs text-slate-600 bg-sky-50 border-b border-slate-200">
         {t('Swipe the table sideways to see amounts, status and row actions.', 'অঙ্ক, অবস্থা ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}
-      </p>
-      <div className="overflow-x-auto">
+      </p>}
+      {entries.length > 0 && <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm text-slate-700">
           <thead className="bg-slate-100 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
             <tr>
@@ -432,141 +438,6 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {/* Inline New Entry Row (Requirement #6) */}
-            {isAddingRow && (
-              <React.Fragment>
-              <tr className="hidden sm:table-row bg-emerald-50/70 border-2 border-emerald-500 transition-all">
-                {/* Reference Input */}
-                <td className="px-3 py-2">
-                  <input
-                    type="text"
-                    aria-label={`${t('New','নতুন')} ${fieldLabels.referenceNo}`}
-                    value={newRowData.referenceNo}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, referenceNo: e.target.value })
-                    }
-                    placeholder="e.g. CH-2026-901"
-                    className="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Source Entity Input */}
-                <td className="px-3 py-2">
-                  <input
-                    type="text"
-                    aria-label={`${t('New','নতুন')} ${fieldLabels.sourceEntity}`}
-                    value={newRowData.sourceEntity}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, sourceEntity: e.target.value })
-                    }
-                    placeholder="e.g. Bangladesh Bank / Payor"
-                    className="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Section Code Input */}
-                <td className="px-3 py-2">
-                  <input
-                    type="text"
-                    aria-label={t('New Section','নতুন ধারা')}
-                    value={newRowData.sectionCode}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, sectionCode: e.target.value })
-                    }
-                    placeholder="Sec 102"
-                    className="w-20 text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Gross Amount Input */}
-                <td className="px-3 py-2 text-right">
-                  <input
-                    type="number"
-                    aria-label={fieldLabels.grossAmount}
-                    value={newRowData.grossAmount}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, grossAmount: e.target.value })
-                    }
-                    placeholder="0.00"
-                    min="0"
-                    step="any"
-                    className="w-24 text-xs px-2 py-1 text-right bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Tax Deducted Input */}
-                <td className="px-3 py-2 text-right">
-                  <input
-                    type="number"
-                    aria-label={fieldLabels.taxDeducted}
-                    value={newRowData.taxDeducted}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, taxDeducted: e.target.value })
-                    }
-                    placeholder="0.00"
-                    min="1"
-                    step="any"
-                    className="w-24 text-xs px-2 py-1 text-right font-semibold bg-white border border-emerald-500 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Date Input */}
-                <td className="px-3 py-2">
-                  <input
-                    type="date"
-                    aria-label={t('New Date','নতুন তারিখ')}
-                    value={newRowData.date}
-                    onChange={(e) =>
-                      setNewRowData({ ...newRowData, date: e.target.value })
-                    }
-                    className="text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                  />
-                </td>
-                {/* Initial Status */}
-                <td className="px-3 py-2 text-center">
-                  <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                    {t('Pending','অপেক্ষমাণ')}
-                  </span>
-                </td>
-                {/* Save / Cancel Buttons */}
-                <td className="px-3 py-2 text-right whitespace-nowrap">
-                  <div className="flex items-center justify-end space-x-1.5">
-                    <button
-                      onClick={handleSaveAdd}
-                      title={t('Save Entry','রেকর্ড সংরক্ষণ')}
-                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold shadow-xs transition-colors"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{t('Save','সংরক্ষণ')}</span>
-                    </button>
-                    <button
-                      onClick={handleCancelAdd}
-                      title={t('Cancel','বাতিল')}
-                      className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-semibold transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>{t('Cancel','বাতিল')}</span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <MobileRowEditor
-                values={newRowData}
-                onFieldChange={(field, value) => setNewRowData((previous) => ({ ...previous, [field]: value }))}
-                onSave={handleSaveAdd}
-                onCancel={handleCancelAdd}
-                evidence={newClaimEvidence}
-                onEvidenceChange={setNewClaimEvidence}
-                routeId={routeId}
-                fieldLabels={fieldLabels}
-                isEdit={false}
-                error={newRowError}
-              />
-              {hasEvidenceFields && (
-                <tr className="hidden sm:table-row bg-emerald-50/70 border-b-2 border-emerald-500">
-                  <td colSpan={8} className="px-3 pb-3">
-                    <ClaimEvidenceFields routeId={routeId} evidence={newClaimEvidence} onChange={setNewClaimEvidence} />
-                  </td>
-                </tr>
-              )}
-              </React.Fragment>
-            )}
-
             {/* Existing Rows */}
             {entries.length === 0 && !isAddingRow ? (
               <tr>
@@ -583,131 +454,8 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
               entries.map((entry) => {
                 const isEditing = editingRowId === entry.id;
 
-                if (isEditing) {
-                  return (
-                    <React.Fragment key={entry.id}>
-                    <tr
-                      className="hidden sm:table-row bg-amber-50/70 border-2 border-amber-500 transition-all"
-                    >
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.referenceNo}`}
-                          value={editRowData.referenceNo}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, referenceNo: e.target.value })
-                          }
-                          className="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.sourceEntity}`}
-                          value={editRowData.sourceEntity}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, sourceEntity: e.target.value })
-                          }
-                          className="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="text"
-                          aria-label={t('Edit Section','ধারা সম্পাদনা')}
-                          value={editRowData.sectionCode}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, sectionCode: e.target.value })
-                          }
-                          className="w-20 text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <input
-                          type="number"
-                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.grossAmount}`}
-                          value={editRowData.grossAmount}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, grossAmount: e.target.value })
-                          }
-                          min="0"
-                          step="any"
-                          className="w-24 text-xs px-2 py-1 text-right bg-white border border-slate-300 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <input
-                          type="number"
-                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.taxDeducted}`}
-                          value={editRowData.taxDeducted}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, taxDeducted: e.target.value })
-                          }
-                          min="1"
-                          step="any"
-                          className="w-24 text-xs px-2 py-1 text-right font-semibold bg-white border border-amber-500 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input
-                          type="date"
-                          aria-label={t('Edit Date','তারিখ সম্পাদনা')}
-                          value={editRowData.date}
-                          onChange={(e) =>
-                            setEditRowData({ ...editRowData, date: e.target.value })
-                          }
-                          className="text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-amber-600 outline-none"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        {renderStatusBadge(entry.status)}
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          <button
-                            onClick={() => handleSaveEdit(entry.id)}
-                            title={t('Save Changes','পরিবর্তন সংরক্ষণ')}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-semibold shadow-xs transition-colors"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>{t('Save','সংরক্ষণ')}</span>
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            title={t('Cancel Edit','সম্পাদনা বাতিল')}
-                            className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-semibold transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>{t('Cancel','বাতিল')}</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <MobileRowEditor
-                      values={editRowData}
-                      onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
-                      onSave={() => handleSaveEdit(entry.id)}
-                      onCancel={handleCancelEdit}
-                      evidence={editClaimEvidence}
-                      onEvidenceChange={setEditClaimEvidence}
-                      routeId={routeId}
-                      fieldLabels={fieldLabels}
-                      isEdit
-                      error={editRowError}
-                    />
-                    {hasEvidenceFields && (
-                      <tr className="hidden sm:table-row bg-amber-50/70 border-b-2 border-amber-500">
-                        <td colSpan={8} className="px-3 pb-3">
-                          <ClaimEvidenceFields routeId={routeId} evidence={editClaimEvidence} onChange={setEditClaimEvidence} />
-                        </td>
-                      </tr>
-                    )}
-                    </React.Fragment>
-                  );
-                }
-
                 return (
-                  <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={entry.id} className={`${isEditing ? 'eledger-row-being-edited' : ''} hover:bg-slate-50 transition-colors`}>
                     <td className="px-3 py-2.5 font-medium text-slate-900">
                       <div>{entry.referenceNo}</div>
                       {entry.remarks && (
@@ -737,7 +485,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                     </td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">
                       {allowEditDelete && <div className="flex items-center justify-end space-x-1.5">
-                        <button
+                        <button disabled={editingRowId !== null || isAddingRow}
                           onClick={() => handleStartEdit(entry)}
                           aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
                           className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
@@ -746,7 +494,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                           <Pencil className="w-3.5 h-3.5" />
                           <span className="sr-only">{t('Edit','সম্পাদনা')}</span>
                         </button>
-                        <button
+                        <button disabled={editingRowId !== null || isAddingRow}
                           onClick={() => handleDelete(entry.id, entry.referenceNo)}
                           aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
                           className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
@@ -784,7 +532,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
             </tfoot>
           )}
         </table>
-      </div>
+      </div>}
     </div>
   );
 };
