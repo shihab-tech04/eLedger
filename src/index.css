@@ -206,6 +206,12 @@ button, select, input { font: inherit; }
   .eledger-footer { flex-direction: column; gap: 2px; }
 }
 @media (max-width: 400px) {
+  .eledger-header-controls { flex-wrap: wrap; gap: 6px; min-width: 0; }
+  .eledger-header-controls > label { font-size: 10px; }
+  .eledger-header-controls > select { max-width: 105px; padding: 6px 18px 6px 6px; }
+  .eledger-taxpayer-select { flex: 1 1 auto; min-width: 0; gap: 4px; justify-content: flex-end; }
+  .eledger-taxpayer-select > span { width: 28px; height: 28px; }
+  .eledger-taxpayer-select select { max-width: 68px; min-width: 0; }
   .eledger-summary-cards { grid-template-columns: 1fr; }
   .eledger-summary-card { flex-direction: row; min-height: 102px; }
   .eledger-summary-details strong { font-size: 21px; }
