@@ -65,7 +65,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({ is
     getVisibleRoutesByGroup(group, entries.map((entry) => entry.routeId)).map((route) => (
       <div className="eledger-payment-subrow" key={route.id}>
         <span>{language === 'bn' ? route.bengaliTitle : route.title}</span>
-        <span className="eledger-payment-subcount">{grouped[route.id]?.entries.length ?? 0} {t('records','রেকর্ড')}</span>
+        <span className="eledger-payment-subcount">{grouped[route.id]?.entries.length ?? 0} {t((grouped[route.id]?.entries.length ?? 0) === 1 ? 'record' : 'records','রেকর্ড')}</span>
         <strong>{formatLedgerAmount(grouped[route.id]?.totalTax ?? 0)}</strong>
       </div>
     ));

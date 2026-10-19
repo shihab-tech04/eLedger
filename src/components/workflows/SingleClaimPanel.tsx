@@ -27,7 +27,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
     existingClaim ? existingClaim.referenceNo : ''
   );
   const [assessingCircle, setAssessingCircle] = useState(
-    existingClaim ? existingClaim.sourceEntity : `${taxpayer.circle}, ${taxpayer.taxesZone}`
+    existingClaim ? existingClaim.sourceEntity : ''
   );
   const [unabsorbedCredit, setUnabsorbedCredit] = useState(
     existingClaim ? existingClaim.taxDeducted.toString() : ''
@@ -41,10 +41,10 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
     const details = readCarryForwardDetails(existingClaim?.remarks, assessmentYear);
     setPriorAssessmentYear(details.priorAssessmentYear);
     setAssessmentOrderNo(existingClaim?.referenceNo ?? '');
-    setAssessingCircle(existingClaim?.sourceEntity ?? `${taxpayer.circle}, ${taxpayer.taxesZone}`);
+    setAssessingCircle(existingClaim?.sourceEntity ?? '');
     setUnabsorbedCredit(existingClaim ? String(existingClaim.taxDeducted) : '');
     setLossOrCreditType(details.classification);
-  }, [existingClaim?.id, assessmentYear, taxpayer.circle, taxpayer.taxesZone]);
+  }, [existingClaim?.id, assessmentYear, taxpayer.tin]);
 
   const handleSaveClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +146,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             id="carry-prior-year"
             value={priorAssessmentYear}
             onChange={(e) => setPriorAssessmentYear(e.target.value)}
-            className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
+            className="eledger-control"
           >
             {priorYearOptions.map((year, index) => (
               <option key={year} value={year}>
@@ -164,7 +164,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             id="carry-classification"
             value={lossOrCreditType}
             onChange={(e) => setLossOrCreditType(e.target.value)}
-            className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
+            className="eledger-control"
           >
             {(existingClaim ? CARRY_FORWARD_CLASSIFICATIONS : CARRY_FORWARD_CLASSIFICATIONS.slice(0, 1)).map((classification) => (
               <option key={classification} value={classification}>{classification}</option>
@@ -182,7 +182,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             value={assessmentOrderNo}
             onChange={(e) => setAssessmentOrderNo(e.target.value)}
             placeholder="e.g. CIR-015/ORD/2025-781"
-            className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
+            className="eledger-control"
             required
           />
         </div>
@@ -197,7 +197,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             value={assessingCircle}
             onChange={(e) => setAssessingCircle(e.target.value)}
             placeholder="Circle-015, Taxes Zone-08"
-            className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
+            className="eledger-control"
             required
           />
         </div>
@@ -216,7 +216,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
               placeholder="0.00"
               min="1"
               step="any"
-              className="w-full text-xs pl-8 pr-3 py-2 font-mono font-semibold bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 outline-none"
+              className="eledger-control pl-8 is-number"
               required
             />
           </div>
@@ -235,7 +235,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
           </div>
           <button
             type="submit"
-            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
+            className="eledger-button eledger-button-primary"
           >
             {existingClaim ? t('Update Carry-Forward Claim','পূর্ববর্তী কর সমন্বয় হালনাগাদ করুন') : t('Save Carry-Forward Claim','পূর্ববর্তী কর সমন্বয় সংরক্ষণ করুন')}
           </button>

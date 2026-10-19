@@ -9,13 +9,38 @@
   --el-blue: #076fb3;
   --el-blue-soft: #e8f3fa;
   --el-green: #006a50;
+  --el-control-radius: 7px;
+  --el-control-height: 40px;
+  --el-control-border: #c7d5e3;
   --el-sidebar-width: 260px;
   --el-header-height: 68px;
   color: var(--el-text);
   background: var(--el-bg);
 }
-body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Bengali', 'Hind Siliguri', sans-serif; }
-button, select, input { font: inherit; }
+body { font-family: 'Inter', 'Noto Sans Bengali', sans-serif; }
+button, select, input, textarea { font: inherit; }
+.eledger-app { font-size: 14px; line-height: 1.5; }
+.eledger-app :where(input, textarea, select) { max-width: 100%; }
+.eledger-app :where(input[type="number"], .is-number) { text-align: right; font-variant-numeric: tabular-nums; }
+.eledger-app input[type="date"] { font-variant-numeric: tabular-nums; }
+.eledger-app :where(button, select) { touch-action: manipulation; }
+.eledger-control { display: block; width: 100%; min-width: 0; min-height: var(--el-control-height); padding: 8px 11px; border: 1px solid var(--el-control-border); border-radius: var(--el-control-radius); color: var(--el-text); background: #fff; font-size: 13px; }
+.eledger-control:focus { border-color: var(--el-blue); }
+.eledger-control.is-readonly { background: #f5f8fb; color: #53657b; cursor: default; }
+.eledger-form-field { display: flex; flex-direction: column; min-width: 0; gap: 5px; color: #344760; font-size: 12px; font-weight: 600; }
+.eledger-evidence-fields { border-color: var(--el-border); background: #f7fafc; }
+.eledger-form-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.eledger-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--el-control-radius); font-size: 12px; font-weight: 650; cursor: pointer; }
+.eledger-button-primary { background: var(--el-blue); color: #fff; }
+.eledger-button-primary:hover { background: #075b94; }
+.eledger-button-secondary { background: #fff; border-color: var(--el-control-border); color: #40546e; }
+.eledger-button-secondary:hover { background: #eef5fa; }
+.eledger-button:disabled { opacity: .55; cursor: not-allowed; }
+.eledger-tip { position: relative; min-width: 0; color: #5f7188; font-size: 12px; font-weight: 400; }
+.eledger-tip summary { display: inline-flex; align-items: center; gap: 5px; color: var(--el-blue); cursor: pointer; list-style: none; font-weight: 600; }
+.eledger-tip summary::-webkit-details-marker { display: none; }
+.eledger-tip summary:focus-visible { outline: 2px solid var(--el-blue); outline-offset: 3px; border-radius: 3px; }
+.eledger-tip-content { max-width: 48ch; padding: 8px 0 2px; line-height: 1.55; }
 .eledger-app :where(button, a, input, select, textarea):focus-visible { outline: 2px solid #076fb3; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .eledger-app *, .eledger-app *::before, .eledger-app *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
@@ -228,6 +253,12 @@ button, select, input { font: inherit; }
 .eledger-salary-empty { padding: 25px 14px !important; color: #7b8a9e !important; text-align: center; }
 .eledger-salary-disclaimer { font-size: 10px; color: #6e8095; padding: 10px 20px; border-top: 1px solid #eaf0f4; }
 .eledger-salary-mobile-hint { display: none; }
+.eledger-salary-editor { padding: 16px 20px 18px; border-bottom: 1px solid var(--el-border); background: #f5faff; }
+.eledger-salary-editor-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.eledger-salary-editor-heading strong { font-size: 14px; font-weight: 700; color: var(--el-text); }
+.eledger-salary-editor-fields { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.eledger-row-being-edited { background: #f0f7fc; }
+.eledger-row-being-edited td:first-child { border-left: 3px solid var(--el-blue); }
 .eledger-ibas-workflow { display: flex; flex-direction: column; gap: 16px; }
 .eledger-ibas-search-row { display: flex; justify-content: flex-end; margin-top: -12px; }
 .eledger-ibas-search-row button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid #0070b9; border-radius: 8px; color: #066bad; background: #fff; font-size: 12px; font-weight: 750; cursor: pointer; }
@@ -241,7 +272,7 @@ button, select, input { font: inherit; }
 .eledger-ibas-facts strong.is-amount { color: #0576b6; font-size: 18px; }
 .eledger-ibas-claim { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 19px 20px; background: #fff; border: 1px solid #dce5ef; border-radius: 12px; }
 .eledger-ibas-claim label { font-size: 12px; color: #21304a; font-weight: 700; }
-.eledger-ibas-claim input { width: min(100%,670px); border: 1px solid #c3d5e8; padding: 12px; border-radius: 8px; font-size: 14px; }
+.eledger-ibas-claim input { width: min(100%,670px); }
 .eledger-ibas-claim span { font-size: 11px; color: #6d7e92; }
 .eledger-ibas-claim button { margin-left: min(45%,500px); padding: 10px 17px; border-radius: 7px; color: #fff; background: #8ab0c8; font-size: 12px; cursor: not-allowed; }
 .eledger-source-demo-note,.eledger-source-import-note { display: flex; align-items: flex-start; gap: 9px; margin-bottom: 10px; padding: 12px 15px; color: #245b7e; background: #edf7ff; border: 1px solid #cee5f3; border-radius: 8px; font-size: 11px; line-height: 1.5; }
@@ -255,6 +286,15 @@ button, select, input { font: inherit; }
 .eledger-source-record-list > div:last-child { box-shadow: none; border-color: #dce5ef; border-radius: 10px; }
 .eledger-source-record-list { min-width: 0; max-width: 100%; }
 .eledger-source-record-list thead { background: #f6f8fa; color: #5e6c80; }
+.eledger-ledger-table :where(input:not([type="checkbox"]),select,textarea) { min-height: 38px; border-color: var(--el-control-border); border-radius: var(--el-control-radius); font-size: 13px; }
+.eledger-ledger-table :where(input,select,textarea):focus { border-color: var(--el-blue); }
+.eledger-ledger-table :where(th) { font-size: 12px; line-height: 1.4; text-transform: none; letter-spacing: 0; }
+.eledger-ledger-table :where(button.bg-emerald-700,button.bg-emerald-600,button.bg-amber-600) { background: var(--el-blue); }
+.eledger-ledger-table :where(button.bg-emerald-700,button.bg-emerald-600,button.bg-amber-600):hover { background: #075b94; }
+.eledger-ledger-table button:disabled { opacity: .55; cursor: not-allowed; }
+.eledger-ledger-table :where(td.text-right,th.text-right) { font-variant-numeric: tabular-nums; }
+.eledger-ledger-table :where(td:has(input[type="date"]),th:nth-child(6)) { text-align: center; }
+.eledger-ledger-table :where(.text-xs,.text-\[11px\]) { line-height: 1.5; }
 
 /* AIT continues the same original white-card, blue-accent document language. */
 .eledger-ait-page { max-width: 1560px; min-width: 0; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
@@ -276,6 +316,14 @@ button, select, input { font: inherit; }
 .eledger-ait-records > div { border-color: #dce5ef; box-shadow: none; border-radius: 10px; max-width: 100%; }
 .eledger-ait-records thead { background: #f6f8fa; color: #5c6f83; }
 .eledger-ait-integrity { color: #758398; font-size: 10px; }
+.eledger-ait-summary p,.eledger-feature-header p,.eledger-source-demo-note,.eledger-source-import-note { font-size: 12px; line-height: 1.55; }
+.eledger-dashboard .eledger-card-label,.eledger-dashboard .eledger-summary-count { font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 650; }
+.eledger-dashboard .eledger-category-list button { font-size: 12px; }
+.eledger-dashboard .eledger-category-list strong,.eledger-dashboard .eledger-category-name small { font-size: 11px; }
+.eledger-dashboard .eledger-composition-heading h2,.eledger-dashboard .eledger-category-heading h2,.eledger-dashboard .eledger-dashboard-quick-actions h2 { font-size: 14px; font-weight: 700; }
+.eledger-dashboard .eledger-summary-caption,.eledger-dashboard .eledger-composition-heading p,.eledger-dashboard .eledger-category-heading p { font-size: 12px; }
+.eledger-dashboard .eledger-dashboard-action-list strong { font-size: 12px; }
+.eledger-dashboard .eledger-dashboard-action-list small { font-size: 11px; }
 
 /* Route forms retain their tested controls while adopting the historic page treatment. */
 .eledger-feature-header { border: 0; box-shadow: none; border-radius: 0; padding: 3px 0 10px; background: transparent; }
@@ -359,8 +407,12 @@ button, select, input { font: inherit; }
   .eledger-source-mobile-routes button { padding: 7px 10px; flex: 0 0 auto; border: 1px solid #d9e5ed; border-radius: 7px; background: #fff; color: #5d7085; font-size: 11px; cursor: pointer; }
   .eledger-source-mobile-routes button.is-active { color: #0874b4; background: #e9f5fc; border-color: #b5dbee; font-weight: 750; }
   .eledger-salary-table table { min-width: 1140px; }
+  .eledger-salary-editor-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 670px) {
+  .eledger-salary-editor { padding: 13px; }
+  .eledger-salary-editor-fields { grid-template-columns: 1fr; gap: 11px; }
+  .eledger-form-actions .eledger-button { flex: 1; }
   .eledger-dashboard-heading { flex-direction: column; gap: 14px; }
   .eledger-summary-cards { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
   .eledger-summary-card { min-height: 155px; padding: 13px; flex-direction: column; }
@@ -389,14 +441,22 @@ button, select, input { font: inherit; }
   .eledger-ait-summary strong { font-size: 15px; }
 }
 @media (max-width: 400px) {
-  .eledger-summary-cards { grid-template-columns: 1fr 1fr; }
-  .eledger-summary-card { min-height: 150px; flex-direction: column; }
-  .eledger-summary-amount { font-size: 18px; }
+  .eledger-summary-cards { grid-template-columns: 1fr; }
+  .eledger-summary-card { min-height: 0; padding: 13px 15px; }
+  .eledger-summary-upper { margin-bottom: 4px; }
+  .eledger-summary-amount { font-size: 22px; }
   .eledger-summary-card .eledger-card-label { min-height: 29px; }
   .eledger-summary-count { font-size: 10px; }
   .eledger-salary-toolbar { gap: 7px; }
   .eledger-salary-stat { padding-right: 7px; }
   .eledger-salary-add { gap: 4px; padding: 8px 7px; font-size: 10px; }
+}
+@media (max-width: 350px) {
+  .eledger-header-controls { flex-wrap: nowrap; gap: 4px; }
+  .eledger-assessment select { max-width: 88px; }
+  .eledger-taxpayer-button > svg { display: none; }
+  .eledger-language-switch button { padding: 5px 6px; }
+  .eledger-header-main { gap: 6px; }
 }
 
 /* September 20 custom eLedger Tax Payment Status — six rows, light sheet, recorded footer. */

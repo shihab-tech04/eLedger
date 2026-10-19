@@ -9,6 +9,8 @@ import { SalaryOthersTable } from './SalaryOthersTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
+import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
+import { LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
 
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -72,13 +74,8 @@ export const SourceTaxView: React.FC = () => {
       </header>
 
       {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
-      <nav className="eledger-source-mobile-routes" aria-label={t('Source Tax categories','উৎস করের খাতসমূহ')}>
-        {sourceTaxRoutes.map((route) => (
-          <button key={route.id} type="button" className={route.id === currentRoute.id ? 'is-active' : ''}
-            aria-current={route.id === currentRoute.id ? 'page' : undefined}
-            onClick={() => setActiveRouteId(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
-        ))}
-      </nav>
+      <RouteMobileTabs routes={sourceTaxRoutes} activeId={currentRoute.id}
+        label={t('Source Tax categories','উৎস করের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
       {isIbas && (
         <section className="eledger-ibas-workflow">
@@ -95,10 +92,12 @@ export const SourceTaxView: React.FC = () => {
           </div>
           <div className="eledger-ibas-claim">
             <label htmlFor="eledger-ibas-claimed">{t('TDS Claim','উৎস কর দাবি')}</label>
-            <input id="eledger-ibas-claimed" value={money(totalTaxForRoute)} readOnly
+            <input id="eledger-ibas-claimed" value={money(totalTaxForRoute)} readOnly className="eledger-control is-readonly"
               aria-describedby="eledger-ibas-integrity-note"/>
-            <span id="eledger-ibas-integrity-note">{t('Read-only demonstration data. No live CGA/iBAS++ lookup or official claim submission is connected.','এটি শুধু পাঠযোগ্য নমুনা তথ্য। সরাসরি CGA/iBAS++ অনুসন্ধান বা সরকারি দাবি দাখিল সংযুক্ত নেই।')}</span>
-            <button type="button" disabled title={t('A verified iBAS++ connection is required','যাচাইকৃত iBAS++ সংযোগ প্রয়োজন')}>{t('Save — official connection required','সংরক্ষণ — সরকারি সংযোগ প্রয়োজন')}</button>
+            <span id="eledger-ibas-integrity-note">{t('Local record only — no official submission.','শুধু স্থানীয় রেকর্ড — সরকারি দাখিল নয়।')}</span>
+            <LedgerTip label={t('Why can’t I save?','সংরক্ষণ বন্ধ কেন?')}>
+              {t('Official submission requires a verified CGA/iBAS++ connection, which is not available here.','সরকারি দাখিলের জন্য যাচাইকৃত CGA/iBAS++ সংযোগ প্রয়োজন; এখানে তা নেই।')}
+            </LedgerTip>
           </div>
         </section>
       )}
@@ -122,7 +121,7 @@ export const SourceTaxView: React.FC = () => {
             </div>
           )}
           {currentRoute.supportsIncomeSync && (
-            <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={currentRoute.title}/>
+            <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.title}/>
           )}
           {currentRoute.id === 'commercial-source' && (
             <SystemLookupPanel routeId={currentRoute.id} category="SOURCE_TAX"

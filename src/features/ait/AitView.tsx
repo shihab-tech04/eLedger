@@ -8,6 +8,7 @@ import { InlineEditableTable } from '../../components/tables/InlineEditableTable
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
+import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
@@ -77,13 +78,8 @@ export const AitView: React.FC = () => {
         <p>{currentRoute.statutorySection}</p>
       </header>
 
-      <nav className="eledger-source-mobile-routes" aria-label={t('AIT categories','অগ্রিম করের খাতসমূহ')}>
-        {aitRoutes.map((route) => (
-          <button type="button" key={route.id} className={route.id === currentRoute.id ? 'is-active' : ''}
-            aria-current={route.id === currentRoute.id ? 'page' : undefined}
-            onClick={() => setActiveRouteId(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
-        ))}
-      </nav>
+      <RouteMobileTabs routes={aitRoutes} activeId={currentRoute.id}
+        label={t('AIT categories','অগ্রিম করের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
       <div className="eledger-ait-summary">
         <div><span>{t('Total Claimed Amount','মোট দাবিকৃত অঙ্ক')}</span><strong>{money(totalTaxForRoute)}</strong></div>

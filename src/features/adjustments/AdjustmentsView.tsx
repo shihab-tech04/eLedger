@@ -14,6 +14,7 @@ import { InlineEditableTable } from '../../components/tables/InlineEditableTable
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { ChevronLeft } from 'lucide-react';
+import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 
 export const AdjustmentsView: React.FC = () => {
   const {
@@ -96,13 +97,8 @@ export const AdjustmentsView: React.FC = () => {
         <p>{currentRoute.statutorySection}</p>
       </header>
 
-      <nav className="eledger-source-mobile-routes" aria-label={t('Adjustment categories','কর সমন্বয়ের খাতসমূহ')}>
-        {adjustmentRoutes.map((route) => (
-          <button type="button" key={route.id} className={route.id === currentRoute.id ? 'is-active' : ''}
-            aria-current={route.id === currentRoute.id ? 'page' : undefined}
-            onClick={() => setActiveRouteId(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
-        ))}
-      </nav>
+      <RouteMobileTabs routes={adjustmentRoutes} activeId={currentRoute.id}
+        label={t('Adjustment categories','কর সমন্বয়ের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
       <div className="eledger-ait-summary">
         <div><span>{t('Total Recorded Adjustment','মোট রেকর্ডকৃত সমন্বয়')}</span><strong>{formatLedgerAmount(totalTaxForRoute)}</strong></div>
