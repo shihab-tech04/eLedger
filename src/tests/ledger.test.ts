@@ -770,14 +770,14 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
 });
 
 describe('eLedger — Phase 11 Recovery Acceptance and Raw Backup', () => {
-  it('offers data backup instead of a destructive reset and gives dashboard route cards keyboard semantics', () => {
+  it('offers data backup instead of a destructive reset and gives dashboard native button semantics', () => {
     const html = renderToStaticMarkup(React.createElement(LanguageProvider, null,
       React.createElement(LedgerProvider, null,
         React.createElement(Header), React.createElement(DashboardView))));
     assert.match(html, /eledger-taxpayer-button/);
     assert.match(html, /Open profile menu/);
     assert.doesNotMatch(html, /Reset defaults/);
-    assert.match(html, /role="button" tabIndex="0"/i);
+    assert.match(html, /<button[^>]+class="eledger-summary-card source"/);
   });
   it('exports both original storage values, even if one is malformed, without rewriting data', () => {
     const recorded = new Map<string, string>([
@@ -1610,17 +1610,24 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.ok(getCurrentRoutesByGroup('AIT').some((route) => route.id === 'ait-import'));
   });
 
-  it('uses the archived dashboard hierarchy without replacing verified totals with recorded sums', () => {
+  it('restores the original September dashboard composition without misrepresenting verified credit', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(DashboardView)));
-    assert.match(markup, /eledger-welcome/);
+    assert.match(markup, /ERETURN LEDGER/);
+    assert.match(markup, /See the current Ledger tax, AIT, adjustments and total amount at a glance/);
     assert.match(markup, /eledger-summary-cards/);
-    assert.match(markup, /Other Tax Credits/);
-    assert.match(markup, /Verified Tax Credit/);
-    assert.match(markup, /Ledger progress/);
-    assert.match(markup, /Recent ledger activity/);
+    assert.match(markup, /Other Tax &amp; Adjustments/);
+    assert.match(markup, /Ledger Total/);
+    assert.match(markup, /Ledger composition/);
+    assert.match(markup, /Source Tax categories/);
+    assert.match(markup, /AIT categories/);
+    assert.match(markup, /Other tax &amp; adjustments/);
+    assert.match(markup, /eledger-composition-bar/);
+    assert.match(markup, /Salary \(iBAS\+\+\)/);
     assert.match(markup, /Quick actions/);
-    assert.match(markup, /Only externally confirmed amounts/);
+    assert.match(markup, /View Tax Payment Status/);
+    assert.match(markup, /Independently authorized verified credit/);
+    assert.doesNotMatch(markup, /eledger-welcome|eledger-progress-ring|Recent ledger activity/);
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
   });
 });

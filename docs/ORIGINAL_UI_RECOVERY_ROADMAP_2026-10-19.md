@@ -34,7 +34,7 @@ Each phase is **complete** only after its changes are isolated, checked against 
 - Keep assessment-year/taxpayer changes, mobile menu, backups and access to all current/legacy saved routes.
 - Run desktop/mobile visual smoke tests, profile/language/nav checks, 104 ledger tests, lint and build.
 
-**Phase 1 implementation verification:** header, sidebar, language state, CSS design tokens and route-preserving navigation updated. Desktop browser review at 1345px confirmed shell geometry and links; Source Tax navigation, profile dropdown, language switching and AIT expansion were exercised successfully. Actual app frames were also inspected at **390×844** and **320×740** CSS-pixel viewports; the mobile navigation drawer opened and exposed the full historical route list. Test suite: **104/104**, TypeScript and production build passed. A ZIP backup of commit 1787030 was uploaded and its metadata read back from the user's independent Google Drive recovery folder (SHA-256 45936054d28cccfb0850f753f5f1519e79717f84e60e145029011b7c58acb302). **GitHub branch/PR, protected main deployment and live review still pending.** The language control currently updates shell labels; full content translation remains in Phase 6.
+**Phase 1 accepted and live:** the recovered shell was merged in [PR #17](https://github.com/shihab-tech04/eLedger/pull/17), production commit `1d57069b815ee09d132beefb6d791372bd5c1903`; GitHub Actions deployment run `39209008674` passed and the actual public GitHub Pages view was inspected. Desktop review at 1345px confirmed shell geometry and links; Source Tax navigation, profile dropdown, language switching and AIT expansion were exercised. Actual app frames were also inspected at **390×844** and **320×740** CSS-pixel viewports. Test suite: **104/104**, TypeScript and production build passed. Independently backed-up tested ZIP: `eledger-phase1-ef82472-20261019.zip`, SHA-256 `ae899a8f844b8c6ce44df09657b60eb8e33e42a77538b2a0884428938fe61c65`. The language control currently updates shell labels; full content translation remains in Phase 6.
 
 ### 2 — Dashboard
 
@@ -42,6 +42,8 @@ Each phase is **complete** only after its changes are isolated, checked against 
 - Use live current-context ledger totals, never copy September screenshot amounts into production.
 - Distinguish recorded ledger total from independently authorized verified credit. Do not label locally saved claims authoritative.
 - Verify empty, seeded, alternative taxpayer and assessment-year views at desktop/mobile widths.
+
+**Phase 2 candidate verification:** replaced the entire modern dashboard hierarchy with the September original: eyebrow, compact summary cards, category breakdowns, composition bar and compact action list. Totals and category counts derive from the active taxpayer, assessment year and saved route IDs, including historical routes that still hold records. The displayed Ledger Total is the recorded sum of Source Tax, AIT, payments and adjustments; independently authorized verified credit remains a distinct value and is explicitly labelled. Desktop (1345px), **390×844** and **320×740** mobile browser views checked. Category drill-down, status modal, active-year changes (**2026–2027**, **2025–2026**, empty **2024–2025**), 0% composition arithmetic, TypeScript, production build and **104/104** tests passed. Production release and independent ZIP evidence are tracked through the corresponding Phase 2 GitHub PR/deploy.
 
 ### 3 — Source Tax pages
 
