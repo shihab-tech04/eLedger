@@ -60,6 +60,7 @@ import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
+import { AitView } from '../features/ait/AitView.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1683,5 +1684,21 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /No live CGA\/iBAS\+\+ lookup/);
     assert.match(markup, /Save — official connection required/);
     assert.match(markup, /disabled/);
+  });
+
+  it('renders original-style AIT categories with local-only lookup and safe claim totals', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(AitView)));
+    assert.match(markup, /AIT on Car/);
+    assert.match(markup, /Total Claimed Amount/);
+    assert.match(markup, /Reference lookup/);
+    assert.match(markup, /Local demonstration records only/);
+    assert.match(markup, /Advance Income Tax claims/);
+    assert.match(markup, /Locally recorded AIT claims remain pending/);
+    assert.doesNotMatch(markup, /eledger-route-overview/);
+    assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
+    assert.deepEqual(getClaimEvidenceFields('sec-154').slice(0, 2).map((field) => field.key), [
+      'paymentDocumentType', 'documentAmount',
+    ]);
   });
 });

@@ -60,6 +60,8 @@ Each phase is **complete** only after its changes are isolated, checked against 
 - Retain all 18 current route identities and historical saved routes. Distinguish Source Tax Import from AIT Import/Section 120.
 - Verify claim scope, duplicates, joint taxpayer shares, year isolation, cross-route reference controls and save/edit/delete.
 
+**Phase 4 candidate verification:** AIT on Car, AIT (154) and AIT Import (120) now share the recovered title/caption, white claim-summary and blue-accent treatment used by the September custom eLedger Source Tax pages. All three present current-context totals and the preserved claim table; Car and Section 154 retain context-bound **local-only** reference lookups, Section 154 retains challan type/amount/payment mode/bank/branch/zone/circle inputs in its inline evidence editor, and Section 120 retains the local all-or-none CSV import separate from Source Tax Import. The remaining Source Tax Sanchayapatra sync and Source Tax Import workflows were smoke-tested in browser; no external government confirmations are fabricated. Phone views at **390×844** and **320×740** were checked and horizontal document overflow contained while nested table scrolling remains available. **108/108 tests**, lint and build pass. The archive has no direct AIT-page screenshot: styling is inferred from the matching custom Ledger shell and Salary pages, rather than certified as exact-to-pixel for AIT. PR/Actions deployment records provide the release gate.
+
 ### 5 — Payments, adjustments and status
 
 - Restore direct Tax Paid with Return, Environmental Surcharge, Tax Refund and Carry-Forward screens.
