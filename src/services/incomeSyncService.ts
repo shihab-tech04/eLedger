@@ -8,7 +8,7 @@ import { INITIAL_INCOME_SYNC_ITEMS } from '../data/seedData.ts';
 import { ledgerRepository } from './ledgerRepository.ts';
 import { sameLedgerReference } from '../domain/validation.ts';
 
-const SYNC_STORAGE_KEY = 'nbr_eledger_income_sync_v1';
+export const SYNC_STORAGE_KEY = 'nbr_eledger_income_sync_v1';
 type IncomeStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
 export class IncomeSyncService {

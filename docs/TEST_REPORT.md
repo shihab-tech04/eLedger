@@ -1,4 +1,15 @@
-# NBR eReturn Ledger — Phase 6 Candidate Verification
+# Current Recovery Checkpoint — Phase 11 (2026-10-19)
+
+- **102/102** native tests passed; TypeScript type check and Vite build passed.
+- Raw saved-data export, unreadable-storage warning and keyboard dashboard controls added.
+- All **18** currently visible routes rendered in the live browser Phase 10 acceptance tour (10 Source Tax, 3 AIT, 2 Payment, 2 Adjustment, 1 Status), with TIN/year switches restored and no console errors.
+- Source/AIT CSV parser and atomic repository checks reject duplicates, invalid dates, incorrect amounts and failed storage writes without partial import.
+- Verified credit remains **Tk. 0.00** when only locally entered or pending records exist; no government attestation is minted.
+- The Phase 11 source release requires its own PR CI, Pages deploy and exact-bundle live check before acceptance is final.
+
+---
+
+# Historical Phase 6 Candidate Verification
 
 **Starting point:** Phase 5 deployed `main` at `a96f31e`.
 

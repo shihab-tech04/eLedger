@@ -51,6 +51,11 @@ import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimE
 import { localDateInputValue } from '../domain/localDate.ts';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../domain/csvImport.ts';
 import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransferPanel.tsx';
+import { createLocalLedgerBackup } from '../services/ledgerBackup.ts';
+import { SYNC_STORAGE_KEY } from '../services/incomeSyncService.ts';
+import { LedgerProvider } from '../context/LedgerContext.tsx';
+import { Header } from '../components/layout/Header.tsx';
+import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -759,6 +764,85 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
     assert.match(markup, /Tax &amp; Payment/);
     assert.match(markup, /does not calculate statutory surcharge rates/);
     assert.match(markup, /Record Local Surcharge Transfer/);
+  });
+});
+
+describe('eLedger — Phase 11 Recovery Acceptance and Raw Backup', () => {
+  it('offers data backup instead of a destructive reset and gives dashboard route cards keyboard semantics', () => {
+    const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(Header), React.createElement(DashboardView)));
+    assert.match(html, /Download Local Backup/);
+    assert.doesNotMatch(html, /Reset defaults/);
+    assert.match(html, /role="button" tabIndex="0"/i);
+  });
+  it('exports both original storage values, even if one is malformed, without rewriting data', () => {
+    const recorded = new Map<string, string>([
+      [LEDGER_STORAGE_KEY, '{not-valid-json'],
+      [SYNC_STORAGE_KEY, '[{"preserve":"unaltered"}]'],
+    ]);
+    let writes = 0;
+    const storage = {
+      getItem: (key: string) => recorded.get(key) ?? null,
+      setItem: () => { writes++; },
+    };
+    const payload = createLocalLedgerBackup(storage, '2026-10-19T00:00:00.000Z');
+    assert.equal(payload.format, 'eledger-local-backup-v1');
+    assert.equal(payload.storage[LEDGER_STORAGE_KEY], '{not-valid-json');
+    assert.equal(payload.storage[SYNC_STORAGE_KEY], '[{"preserve":"unaltered"}]');
+    assert.equal(payload.createdAt, '2026-10-19T00:00:00.000Z');
+    assert.equal(writes, 0);
+    assert.deepEqual(JSON.parse(JSON.stringify(payload)), payload);
+  });
+
+  it('does not silently substitute demo records into a raw backup when storage values are missing', () => {
+    const payload = createLocalLedgerBackup({ getItem: () => null }, '2026-10-19T00:00:00Z');
+    assert.equal(payload.storage[LEDGER_STORAGE_KEY], null);
+    assert.equal(payload.storage[SYNC_STORAGE_KEY], null);
+  });
+
+  it('preserves the complete transaction story: batch import, correction, adjustment, two-context isolation, reconciliation, delete', async () => {
+    const recorded = new Map<string, string>();
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key) => recorded.get(key) ?? null,
+      setItem: (key, value) => { recorded.set(key, value); },
+    });
+    const current = { taxpayerTin: '987654321098', assessmentYear: '2025-2026' as const };
+    const context = { ...current, routeId: 'ait-import' as const };
+    const imported = await repo.addEntriesBatch(parseSection120Csv(
+      `${SECTION120_CSV_HEADERS.join(',')}\nBOE-P11-01,Customs,Sec 120,40000,4000,2025-05-10`, context
+    ));
+    assert.equal(imported.length, 1);
+    const corrected = await repo.updateEntry(imported[0].id, { taxDeducted: 3750 });
+    assert.equal(corrected.taxDeducted, 3750);
+    const surcharge = await repo.addEntry({
+      ...current, category: 'PAYMENT', routeId: 'environmental-surcharge',
+      referenceNo: 'SUR-P11-01', sourceEntity: 'Local Tax & Payment', sectionCode: 'Surcharge',
+      grossAmount: 500, taxDeducted: 500, date: '2025-05-10',
+      status: 'PENDING_VERIFICATION', workflow: 'MANUAL_ENTRY', isManual: true, externalVerified: false,
+    });
+    const scoped = await repo.getEntries(current.taxpayerTin, current.assessmentYear);
+    const totals = calculateCategoryTotals(scoped);
+    assert.equal(totals.aitTotal, 3750);
+    assert.equal(totals.environmentalSurchargeTotal, 500);
+    assert.equal(totals.grandTotalCredits, 0);
+    assert.equal(scoped.some((row) => row.id === surcharge.id), true);
+    assert.equal((await repo.getEntries(current.taxpayerTin, '2026-2027')).some((row) => row.id === surcharge.id), false);
+    assert.equal((await repo.getEntries('123456789012', current.assessmentYear)).some((row) => row.id === imported[0].id), false);
+    const backup = createLocalLedgerBackup({ getItem: (key) => recorded.get(key) ?? null });
+    assert.match(backup.storage[LEDGER_STORAGE_KEY] || '', /BOE-P11-01/);
+    assert.equal(await repo.deleteEntry(surcharge.id), true);
+    assert.equal((await repo.getEntries(current.taxpayerTin, current.assessmentYear)).length, 1);
+    assert.equal((await repo.getEntryById(corrected.id))?.taxDeducted, 3750);
+  });
+
+  it('maintains the same 18 visible route IDs with no hidden existing route data loss', () => {
+    assert.equal(CURRENT_ROUTE_REGISTRY.length, 18);
+    assert.equal(new Set(CURRENT_ROUTE_REGISTRY.map((route) => route.id)).size, 18);
+    for (const route of CURRENT_ROUTE_REGISTRY) {
+      const visible = getVisibleRoutesByGroup(route.group, []);
+      assert.ok(visible.some((item) => item.id === route.id), `Missing ${route.id}`);
+    }
+    assert.ok(getVisibleRoutesByGroup('Source Tax', ['contractor-supplier']).some((route) => route.id === 'contractor-supplier'));
   });
 });
 

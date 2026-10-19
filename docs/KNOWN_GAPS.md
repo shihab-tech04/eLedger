@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–10)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–11)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -7,6 +7,8 @@ This document tracks items where source evidence was interrupted or where live g
 ## 1. Status Breakdown
 
 ### Implemented & Tested
+- [x] Phase 11: Original raw ledger/income-sync backup export and visible corrupt-storage alert without record replacement
+- [x] Phase 11: Keyboard-operable dashboard cards, 18 live route smoke checks, taxpayer/year browser switch, 102-test regression suite
 - [x] Phase 10: Local Section 120 CSV import on Source Tax and AIT with all-or-nothing validation and duplicate prevention
 - [x] Phase 10: Explicit local surcharge handoff/reference, pending status and separate reconciliation bucket
 - [x] Phase 9: Mobile in-row form and modal breakdown layout, dynamic route-evidence badges, browser-local dates, and removal of public global reset
@@ -66,7 +68,7 @@ This document tracks items where source evidence was interrupted or where live g
 - **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
 - **Customs/system imports:** Local Section 120 CSV files can be read and batch-saved, but no ASYCUDA feed, government reference confirmation or authoritative import-file reconciliation is connected.
 - **Environmental Surcharge:** The Tax & Payment handoff is a user-entered local simulation. The app does not calculate surcharge rates or retrieve real liability/receipt records from NBR.
-- **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks and 16 writable routes have repository-level transaction tests. Browser form-level create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute complete financial-workflow acceptance.
+- **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks, including Phase 10 Source/AIT import and surcharge field validation, and 16 original writable routes have repository-level transaction tests. Browser form-level create/edit/delete for every route, cross-browser accessibility, actual backend financial journeys, and real storage-failure UI exercise remain unverified. Rendering and unit tests do not constitute complete financial-workflow acceptance.
 - **Concurrent independent tabs:** A single-tab mutation queue does not make browser localStorage a transactional multi-user database. Simultaneous cross-tab writes remain a known limitation pending a backend.
 
 ### Unverified Historical Commit Assets

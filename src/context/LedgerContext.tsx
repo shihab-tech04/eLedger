@@ -25,6 +25,7 @@ interface LedgerContextType {
   setAssessmentYear: (ay: AssessmentYear) => void;
   entries: LedgerEntry[];
   isLoading: boolean;
+  loadError: string | null;
   totals: TaxCategoryTotals;
   activeNavTab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments';
   setActiveNavTab: (tab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments') => void;
@@ -50,6 +51,7 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [loadedEntries, setLoadedEntries] = useState<LedgerEntry[]>([]);
   const loadSequence = useRef(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments'>('dashboard');
   const [activeRouteId, setActiveRouteId] = useState<LedgerRouteId>('salary-ibas');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
@@ -65,9 +67,16 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsLoading(true);
     try {
       const data = await ledgerRepository.getEntries(taxpayer.tin, assessmentYear);
-      if (loadId === loadSequence.current) setLoadedEntries(data);
+      if (loadId === loadSequence.current) {
+        setLoadedEntries(data);
+        setLoadError(null);
+      }
     } catch (err) {
       console.error('Error fetching ledger entries:', err);
+      if (loadId === loadSequence.current) {
+        setLoadedEntries([]);
+        setLoadError(err instanceof Error ? err.message : 'Saved ledger data could not be read.');
+      }
     } finally {
       if (loadId === loadSequence.current) setIsLoading(false);
     }
@@ -210,6 +219,7 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setAssessmentYear,
         entries,
         isLoading,
+        loadError,
         totals,
         activeNavTab,
         setActiveNavTab,

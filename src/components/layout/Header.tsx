@@ -3,12 +3,14 @@
  * Government of Bangladesh - National Board of Revenue eReturn Ledger
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { AssessmentYear } from '../../domain/models.ts';
-import { Building2, Calendar, User, FileText } from 'lucide-react';
+import { Building2, Calendar, User, FileText, Download } from 'lucide-react';
+import { createLocalLedgerBackup } from '../../services/ledgerBackup.ts';
 
 export const Header: React.FC = () => {
+  const [backupError, setBackupError] = useState<string | null>(null);
   const {
     taxpayer,
     setTaxpayer,
@@ -16,6 +18,24 @@ export const Header: React.FC = () => {
     assessmentYear,
     setAssessmentYear,
   } = useLedger();
+
+  const downloadLocalBackup = () => {
+    setBackupError(null);
+    try {
+      const snapshot = createLocalLedgerBackup(window.localStorage);
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `eledger-local-backup-${snapshot.createdAt.slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch {
+      setBackupError('Local backup could not be downloaded. Your saved data has not been changed.');
+    }
+  };
 
   return (
     <header className="bg-emerald-900 text-white border-b border-emerald-950 shadow-sm">
@@ -103,7 +123,18 @@ export const Header: React.FC = () => {
             </div>
 
           </div>
+
+            <button
+              type="button"
+              onClick={downloadLocalBackup}
+              title="Download local ledger backup (all saved contexts)"
+              aria-label="Download Local Backup"
+              className="p-1.5 rounded hover:bg-emerald-700 text-emerald-300 hover:text-white transition-colors border border-emerald-700"
+            >
+              <Download className="w-4 h-4" />
+            </button>
         </div>
+          {backupError && <p role="alert" className="text-xs text-rose-100 bg-rose-800 border border-rose-600 rounded p-2">{backupError}</p>}
       </div>
     </header>
   );
