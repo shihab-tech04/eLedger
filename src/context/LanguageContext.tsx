@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export type LedgerLanguage = 'en' | 'bn';
 
@@ -10,8 +10,19 @@ type LanguageContextValue = {
 // Standalone embedded/SSR components retain English when no language provider is present.
 const LanguageContext = createContext<LanguageContextValue>({ language: 'en', setLanguage: () => {} });
 
-export function LanguageProvider({ children, initialLanguage = 'en' }: { children?: React.ReactNode; initialLanguage?: LedgerLanguage }) {
-  const [language, setLanguage] = useState<LedgerLanguage>(initialLanguage);
+const LANGUAGE_STORAGE_KEY = 'eledger:display-language';
+
+export function LanguageProvider({ children, initialLanguage }: { children?: React.ReactNode; initialLanguage?: LedgerLanguage }) {
+  const [language, setLanguage] = useState<LedgerLanguage>(() => {
+    if (initialLanguage) return initialLanguage;
+    try {
+      const stored = typeof window === 'undefined' ? null : window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      return stored === 'bn' ? 'bn' : 'en';
+    } catch { return 'en'; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language); } catch { /* Private browsing may deny persistence. */ }
+  }, [language]);
   return <LanguageContext.Provider value={{ language, setLanguage }}>{children}</LanguageContext.Provider>;
 }
 
