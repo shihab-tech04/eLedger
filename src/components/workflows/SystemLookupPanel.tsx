@@ -15,6 +15,7 @@ import { validateExternalLookupMatch } from '../../domain/validation.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { Search, ShieldCheck, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { LedgerInput } from '../ui/LedgerForm.tsx';
 
 interface SystemLookupPanelProps {
   routeId: LedgerRouteId;
@@ -165,22 +166,21 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
       <form onSubmit={handleLookup} className="mt-3 flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <input
+          <LedgerInput label={t('Reference number','রেফারেন্স নম্বর')}
             type="text"
             aria-label={t('Reference number to look up','অনুসন্ধানের রেফারেন্স নম্বর')}
             value={referenceQuery}
-            onChange={(e) => changeReference(e.target.value)}
+            onValueChange={changeReference}
             placeholder={lookupPlaceholder}
-            className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
           />
         </div>
         <button
           type="submit"
           disabled={isSearching || !referenceQuery.trim()}
-          className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs sm:text-sm font-semibold shadow-xs transition-colors disabled:opacity-50"
+          className="eledger-button eledger-button-primary self-end"
         >
           <Search className="w-4 h-4" />
-          <span>{isSearching ? t('Verifying...','যাচাই চলছে...') : t('Verify Reference','রেফারেন্স যাচাই করুন')}</span>
+          <span>{isSearching ? t('Searching...','খোঁজা হচ্ছে...') : t('Find local reference','স্থানীয় রেফারেন্স খুঁজুন')}</span>
         </button>
       </form>
 
@@ -258,7 +258,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
               <button
                 type="button"
                 onClick={handleSaveToLedger}
-                className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
+                className="eledger-button eledger-button-primary"
               >
                 {t('Add Reference to Ledger','রেফারেন্স লেজারে যোগ করুন')}
               </button>
