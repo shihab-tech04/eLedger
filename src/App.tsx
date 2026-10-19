@@ -18,7 +18,7 @@ import { TaxPaymentStatusModal } from './components/modals/TaxPaymentStatusModal
 import { Shield, FileCheck2 } from 'lucide-react';
 
 const AppContent: React.FC = () => {
-  const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen } = useLedger();
+  const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen, loadError } = useLedger();
   // Discard unsaved form/lookup state when the route or taxpayer context changes.
   const workflowKey = `${taxpayer.tin}:${assessmentYear}:${activeRouteId}`;
 
@@ -48,6 +48,15 @@ const AppContent: React.FC = () => {
 
       {/* Single-Level Navigation Bar */}
       <Navbar />
+
+      {loadError && (
+        <div role="alert" className="max-w-7xl w-full mx-auto px-4 pt-4">
+          <div className="rounded-lg p-3 text-sm text-rose-900 bg-rose-50 border border-rose-300">
+            <strong>Saved ledger unavailable.</strong> {loadError} No saved records were overwritten.
+            Use the header’s Download Local Backup action to preserve the original browser data before attempting recovery.
+          </div>
+        </div>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">

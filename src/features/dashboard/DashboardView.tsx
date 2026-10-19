@@ -83,7 +83,10 @@ export const DashboardView: React.FC = () => {
         {/* Card 1: Source Tax */}
         <div
           onClick={() => setActiveNavTab('source-tax')}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 transition-all cursor-pointer group"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('source-tax'); } }}
+          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -109,7 +112,10 @@ export const DashboardView: React.FC = () => {
         {/* Card 2: Advance Income Tax (AIT) */}
         <div
           onClick={() => setActiveNavTab('ait')}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 transition-all cursor-pointer group"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('ait'); } }}
+          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -135,7 +141,10 @@ export const DashboardView: React.FC = () => {
         {/* Card 3: Payments */}
         <div
           onClick={() => setActiveNavTab('payments')}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 transition-all cursor-pointer group"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('payments'); } }}
+          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -161,7 +170,10 @@ export const DashboardView: React.FC = () => {
         {/* Card 4: Adjustments */}
         <div
           onClick={() => setActiveNavTab('adjustments')}
-          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 transition-all cursor-pointer group"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setActiveNavTab('adjustments'); } }}
+          className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 transition-all cursor-pointer group"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -246,7 +258,10 @@ export const DashboardView: React.FC = () => {
               <div
                 key={route.id}
                 onClick={() => navigateToRoute(route.id, route.group)}
-                className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigateToRoute(route.id, route.group); } }}
+                className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 hover:bg-white hover:border-emerald-600 focus-visible:ring-2 focus-visible:ring-emerald-600 hover:shadow-xs transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between text-xs text-slate-500 mb-1">

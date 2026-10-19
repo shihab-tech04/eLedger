@@ -118,4 +118,5 @@ considering the site live.
 - [`docs/PHASE8_CLAIM_EVIDENCE.md`](docs/PHASE8_CLAIM_EVIDENCE.md) — Historic screenshot-specific claim details and evidence boundaries.
 - [`docs/PHASE9_UI_DATA_SAFETY.md`](docs/PHASE9_UI_DATA_SAFETY.md) — Responsive entry/reconciliation and corrupt browser record protections.
 - [`docs/PHASE10_LOCAL_WORKFLOWS.md`](docs/PHASE10_LOCAL_WORKFLOWS.md) — Atomic Section 120 CSV import and local surcharge handoff with authority boundaries.
+- [`docs/PHASE11_FINAL_ACCEPTANCE.md`](docs/PHASE11_FINAL_ACCEPTANCE.md) — Final safety, recovery and 18-route acceptance evidence, with remaining official-system dependencies.
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) — Executed verification and deployment results across recovery checkpoints.
