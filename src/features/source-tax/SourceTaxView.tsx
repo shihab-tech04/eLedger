@@ -1,255 +1,154 @@
-/**
- * Source Tax View
- * Houses the 10 registered Source Tax routes with workflow patterns:
- * - System Claim (iBAS++)
- * - Manual Entry (inline row Add/Save/Cancel)
- * - Sync from Income (Bank, Dividend, Sanchayapatra)
- * - Hybrid Sync + Manual Entry (Service Payment, Contractor)
- * - System Records / Import (Customs TDS)
- */
-
-import React from 'react';
+import React, { useRef } from 'react';
+import { Building, ChevronLeft, Search, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
-import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
+import type { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
+import { SalaryOthersTable } from './SalaryOthersTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
-import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
-import { Receipt, ShieldCheck, Building, Sparkles, ChevronLeft } from 'lucide-react';
+import { filterEntriesByRoute } from '../../domain/calculations.ts';
+
+const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
 export const SourceTaxView: React.FC = () => {
   const {
-    entries,
-    activeRouteId,
-    setActiveRouteId,
-    setActiveNavTab,
-    addEntry,
-    updateEntry,
-    deleteEntry,
-    assessmentYear,
-    taxpayer,
+    entries, activeRouteId, setActiveRouteId, setActiveNavTab,
+    addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
-
-  // All 10 Source Tax routes
+  const localClaimsRef = useRef<HTMLDivElement>(null);
   const sourceTaxRoutes = getVisibleRoutesByGroup('Source Tax', entries.map((entry) => entry.routeId));
-
-  // Active route
   const currentRoute = getActiveVisibleRouteForGroup(activeRouteId, 'Source Tax', entries.map((entry) => entry.routeId));
   const routeEntries = filterEntriesByRoute(entries, currentRoute.id);
-  const totalTaxForRoute = routeEntries.reduce((sum, e) => sum + (Number(e.taxDeducted) || 0), 0);
+  const totalTaxForRoute = routeEntries.reduce((sum, entry) => sum + (Number(entry.taxDeducted) || 0), 0);
+  const isSalaryOthers = currentRoute.id === 'salary-others';
+  const isIbas = currentRoute.id === 'salary-ibas';
 
   const handleSaveNewEntry = async (entryData: {
-    referenceNo: string;
-    sourceEntity: string;
-    sectionCode: string;
-    grossAmount: number;
-    taxDeducted: number;
-    date: string;
-    remarks?: string;
-    claimEvidence?: ClaimEvidence;
+    referenceNo: string; sourceEntity: string; sectionCode: string;
+    grossAmount: number; taxDeducted: number; date: string;
+    remarks?: string; claimEvidence?: ClaimEvidence;
   }) => {
     const res = await addEntry({
-      taxpayerTin: taxpayer.tin,
-      assessmentYear,
-      category: 'SOURCE_TAX',
-      routeId: currentRoute.id,
-      referenceNo: entryData.referenceNo,
+      taxpayerTin: taxpayer.tin, assessmentYear, category: 'SOURCE_TAX',
+      routeId: currentRoute.id, referenceNo: entryData.referenceNo,
       sourceEntity: entryData.sourceEntity,
       sectionCode: entryData.sectionCode || currentRoute.statutorySection,
-      grossAmount: entryData.grossAmount,
-      taxDeducted: entryData.taxDeducted,
-      date: entryData.date,
-      status: 'PENDING_VERIFICATION',
-      workflow: 'MANUAL_ENTRY',
-      isManual: true,
-      externalVerified: false,
-      remarks: entryData.remarks,
-      claimEvidence: entryData.claimEvidence,
+      grossAmount: entryData.grossAmount, taxDeducted: entryData.taxDeducted,
+      date: entryData.date, status: 'PENDING_VERIFICATION',
+      workflow: 'MANUAL_ENTRY', isManual: true, externalVerified: false,
+      remarks: entryData.remarks, claimEvidence: entryData.claimEvidence,
     });
-
-    if (res.success) {
-      return { success: true };
-    } else {
-      const firstError = Object.values(res.validation?.errors || {})[0];
-      return { success: false, error: firstError || 'Validation failed.' };
-    }
+    return res.success ? { success: true } : {
+      success: false, error: Object.values(res.validation?.errors || {})[0] || 'Validation failed.',
+    };
   };
 
   const handleUpdateEntry = async (id: string, patch: Partial<LedgerEntry>) => {
     const res = await updateEntry(id, patch);
-    if (res.success) {
-      return { success: true };
-    } else {
-      const firstError = Object.values(res.validation?.errors || {})[0];
-      return { success: false, error: firstError || 'Update failed.' };
-    }
+    return res.success ? { success: true } : {
+      success: false, error: Object.values(res.validation?.errors || {})[0] || 'Update failed.',
+    };
   };
+  const handleDeleteEntry = (id: string) => deleteEntry(id);
 
-  const handleDeleteEntry = async (id: string) => {
-    return await deleteEntry(id);
-  };
+  const heading = isIbas ? 'iBAS++ (Salary) TDS' : isSalaryOthers ? 'Salary (Others)' : currentRoute.title;
+  const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
+    isIbas ? 'Local iBAS++ payroll references — not connected to CGA' : currentRoute.statutorySection;
 
   return (
-    <div className="space-y-5">
-      {/* View Header */}
-      <div className="eledger-feature-header bg-white rounded-xl border border-slate-200 p-5 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-lg bg-emerald-800 text-white">
-              <Receipt className="w-6 h-6" />
+    <div className="eledger-source-page">
+      <header className="eledger-source-title">
+        <div className="eledger-source-title-line">
+          <button type="button" className="eledger-source-back" aria-label="Back to dashboard"
+            onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
+          <h1>{heading}</h1>
+        </div>
+        <p>{caption}</p>
+      </header>
+
+      {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
+      <nav className="eledger-source-mobile-routes" aria-label="Source Tax categories">
+        {sourceTaxRoutes.map((route) => (
+          <button key={route.id} type="button" className={route.id === currentRoute.id ? 'is-active' : ''}
+            onClick={() => setActiveRouteId(route.id)}>{route.title}</button>
+        ))}
+      </nav>
+
+      {isIbas && (
+        <section className="eledger-ibas-workflow">
+          <div className="eledger-ibas-search-row">
+            <button type="button" onClick={() => localClaimsRef.current?.scrollIntoView({ behavior: 'smooth' })}>
+              <Search size={17}/>Search local records
+            </button>
+          </div>
+          <div className="eledger-ibas-facts">
+            <div><span>Assessment Year</span><strong>{assessmentYear}</strong></div>
+            <div><span>Office Name (local demo record)</span><strong>{routeEntries[0]?.sourceEntity ?? 'Not available'}</strong></div>
+            <div><span>Designation</span><strong>Requires CGA/iBAS++ connection</strong></div>
+            <div><span>TDS Available (local records only)</span><strong className="is-amount">{money(totalTaxForRoute)}</strong></div>
+          </div>
+          <div className="eledger-ibas-claim">
+            <label htmlFor="eledger-ibas-claimed">TDS Claim</label>
+            <input id="eledger-ibas-claimed" value={money(totalTaxForRoute)} readOnly
+              aria-describedby="eledger-ibas-integrity-note"/>
+            <span id="eledger-ibas-integrity-note">Read-only demonstration data. No live CGA/iBAS++ lookup or official claim submission is connected.</span>
+            <button type="button" disabled title="A verified iBAS++ connection is required">Save — official connection required</button>
+          </div>
+        </section>
+      )}
+
+      {isSalaryOthers ? (
+        <SalaryOthersTable
+          key={currentRoute.id}
+          entries={routeEntries}
+          defaultSection={currentRoute.statutorySection}
+          onSaveNewEntry={handleSaveNewEntry}
+          onUpdateEntry={handleUpdateEntry}
+          onDeleteEntry={handleDeleteEntry}
+        />
+      ) : (
+        <>
+          {!isIbas && (
+            <div className="eledger-source-record-summary">
+              <span>Total Claimed Amount <strong>{money(totalTaxForRoute)}</strong></span>
+              <span>Records <strong>{routeEntries.length}</strong></span>
+              <small>{currentRoute.description}</small>
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
-                  <button type="button" className="eledger-route-back" aria-label="Back to dashboard" onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={22}/></button>
-                  {currentRoute.title}
-                </h2>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  10 Functional Categories
-                </span>
+          )}
+          {currentRoute.supportsIncomeSync && (
+            <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={currentRoute.title}/>
+          )}
+          {currentRoute.id === 'commercial-source' && (
+            <SystemLookupPanel routeId={currentRoute.id} category="SOURCE_TAX"
+              defaultSection={currentRoute.statutorySection} lookupPlaceholder="Unique Key (Transaction No.)"
+              helperText="Enter the commercial vehicle transaction key to check the available reference record."/>
+          )}
+          {currentRoute.id === 'system-import' && (
+            <div className="eledger-source-import-note">
+              <Building size={18}/>
+              <div><strong>Customs ASYCUDA World Port Clearance Import</strong>
+                <p>Record customs references with Add Entry or the local CSV importer. Live ASYCUDA imports are not connected.</p>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600">
-                {currentRoute.description}
-              </p>
             </div>
+          )}
+          {currentRoute.id === 'system-import' && (
+            <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-system-import`} routeId="system-import"/>
+          )}
+          <div ref={localClaimsRef} className="eledger-source-record-list">
+            {isIbas && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
+              Saved iBAS++-style records are local demonstration entries; they do not establish authoritative tax credits.</div>}
+            <InlineEditableTable
+              key={currentRoute.id} entries={routeEntries} category="SOURCE_TAX"
+              routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
+              onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+              onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.supportsManualEntry}
+              allowEditDelete={currentRoute.supportsManualEntry}
+            />
           </div>
-
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-right">
-            <span className="text-[11px] text-slate-500 uppercase font-semibold block">
-              Active Category Total
-            </span>
-            <span className="text-lg font-bold font-mono text-emerald-800">
-              {formatCurrencyBDT(totalTaxForRoute)}
-            </span>
-            <span className="text-[11px] text-slate-500 block">
-              {routeEntries.length} {routeEntries.length === 1 ? 'record' : 'records'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 10 Route Sub-Tabs / Horizontal Route Selector */}
-      <div className="eledger-route-tabs bg-white rounded-lg border border-slate-200 p-2 shadow-xs">
-        <div className="flex items-center space-x-1 overflow-x-auto pb-1 scrollbar-thin">
-          {sourceTaxRoutes.map((route) => {
-            const count = filterEntriesByRoute(entries, route.id).length;
-            const isSelected = route.id === currentRoute.id;
-
-            return (
-              <button
-                key={route.id}
-                onClick={() => setActiveRouteId(route.id)}
-                className={`flex-shrink-0 flex items-center space-x-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all ${
-                  isSelected
-                    ? 'bg-emerald-700 text-white shadow-xs'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200/60'
-                }`}
-              >
-                <span>{route.title}</span>
-                {count > 0 && (
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isSelected
-                        ? 'bg-emerald-950 text-emerald-200'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Active Route Overview & Statutory Section */}
-      <div className="eledger-route-overview bg-emerald-950 text-emerald-100 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-emerald-900">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h3 className="text-sm sm:text-base font-bold text-white">
-              {currentRoute.title}
-            </h3>
-            <span className="text-xs px-2 py-0.5 rounded bg-emerald-800 text-emerald-200 font-mono">
-              {currentRoute.statutorySection}
-            </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-900 text-emerald-300 font-medium">
-              {currentRoute.workflow.replace(/_/g, ' ')}
-            </span>
-          </div>
-          <p className="text-xs text-emerald-300 mt-1">{currentRoute.description}</p>
-        </div>
-        <div className="text-right text-xs text-emerald-300">
-          AY: <strong className="text-white">{assessmentYear}</strong> | TIN: <strong className="text-white font-mono">{taxpayer.tin}</strong>
-        </div>
-      </div>
-
-      {/* Special Workflow: iBAS++ System Claim Info */}
-      {currentRoute.id === 'salary-ibas' && (
-        <div className="bg-sky-50 border border-sky-200 rounded-lg p-4 text-xs text-sky-900">
-          <div className="flex items-center space-x-2 mb-1.5">
-            <ShieldCheck className="w-4 h-4 text-sky-700" />
-            <strong className="text-sm font-semibold text-sky-950">
-              iBAS++ Payroll Ledger Reference (Demo)
-            </strong>
-          </div>
-          <p className="text-sky-800 leading-relaxed">
-            These salary TDS records are local demonstration data. No CGA iBAS++ connection or automatic government verification is active; real discrepancies must be resolved with the appropriate Drawing and Disbursing Officer (DDO).
-          </p>
-        </div>
+        </>
       )}
-
-      {/* Special Workflow: Income Synchronization Panel */}
-      {currentRoute.supportsIncomeSync && (
-        <IncomeSyncPanel
-          routeId={currentRoute.id}
-          defaultSection={currentRoute.statutorySection}
-          title={currentRoute.title}
-        />
-      )}
-
-      {currentRoute.id === 'commercial-source' && (
-        <SystemLookupPanel
-          routeId={currentRoute.id}
-          category="SOURCE_TAX"
-          defaultSection={currentRoute.statutorySection}
-          lookupPlaceholder="Unique Key (Transaction No.)"
-          helperText="Enter the commercial vehicle transaction key to check the available reference record."
-        />
-      )}
-
-      {/* Special Workflow: System Import for Customs Bill of Entry */}
-      {currentRoute.id === 'system-import' && (
-        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
-          <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
-            <Building className="w-4 h-4 text-emerald-700" />
-            <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-              Customs ASYCUDA World Port Clearance Import
-            </h4>
-          </div>
-          <p className="text-xs text-slate-600 mt-2">
-            Record customs clearance references below using Add Entry or the local CSV batch importer. Live ASYCUDA Bill-of-Entry imports are not connected.
-          </p>
-        </div>
-      )}
-
-      {currentRoute.id === 'system-import' && <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-system-import`} routeId="system-import" />}
-
-      {/* Requirement #6: Inline Editable Table with Add Entry inserting row directly inside */}
-      <InlineEditableTable
-        key={currentRoute.id}
-        entries={routeEntries}
-        category="SOURCE_TAX"
-        routeId={currentRoute.id}
-        defaultSection={currentRoute.statutorySection}
-        onSaveNewEntry={handleSaveNewEntry}
-        onUpdateEntry={handleUpdateEntry}
-        onDeleteEntry={handleDeleteEntry}
-        allowAdd={currentRoute.supportsManualEntry}
-        allowEditDelete={currentRoute.supportsManualEntry}
-      />
     </div>
   );
 };

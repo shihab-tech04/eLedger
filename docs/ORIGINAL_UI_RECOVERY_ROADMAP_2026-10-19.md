@@ -52,6 +52,8 @@ Each phase is **complete** only after its changes are isolated, checked against 
 - Restore original inline add/edit/delete controls, row alignment, numeric/date semantics and responsive presentation.
 - Validate salary iBAS++ lookup/read-only records and other Source Tax routes without treating mock lookup results as official confirmation.
 
+**Phase 3 candidate verification:** Salary (Others) now uses the September evidence's exact visible domain columns: depositing authority, challan/certificate type, reference, date, document amount, claimed amount, optional Bank/Branch and inline pencil/trash/save/cancel. Supporting metadata is stored in the existing typed `claimEvidence` structure; domain validation rejects claims exceeding document amounts and does not promote any manual claim to verified credit. Existing rows without document metadata show preserved amounts without fabricating a document type. The iBAS++ screen now restores the white four-field reference layout and read-only TDS claim composition, while **explicitly marking it as local demo data** and disabling fictitious official save/lookup. All other Source Tax routes retain working import, sync, lookup and generic table components, with their original-like route heading. The actual Salary and iBAS screenshots were visually compared in browser at 1345px, and the Salary screen was inspected at **390×844** and **320×740**. Inline Add new, validation error and Cancel were exercised without writing test claims to production. **107/107 tests**, TypeScript and production build passed. The GitHub PR and live deployment record the release gates.
+
 ### 4 — AIT and remaining claim routes
 
 - Reconstruct AIT route layouts and document/lookup panels from available evidence.
