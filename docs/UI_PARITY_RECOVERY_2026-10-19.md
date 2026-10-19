@@ -2,7 +2,7 @@
 
 Date: 2026-10-19
 
-Status: **local implementation, not published**. The existing GitHub Pages release remains unchanged.
+Status: **release authorized by the user on 2026-10-19; production deployment and post-release visual checks to be confirmed separately**.
 
 ## References examined
 
@@ -38,8 +38,8 @@ The reference images are held in the user's ChatGPT Library, not copied into the
 - External “Go to eReturn” destination independently confirmed at `https://etaxnbr.gov.bd/`.
 - Local Vite preview responded `200 OK` to a server-side HTTP check.
 
-## Outstanding release gate
+## Post-release visual acceptance
 
-A real rendered desktop/mobile screenshot comparison and interactive route smoke test remain required. The user explicitly authorized private preview access on 2026-10-19, but the separate cloud browser returned `ERR_BLOCKED_BY_CLIENT` for the private preview URL, and the connected desktop browser previously could not reach it. The preview HTML was served correctly in the same local network namespace; this does not establish visual parity. Do not bypass browser access restrictions.
+A real rendered desktop/mobile screenshot comparison and interactive route smoke test remain required. The user explicitly authorized private preview access on 2026-10-19, but the separate cloud browser returned `ERR_BLOCKED_BY_CLIENT` for the private preview URL, and the connected desktop browser previously could not reach it. The preview HTML was served correctly in the same local network namespace; this does not establish visual parity. The user subsequently instructed an immediate live release, accepting that this visual step would move to post-release review. Do not bypass browser access restrictions.
 
-Do not upload, merge or deploy this checkpoint until its rendered UI and navigation are approved and verified.
+This checkpoint is approved for release following the user’s explicit instruction to make it live. Record production verification and any remaining visual differences as follow-up work.
