@@ -89,6 +89,8 @@ Each phase is **complete** only after its changes are isolated, checked against 
 - Re-check every original screenshot against its restored route; record unsupported October 9 differences as unknown, not passed.
 - Preserve independent source backups before final rollout, deploy only the verified candidate, confirm the actual live GitHub Pages SHA and view, and finalize the acceptance ledger.
 
+**Phase 7 audit checkpoint (19 October 2026):** Fresh Phase 6 baseline `8819fc2` passed 114/114 tests, TypeScript and Vite build. Public browser checks covered all 17 financial-entry destinations plus the reconciliation modal, the six recorded buckets, empty-year and alternate-taxpayer isolation, Bengali Salary (Others), and mobile dashboard/status/inline editing at 390px/320px with no console errors. The live asset filenames matched the locally built baseline. Detailed evidence, release checklist and unresolved source/screenshot-parity limits are in [`PHASE7_FINAL_RECOVERY_CERTIFICATION_2026-10-19.md`](PHASE7_FINAL_RECOVERY_CERTIFICATION_2026-10-19.md). **Final Phase 7 release is not yet certified until the new PR and deployment gates pass.**
+
 ## Protected invariants
 
 - Local claims and example/simulated lookups must never become authoritative VERIFIED tax credit.
