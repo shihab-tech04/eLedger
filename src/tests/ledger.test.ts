@@ -58,6 +58,8 @@ import { LanguageProvider } from '../context/LanguageContext.tsx';
 import { Header } from '../components/layout/Header.tsx';
 import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
+import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
+import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -1516,6 +1518,24 @@ describe('eLedger — Phase 8 Historic Claim Evidence Parity', () => {
     assert.ok(fields('ait-import').includes('bankName'));
     assert.deepEqual(fields('sanchayapatra'), ['savingsScheme', 'savingsRegistration', 'savingsIssueDate']);
     assert.deepEqual(fields('salary-ibas'), []);
+    assert.deepEqual(fields('salary-others'), [
+      'depositingAuthority', 'paymentDocumentType', 'documentAmount', 'bankName', 'branchName',
+    ]);
+  });
+
+  it('validates original Salary (Others) document amounts independently of verified credit', () => {
+    const salary = { ...base, routeId: 'salary-others' as const, claimEvidence: normalizeClaimEvidence({
+      depositingAuthority: 'Finance Department',
+      paymentDocumentType: 'CERTIFICATE',
+      documentAmount: 1000,
+      bankName: 'Test Bank',
+      branchName: 'Main Branch',
+    }) };
+    assert.equal(validateLedgerEntry(salary, []).isValid, true);
+    assert.match(validateLedgerEntry({
+      ...salary, claimEvidence: { ...salary.claimEvidence, documentAmount: 100 },
+    }, []).errors.documentAmount, /cover/);
+    assert.equal(calculateCategoryTotals([salary as LedgerEntry]).grandTotalCredits, 0);
   });
 
   it('normalizes optional evidence while preserving historic claims that have no metadata', () => {
@@ -1629,5 +1649,39 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Independently authorized verified credit/);
     assert.doesNotMatch(markup, /eledger-welcome|eledger-progress-ring|Recent ledger activity/);
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
+  });
+
+  it('renders September Salary (Others) columns and original controls without discarding evidence', () => {
+    const sample = { ...INITIAL_LEDGER_ENTRIES[0], routeId: 'salary-others' as const,
+      claimEvidence: { paymentDocumentType: 'CERTIFICATE' as const, documentAmount: 200000,
+        depositingAuthority: 'Employer Accounts', bankName: 'Test Bank', branchName: 'Main' } };
+    const markup = renderToStaticMarkup(React.createElement(SalaryOthersTable, {
+      entries: [sample], defaultSection: 'Sec 86',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    }));
+    assert.match(markup, /Total Claimed Amount/);
+    assert.match(markup, /Depositing Authority/);
+    assert.match(markup, /Payment Document Type/);
+    assert.match(markup, /Challan\/ Certificate Reference No/);
+    assert.match(markup, /Claimed Amount/);
+    assert.match(markup, /Bank \/ Branch/);
+    assert.match(markup, /Employer Accounts/);
+    assert.match(markup, /Certificate/);
+    assert.match(markup, /Test Bank \/ Main/);
+    assert.match(markup, /Edit /);
+    assert.match(markup, /Delete /);
+    assert.match(markup, /Add new/);
+  });
+
+  it('keeps iBAS++ local payroll records read-only without fabricating a live official lookup', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(SourceTaxView)));
+    assert.match(markup, /iBAS\+\+ \(Salary\) TDS/);
+    assert.match(markup, /TDS Available \(local records only\)/);
+    assert.match(markup, /No live CGA\/iBAS\+\+ lookup/);
+    assert.match(markup, /Save — official connection required/);
+    assert.match(markup, /disabled/);
   });
 });

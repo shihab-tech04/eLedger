@@ -38,6 +38,13 @@ const treasuryFields: EvidenceFieldDefinition[] = [
 ];
 
 const fieldsByRoute: Partial<Record<LedgerRouteId, EvidenceFieldDefinition[]>> = {
+  'salary-others': [
+    { key: 'depositingAuthority', label: 'Depositing Authority', kind: 'text' },
+    documentType,
+    documentAmount,
+    { key: 'bankName', label: 'Bank Name', kind: 'text' },
+    { key: 'branchName', label: 'Branch Name', kind: 'text' },
+  ],
   'service-payment': [
     { key: 'depositingAuthority', label: 'Depositing Authority', kind: 'text' },
     documentType,
