@@ -33,6 +33,7 @@ interface LedgerContextType {
   isStatusModalOpen: boolean;
   setIsStatusModalOpen: (open: boolean) => void;
   addEntry: (entryData: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; entry?: LedgerEntry; validation?: ValidationResult }>;
+  addEntriesBatch: (data: Array<Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<{ success: boolean; count?: number; error?: string }>;
   updateEntry: (id: string, patch: Partial<LedgerEntry>) => Promise<{ success: boolean; entry?: LedgerEntry; validation?: ValidationResult }>;
   deleteEntry: (id: string) => Promise<boolean>;
   syncIncomeItem: (itemId: string, sectionCode: string, claimedAmount?: number) => Promise<{ success: boolean; error?: string }>;
@@ -148,6 +149,19 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const addEntriesBatch = async (data: Array<Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>>) => {
+    if (data.some((entry) => entry.taxpayerTin !== taxpayer.tin || entry.assessmentYear !== assessmentYear)) {
+      return { success: false, error: 'Import taxpayer/assessment-year context mismatch.' };
+    }
+    try {
+      const created = await ledgerRepository.addEntriesBatch(data);
+      await loadEntries();
+      return { success: true, count: created.length };
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : 'Import failed.' };
+    }
+  };
+
   const deleteEntry = async (id: string) => {
     if (!entries.some((entry) => entry.id === id)) return false;
     try {
@@ -204,6 +218,7 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isStatusModalOpen,
         setIsStatusModalOpen,
         addEntry,
+        addEntriesBatch,
         updateEntry,
         deleteEntry,
         syncIncomeItem,

@@ -11,6 +11,7 @@ import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../do
 import { LedgerRouteId, LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
+import { SurchargeTransferPanel } from '../../components/workflows/SurchargeTransferPanel.tsx';
 import { formatCurrencyBDT, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { CreditCard } from 'lucide-react';
 
@@ -81,6 +82,27 @@ export const PaymentsView: React.FC = () => {
 
   const handleDeleteEntry = async (id: string) => {
     return await deleteEntry(id);
+  };
+
+  const recordLocalSurcharge = async (referenceNo: string, amount: number, date: string) => {
+    const response = await addEntry({
+      taxpayerTin: taxpayer.tin,
+      assessmentYear,
+      category: 'PAYMENT',
+      routeId: 'environmental-surcharge',
+      referenceNo,
+      sourceEntity: 'Tax & Payment — taxpayer-entered local stage',
+      sectionCode: currentRoute.statutorySection,
+      grossAmount: amount,
+      taxDeducted: amount,
+      date,
+      status: 'PENDING_VERIFICATION',
+      workflow: 'MANUAL_ENTRY',
+      isManual: true,
+      externalVerified: false,
+      remarks: 'Locally declared surcharge amount. Not an official NBR transfer or payment verification.',
+    });
+    return { success: response.success, error: Object.values(response.validation?.errors || {})[0] };
   };
 
   return (
@@ -184,14 +206,7 @@ export const PaymentsView: React.FC = () => {
       />}
 
       {currentRoute.id === 'environmental-surcharge' && (
-        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
-          <h4 className="text-sm font-semibold text-slate-800">Environmental Surcharge</h4>
-          <p className="text-xs text-slate-600 mt-2">
-            {routeEntries.length === 0
-              ? 'No environmental surcharge has been transferred for the selected taxpayer and assessment year.'
-              : 'Recorded environmental surcharge appears below.'} Surcharge liability must first be established in Tax & Payment.
-          </p>
-        </div>
+        <SurchargeTransferPanel key={`${taxpayer.tin}-${assessmentYear}`} onRecord={recordLocalSurcharge} />
       )}
 
       {/* Inline Editable Table (Requirement #6) */}
@@ -204,7 +219,7 @@ export const PaymentsView: React.FC = () => {
         onSaveNewEntry={handleSaveNewEntry}
         onUpdateEntry={handleUpdateEntry}
         onDeleteEntry={handleDeleteEntry}
-        allowAdd={currentRoute.supportsManualEntry}
+        allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'environmental-surcharge'}
         allowEditDelete={currentRoute.supportsManualEntry}
       />
     </div>

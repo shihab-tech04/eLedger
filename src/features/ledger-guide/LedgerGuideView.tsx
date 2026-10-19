@@ -44,7 +44,7 @@ export const LedgerGuideView: React.FC = () => {
         </div>
 
         <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-          eLedger operates as an authoritative sub-ledger within the Bangladesh National Board of Revenue (NBR) digital tax filing infrastructure. The mandated taxpayer journey flows as:
+          eLedger is a local prototype of a sub-ledger within the Bangladesh National Board of Revenue (NBR) digital tax filing journey. The intended taxpayer journey flows as:
         </p>
 
         <div className="mt-4 p-4 rounded-lg bg-slate-900 text-white overflow-x-auto">
@@ -135,7 +135,7 @@ export const LedgerGuideView: React.FC = () => {
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50">
             <span className="text-xs font-bold text-emerald-800 block">6. System Records / Import</span>
             <p className="text-xs text-slate-600 mt-1">
-              Batch processing for ASYCUDA customs bill of entry imports and port clearance withholding records.
+              Atomic local CSV batch entry for Section 120 source-tax and AIT import references, without a live ASYCUDA customs feed. Imported amounts remain pending verification.
             </p>
           </div>
 

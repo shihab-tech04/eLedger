@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–9)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–10)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -7,6 +7,8 @@ This document tracks items where source evidence was interrupted or where live g
 ## 1. Status Breakdown
 
 ### Implemented & Tested
+- [x] Phase 10: Local Section 120 CSV import on Source Tax and AIT with all-or-nothing validation and duplicate prevention
+- [x] Phase 10: Explicit local surcharge handoff/reference, pending status and separate reconciliation bucket
 - [x] Phase 9: Mobile in-row form and modal breakdown layout, dynamic route-evidence badges, browser-local dates, and removal of public global reset
 - [x] Phase 9: Nested/corrupt claim evidence rejected before rendering; unreadable original saved data left unchanged
 - [x] Phase 8: Per-route claim evidence editor and persisted disclosure for service TDS, other TDS, Source Tax LTU, Section 154, Section 173, AIT Import, and Sanchayapatra
@@ -62,7 +64,8 @@ This document tracks items where source evidence was interrupted or where live g
 - **Live BRTA Vehicle Database API:** Not connected. Local matches remain pending; route, taxpayer, and year mismatches are rejected.
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.
 - **Source Tax reference lookups:** Registry capability flags describe planned lookup integrations, but Source Tax UI has no live lookup panel; only locally entered or income-synced rows are available.
-- **Customs/system imports:** The import route offers local reference entry, not ASYCUDA ingestion or import-file reconciliation.
+- **Customs/system imports:** Local Section 120 CSV files can be read and batch-saved, but no ASYCUDA feed, government reference confirmation or authoritative import-file reconciliation is connected.
+- **Environmental Surcharge:** The Tax & Payment handoff is a user-entered local simulation. The app does not calculate surcharge rates or retrieve real liability/receipt records from NBR.
 - **Browser journey tests:** All 18 routes have live navigation/rendering smoke checks and 16 writable routes have repository-level transaction tests. Browser form-level create/edit/delete, cross-browser accessibility, actual backend financial journeys, and storage failure UI exercise remain unverified. Rendering and unit tests do not constitute complete financial-workflow acceptance.
 - **Concurrent independent tabs:** A single-tab mutation queue does not make browser localStorage a transactional multi-user database. Simultaneous cross-tab writes remain a known limitation pending a backend.
 
