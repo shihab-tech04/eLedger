@@ -66,6 +66,8 @@ import { AitView } from '../features/ait/AitView.tsx';
 import { PaymentsView } from '../features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
+import { LedgerInput, LedgerSelect, LedgerTip } from '../components/ui/LedgerForm.tsx';
+import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
@@ -567,6 +569,41 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   });
 });
 
+describe('eLedger — Shared UI and responsive workflow guardrails', () => {
+  it('renders accessible shared inputs, selects and optional help disclosures', () => {
+    const field = renderToStaticMarkup(React.createElement(LedgerInput, {
+      label: 'Challan Date', type: 'date', value: '', onValueChange: () => {}, required: true,
+    }));
+    const select = renderToStaticMarkup(React.createElement(LedgerSelect, {
+      label: 'Document type', value: 'CHALLAN', onValueChange: () => {}, children: React.createElement('option', { value: 'CHALLAN' }, 'Challan'),
+    }));
+    const help = renderToStaticMarkup(React.createElement(LedgerTip, { label: 'Details', children: 'Local only' }));
+    assert.match(field, /eledger-control/);
+    assert.match(field, /aria-label="Challan Date"/);
+    assert.match(field, /required/);
+    assert.match(select, /eledger-control/);
+    assert.match(select, /Document type/);
+    assert.match(help, /<details/);
+    assert.match(help, /<summary/);
+  });
+
+  it('uses the same route tab component with correct active page semantics', () => {
+    const routes = getVisibleRoutesByGroup('AIT', []);
+    const markup = renderToStaticMarkup(React.createElement(RouteMobileTabs, {
+      routes, activeId: 'sec-154', label: 'AIT categories', onSelect: () => {},
+    }));
+    assert.match(markup, /eledger-source-mobile-routes/);
+    assert.match(markup, /aria-label="AIT categories"/);
+    assert.match(markup, /aria-current="page"[^>]*>AIT under Section 154/);
+  });
+
+  it('gives surcharge payments route-specific labels instead of a tax-deduction label', () => {
+    const labels = getTableFieldLabels('PAYMENT', (english) => english, 'environmental-surcharge');
+    assert.equal(labels.grossAmount, 'Assessed Surcharge (৳)');
+    assert.equal(labels.taxDeducted, 'Recorded Surcharge (৳)');
+  });
+});
+
 describe('eLedger — Final Workflow UX Audit', () => {
   const translate = (english: string) => english;
 
@@ -581,7 +618,7 @@ describe('eLedger — Final Workflow UX Audit', () => {
     const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(LedgerGuideView)));
     assert.match(html, /Salary \(iBAS\+\+\) shows read-only local payroll records/);
-    assert.match(html, /Where Add Entry is available/);
+    assert.match(html, /Use Add Entry to record challan or certificate details/);
   });
 
   it('uses truthful workflow-specific headers and edit labels in every credit group', () => {
@@ -817,7 +854,7 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
       onRecord: async () => ({ success: true }),
     }));
     assert.match(markup, /Tax &amp; Payment/);
-    assert.match(markup, /does not calculate statutory surcharge rates/);
+    assert.match(markup, /No tax rate is calculated/);
     assert.match(markup, /Record Local Surcharge Transfer/);
   });
 });
@@ -1731,9 +1768,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       React.createElement(SourceTaxView)));
     assert.match(markup, /iBAS\+\+ \(Salary\) TDS/);
     assert.match(markup, /TDS Available \(local records only\)/);
-    assert.match(markup, /No live CGA\/iBAS\+\+ lookup/);
-    assert.match(markup, /Save — official connection required/);
-    assert.match(markup, /disabled/);
+    assert.match(markup, /Official submission requires a verified CGA\/iBAS\+\+ connection/);
+    assert.match(markup, /readOnly/);
+    assert.match(markup, /Why can’t I save/);
   });
 
   it('renders original-style AIT categories with local-only lookup and safe claim totals', () => {
@@ -1811,11 +1848,11 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       React.createElement(LedgerGuideView)));
     assert.match(html, /eledger-guide-heading/);
     assert.match(html, /eReturn LEDGER/);
-    assert.match(html, /between 1 July 2025 to 30 June 2026/);
+    assert.match(html, /1 July 2025 – 30 June 2026/);
     assert.match(html, /Search Option/);
-    assert.match(html, /You may want to know/);
+    assert.match(html, /Important/);
     assert.match(html, /eledger-guide-info/);
-    assert.match(html, /no live government verification connection/);
+    assert.match(html, /not government-verified tax credits/);
     assert.doesNotMatch(html, /Reusable Workflow Architecture|bg-slate-900/);
   });
 
@@ -1823,8 +1860,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const renderBn = (...children: React.ReactNode[]) => renderToStaticMarkup(React.createElement(
       LanguageProvider, { initialLanguage: 'bn' }, React.createElement(LedgerProvider, null, ...children)));
     const guide = renderBn(React.createElement(LedgerGuideView));
-    assert.match(guide, /১ জুলাই 2025 থেকে ৩০ জুন 2026/);
-    assert.match(guide, /আপনি জেনে রাখতে পারেন/);
+    assert.match(guide, /১ জুলাই 2025 – ৩০ জুন 2026/);
+    assert.match(guide, /মনে রাখুন/);
     const dashboard = renderBn(React.createElement(DashboardView));
     assert.match(dashboard, /লেজারের বিন্যাস/);
     assert.match(dashboard, /রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়/);
