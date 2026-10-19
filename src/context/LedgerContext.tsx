@@ -35,7 +35,7 @@ interface LedgerContextType {
   addEntry: (entryData: Omit<LedgerEntry, 'id' | 'createdAt' | 'updatedAt'>) => Promise<{ success: boolean; entry?: LedgerEntry; validation?: ValidationResult }>;
   updateEntry: (id: string, patch: Partial<LedgerEntry>) => Promise<{ success: boolean; entry?: LedgerEntry; validation?: ValidationResult }>;
   deleteEntry: (id: string) => Promise<boolean>;
-  syncIncomeItem: (itemId: string, sectionCode: string) => Promise<{ success: boolean; error?: string }>;
+  syncIncomeItem: (itemId: string, sectionCode: string, claimedAmount?: number) => Promise<{ success: boolean; error?: string }>;
   refreshData: () => Promise<void>;
   resetToDefaults: () => Promise<void>;
 }
@@ -160,13 +160,14 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const syncIncomeItem = async (itemId: string, sectionCode: string) => {
+  const syncIncomeItem = async (itemId: string, sectionCode: string, claimedAmount?: number) => {
     try {
       const res = await incomeSyncService.syncItemToLedger(
         itemId,
         sectionCode,
         taxpayer.tin,
-        assessmentYear
+        assessmentYear,
+        claimedAmount
       );
       if (res.success) await loadEntries();
       return res;

@@ -30,13 +30,17 @@ export type LedgerRouteId =
   | 'contractor-supplier'
   | 'house-property'
   | 'system-import'
+  | 'source-ltu'
+  | 'commercial-source'
   // AIT (3 routes)
   | 'commercial-vehicle'
   | 'car-ait'
   | 'sec-154'
+  | 'ait-import'
   // Payment (2 routes)
   | 'sec-173'
   | 'sec-171'
+  | 'environmental-surcharge'
   // Adjustment (2 routes)
   | 'refund'
   | 'carry-forward'
@@ -134,6 +138,10 @@ export interface TaxCategoryTotals {
   adjustmentsCount: number;
   grandTotalCredits: number;
   totalRecordsCount: number;
+  taxPaidWithReturnTotal: number;
+  environmentalSurchargeTotal: number;
+  refundAdjustmentTotal: number;
+  carryForward163Total: number;
 }
 
 export interface RouteRegistryEntry {

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
-import { ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
+import { CURRENT_ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
 import { formatCurrencyBDT, groupEntriesByRoute } from '../../domain/calculations.ts';
 import { LedgerRouteId } from '../../domain/models.ts';
 import {
@@ -233,7 +233,7 @@ export const DashboardView: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-          {ROUTE_REGISTRY.map((route) => {
+          {CURRENT_ROUTE_REGISTRY.map((route) => {
             const data = grouped[route.id];
             const count = data ? data.entries.length : 0;
             const amount = data ? data.totalTax : 0;

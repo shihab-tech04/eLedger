@@ -7,6 +7,9 @@ This document tracks items where source evidence was interrupted or where live g
 ## 1. Status Breakdown
 
 ### Implemented & Tested
+- [x] Phase 7: 28 historic authenticated screenshots crosswalked to the current 18-route UI, preserving preexisting legacy records
+- [x] Phase 7: Source Tax LTU, commercial-vehicle source-tax, AIT Import (120), and Environmental Surcharge are distinct route selections
+- [x] Phase 7: Section 120 Source/AIT cross-claim duplicate guard, s.163 carry-forward labels, separate status buckets and Sanchayapatra taxpayer-share bound
 - [x] Application shell, Header, Single-Level Navigation Bar
 - [x] Internal Route Registry tracking 18 functional routes
 - [x] Reusable Inline Editable Table with row-level **Add Entry**, Save, Cancel, Edit, and Delete
@@ -48,6 +51,7 @@ This document tracks items where source evidence was interrupted or where live g
 - **House Property TDS (`house-property`):** Implemented with manual entry under Sec 109; provisional pending official tenancy agreement identifier schema.
 
 ### Partial / Blocked by External Environment
+- **Screenshot field parity:** Payment document type, certificate/challan total versus claimed amount, LTU file evidence, and Section 154 challan metadata still need structured forms and persistence (see `PHASE7_SCREENSHOT_ALIGNMENT.md`).
 - **Live iBAS++ API Endpoint:** Not connected. Existing records are local reference data and remain pending verification.
 - **Live BRTA Vehicle Database API:** Not connected. Local matches remain pending; route, taxpayer, and year mismatches are rejected.
 - **Live A-Challan Verification:** Not connected. Local matches cannot establish payment settlement or credit entitlement.

@@ -114,13 +114,15 @@ const LOCAL_REFERENCE_RECORDS: Record<string, ExternalLookupResult> = {
 export function getLocalReferenceExamples(routeId: LedgerRouteId): Array<{ referenceNo: string; label: string }> {
   const labels: Partial<Record<LedgerRouteId, string>> = {
     'commercial-vehicle': 'Commercial',
+    'commercial-source': 'Commercial',
     'car-ait': 'Private Car',
     'sec-154': 'Section 154',
     'sec-173': 'Section 173',
     'sec-171': 'Section 171',
   };
   return Object.values(LOCAL_REFERENCE_RECORDS)
-    .filter((record) => record.routeId === routeId)
+    .filter((record) => record.routeId === routeId ||
+      (routeId === 'commercial-source' && record.routeId === 'commercial-vehicle'))
     .map((record) => ({
       referenceNo: record.referenceNo,
       label: record.status === 'MISMATCH' ? 'TIN Mismatch Test' : labels[routeId] || 'Reference',
@@ -178,17 +180,21 @@ export class ExternalLookupService implements IExternalLookupService {
     }
 
     // 3. Validate TIN match
-    if (record.matchedTin !== query.expectedTin) {
+    const mappedRecord = query.routeId === 'commercial-source' && record.routeId === 'commercial-vehicle'
+      ? { ...record, routeId: 'commercial-source' as const }
+      : record;
+
+    if (mappedRecord.matchedTin !== query.expectedTin) {
       return {
-        ...record,
+        ...mappedRecord,
         status: 'MISMATCH',
-        statusMessage: `Taxpayer TIN mismatch: External record is registered to TIN ${record.matchedTin}, which differs from current taxpayer ${query.expectedTin}.`,
+        statusMessage: `Taxpayer TIN mismatch: Reference belongs to TIN ${mappedRecord.matchedTin}, which differs from current taxpayer ${query.expectedTin}.`,
       };
     }
 
-    if (record.routeId !== query.routeId || record.assessmentYear !== query.assessmentYear) {
+    if (mappedRecord.routeId !== query.routeId || mappedRecord.assessmentYear !== query.assessmentYear) {
       return {
-        ...record,
+        ...mappedRecord,
         authoritative: false,
         status: 'MISMATCH',
         statusMessage: 'Reference does not match the selected ledger category or assessment year.',
@@ -197,7 +203,7 @@ export class ExternalLookupService implements IExternalLookupService {
 
     // 4. Local matches may be recorded, but never become verified credits.
     return {
-      ...record,
+      ...mappedRecord,
       authoritative: false,
       status: 'VALID',
     };

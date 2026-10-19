@@ -17,7 +17,7 @@
 import React, { useState } from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { formatCurrencyBDT, groupEntriesByRoute } from '../../domain/calculations.ts';
-import { ROUTE_REGISTRY } from '../../domain/routeRegistry.ts';
+import { getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import {
   X,
   ChevronDown,
@@ -53,7 +53,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
 
   // Helper to render group rows
   const renderRouteBreakdown = (group: 'Source Tax' | 'AIT' | 'Payment' | 'Adjustment') => {
-    const routes = ROUTE_REGISTRY.filter((r) => r.group === group);
+    const routes = getVisibleRoutesByGroup(group, entries.map((entry) => entry.routeId));
     return (
       <div className="space-y-1.5 pt-2 pb-1">
         {routes.map((route) => {
@@ -285,32 +285,25 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({
             )}
           </div>
 
-          {/* Reconciliation Integrity Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-center">
-            <div className="bg-white p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-500 block">Total Records</span>
-              <span className="text-base font-bold text-slate-800 font-mono">
-                {totals.totalRecordsCount}
-              </span>
-            </div>
-            <div className="bg-white p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-500 block">Source Deduction</span>
-              <span className="text-xs font-bold text-emerald-800 font-mono">
-                {formatCurrencyBDT(totals.sourceTaxTotal)}
-              </span>
-            </div>
-            <div className="bg-white p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-500 block">AIT Total</span>
-              <span className="text-xs font-bold text-emerald-800 font-mono">
-                {formatCurrencyBDT(totals.aitTotal)}
-              </span>
-            </div>
-            <div className="bg-white p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-500 block">Payments & Adj</span>
-              <span className="text-xs font-bold text-emerald-800 font-mono">
-                {formatCurrencyBDT(totals.paymentsTotal + totals.adjustmentsTotal)}
-              </span>
-            </div>
+          {/* The six recorded buckets follow the older eLedger status screen.
+              Do not combine surcharge, tax paid with return, and refunds. */}
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <h3 className="px-4 py-2.5 bg-slate-100 text-xs font-bold text-slate-800 border-b border-slate-200">
+              Tax Payment Status — Recorded Amounts
+            </h3>
+            {[
+              ['Source Tax', totals.sourceTaxTotal],
+              ['Advance Income Tax (AIT)', totals.aitTotal],
+              ['Tax Paid With Return', totals.taxPaidWithReturnTotal],
+              ['Environmental Surcharge', totals.environmentalSurchargeTotal],
+              ['Adjustment of Tax Refund', totals.refundAdjustmentTotal],
+              ['Adjustment of carry forward tax u/s 163', totals.carryForward163Total],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between gap-3 px-4 py-2 border-b last:border-b-0 border-slate-100 text-xs sm:text-sm">
+                <span className="text-slate-700">{label}</span>
+                <span className="font-mono font-semibold text-slate-900 tabular-nums">{formatCurrencyBDT(Number(value))}</span>
+              </div>
+            ))}
           </div>
         </div>
 

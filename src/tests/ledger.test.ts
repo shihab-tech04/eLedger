@@ -24,7 +24,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { ROUTE_REGISTRY, getActiveRouteForGroup, getRouteById, getRoutesByGroup } from '../domain/routeRegistry.ts';
+import { ROUTE_REGISTRY, CURRENT_ROUTE_REGISTRY, getActiveRouteForGroup, getRouteById, getRoutesByGroup, getCurrentRoutesByGroup, getVisibleRoutesByGroup } from '../domain/routeRegistry.ts';
 import {
   calculateCategoryTotals,
   filterEntriesByRoute,
@@ -1105,5 +1105,90 @@ describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
       assert.ok(getRoutesByGroup(group).length > 0);
     }
     assert.equal(calculateCategoryTotals(INITIAL_LEDGER_ENTRIES).grandTotalCredits, 0);
+  });
+});
+
+describe('eLedger — October 8 Screenshot Crosswalk and Credit Guard', () => {
+  it('maps exactly the 18 screenshot-evidenced functional routes without removing historical entries', () => {
+    assert.equal(CURRENT_ROUTE_REGISTRY.length, 18);
+    assert.equal(new Set(CURRENT_ROUTE_REGISTRY.map((route) => route.id)).size, 18);
+    assert.equal(getCurrentRoutesByGroup('Source Tax').length, 10);
+    assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
+    assert.equal(getCurrentRoutesByGroup('Payment').length, 2);
+    assert.equal(getCurrentRoutesByGroup('Adjustment').length, 2);
+    assert.equal(getCurrentRoutesByGroup('Tax Payment Status').length, 1);
+    for (const route of ['source-ltu', 'commercial-source', 'ait-import', 'environmental-surcharge']) {
+      assert.ok(CURRENT_ROUTE_REGISTRY.some((item) => item.id === route), `${route} missing`);
+    }
+    assert.equal(getRouteById('commercial-source')?.statutorySection, 'Sec 138 (ITA 2023)');
+    assert.equal(getRouteById('carry-forward')?.statutorySection, 'Sec 163 (ITA 2023)');
+    assert.ok(getVisibleRoutesByGroup('AIT', []).every((route) => route.id !== 'commercial-vehicle'));
+    assert.ok(getVisibleRoutesByGroup('AIT', ['commercial-vehicle']).some((route) => route.id === 'commercial-vehicle'));
+    assert.ok(getVisibleRoutesByGroup('Source Tax', []).every((route) => !['contractor-supplier','house-property'].includes(route.id)));
+    assert.ok(getVisibleRoutesByGroup('Payment', ['sec-171']).some((route) => route.id === 'sec-171'));
+  });
+
+  it('prevents the same Section 120 customs reference being claimed under both Source Tax and AIT', async () => {
+    const store = new Map<string, string>();
+    const repository = new LocalStorageLedgerRepository({
+      getItem: (key) => store.get(key) ?? null,
+      setItem: (key, value) => { store.set(key, value); },
+    });
+    await repository.resetToDefaults();
+    const base = {
+      taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const,
+      referenceNo: 'CUS-2026-BOE-1', sourceEntity: 'Customs',
+      sectionCode: 'Sec 120', grossAmount: 100000, taxDeducted: 10000,
+      date: '2026-10-08', status: 'PENDING_VERIFICATION' as const,
+      workflow: 'MANUAL_ENTRY' as const, isManual: true, externalVerified: false,
+    };
+    await repository.addEntry({ ...base, category: 'SOURCE_TAX', routeId: 'system-import' });
+    await assert.rejects(repository.addEntry({ ...base, category: 'AIT', routeId: 'ait-import' }), /Duplicate entry/);
+    assert.equal((await repository.getEntries(base.taxpayerTin, base.assessmentYear)).filter((entry) => entry.referenceNo === base.referenceNo).length, 1);
+  });
+
+  it('provides current commercial source-tax lookup context without granting authoritative credit', async () => {
+    const query: ExternalLookupQuery = {
+      routeId: 'commercial-source', referenceNo: 'DHAKA-METRO-JA-11-2044',
+      expectedTin: '123456789012', assessmentYear: '2026-2027',
+    };
+    const result = await new ExternalLookupService().lookup(query);
+    assert.equal(result.routeId, 'commercial-source');
+    assert.equal(result.authoritative, false);
+    assert.equal(validateExternalLookupMatch(query, result).canSave, true);
+    assert.ok(getLocalReferenceExamples('commercial-source').some((item) => item.referenceNo === query.referenceNo));
+  });
+
+  it('keeps the six screenshot tax-payment-status amounts as distinct buckets', () => {
+    const base = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'salary-others')!;
+    const entries = [
+      { ...base, id: 'receipt', routeId: 'sec-173' as const, category: 'PAYMENT' as const, taxDeducted: 100 },
+      { ...base, id: 'surcharge', routeId: 'environmental-surcharge' as const, category: 'PAYMENT' as const, taxDeducted: 25 },
+      { ...base, id: 'refund', routeId: 'refund' as const, category: 'ADJUSTMENT' as const, taxDeducted: 30 },
+      { ...base, id: 'carry', routeId: 'carry-forward' as const, category: 'ADJUSTMENT' as const, taxDeducted: 40 },
+    ];
+    const amounts = calculateCategoryTotals(entries);
+    assert.equal(amounts.taxPaidWithReturnTotal, 100);
+    assert.equal(amounts.environmentalSurchargeTotal, 25);
+    assert.equal(amounts.refundAdjustmentTotal, 30);
+    assert.equal(amounts.carryForward163Total, 40);
+    assert.equal(amounts.grandTotalCredits, 0);
+  });
+
+  it('limits joint Sanchayapatra sync to the taxpayer share and preserves instrument TDS', async () => {
+    await ledgerRepository.resetToDefaults();
+    const item = INITIAL_INCOME_SYNC_ITEMS.find((entry) => entry.id === 'sync-item-sanchaya-02')!;
+    const args = [item.id, 'Sec 105', item.taxpayerTin, item.assessmentYear] as const;
+    assert.equal((await incomeSyncService.syncItemToLedger(...args, -1)).success, false);
+    assert.equal((await incomeSyncService.syncItemToLedger(...args, item.calculatedTaxCredit + 1)).success, false);
+    const claimed = item.calculatedTaxCredit / 2;
+    const synced = await incomeSyncService.syncItemToLedger(...args, claimed);
+    assert.equal(synced.success, true);
+    assert.equal(synced.entry?.taxDeducted, claimed);
+    assert.equal(synced.entry?.status, 'SYNCED');
+    assert.equal(synced.entry?.externalVerified, false);
+    assert.match(synced.entry?.remarks ?? '', /Instrument TDS/);
+    const bank = INITIAL_INCOME_SYNC_ITEMS.find((entry) => entry.id === 'sync-item-bank-02')!;
+    assert.equal((await incomeSyncService.syncItemToLedger(bank.id, 'Sec 102', bank.taxpayerTin, bank.assessmentYear, 1)).success, false);
   });
 });

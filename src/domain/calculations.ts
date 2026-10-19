@@ -15,10 +15,18 @@ export function calculateCategoryTotals(entries: LedgerEntry[]): TaxCategoryTota
   let adjustmentsTotal = 0;
   let adjustmentsCount = 0;
   let verifiedTotal = 0;
+  let taxPaidWithReturnTotal = 0;
+  let environmentalSurchargeTotal = 0;
+  let refundAdjustmentTotal = 0;
+  let carryForward163Total = 0;
 
   for (const entry of entries) {
     const amount = Number(entry.taxDeducted);
     const tax = Number.isFinite(amount) ? amount : 0;
+    if (entry.routeId === 'sec-173') taxPaidWithReturnTotal += tax;
+    if (entry.routeId === 'environmental-surcharge') environmentalSurchargeTotal += tax;
+    if (entry.routeId === 'refund') refundAdjustmentTotal += tax;
+    if (entry.routeId === 'carry-forward') carryForward163Total += tax;
     // Recorded claims are not necessarily eligible credits. A local/manual
     // record or an Income sync must never increase the verified total.
     if (
@@ -65,6 +73,10 @@ export function calculateCategoryTotals(entries: LedgerEntry[]): TaxCategoryTota
     adjustmentsCount,
     grandTotalCredits: Math.round(grandTotalCredits * 100) / 100,
     totalRecordsCount,
+    taxPaidWithReturnTotal: Math.round(taxPaidWithReturnTotal * 100) / 100,
+    environmentalSurchargeTotal: Math.round(environmentalSurchargeTotal * 100) / 100,
+    refundAdjustmentTotal: Math.round(refundAdjustmentTotal * 100) / 100,
+    carryForward163Total: Math.round(carryForward163Total * 100) / 100,
   };
 }
 
