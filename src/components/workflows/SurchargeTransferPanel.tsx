@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { localDateInputValue } from '../../domain/localDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
+import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
 
 /** Local handoff of a user-entered Tax & Payment surcharge; no tax rate is inferred. */
 export const SurchargeTransferPanel: React.FC<{
@@ -9,7 +9,7 @@ export const SurchargeTransferPanel: React.FC<{
   const t = useLedgerCopy();
   const [reference, setReference] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(localDateInputValue);
+  const [date, setDate] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,25 +41,17 @@ export const SurchargeTransferPanel: React.FC<{
   return (
     <section className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
       <h4 className="text-sm font-semibold text-slate-800">{t('Tax & Payment → Environmental Surcharge (local handoff)','Tax & Payment → পরিবেশ সারচার্জ (স্থানীয় হস্তান্তর)')}</h4>
-      <p className="text-xs text-slate-600 mt-2">
-        {t('Enter a surcharge amount already assessed in the separate Tax & Payment stage and its local source reference. This prototype does not calculate statutory surcharge rates, retrieve Tax & Payment data, transmit money, or obtain NBR verification.','অন্য Tax & Payment ধাপে ইতোমধ্যে নির্ধারিত সারচার্জের অঙ্ক ও স্থানীয় উৎস রেফারেন্স লিখুন। এই প্রোটোটাইপ সারচার্জ হার গণনা, সরকারি তথ্য সংগ্রহ, অর্থ স্থানান্তর বা এনবিআর যাচাই করে না।')}
-      </p>
+      <p className="text-xs text-slate-600 mt-2">{t('Record an already-assessed surcharge and its source reference.','আগে নির্ধারিত সারচার্জ ও উৎস রেফারেন্স রেকর্ড করুন।')}</p>
+      <LedgerTip label={t('About this record','এই রেকর্ড সম্পর্কে')}>
+        {t('No tax rate is calculated, no payment is transmitted, and no NBR verification is performed.','এখানে করহার গণনা, অর্থ পরিশোধ বা এনবিআর যাচাই করা হয় না।')}
+      </LedgerTip>
       <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-        <label className="text-xs font-semibold text-slate-700">
-          <span className="block mb-1">{t('Tax & Payment Reference','Tax & Payment রেফারেন্স')}</span>
-          <input aria-label={t('Tax & Payment Reference','Tax & Payment রেফারেন্স')} value={reference} onChange={(event) => setReference(event.target.value)} className="w-full p-2 border border-slate-300 rounded text-sm" placeholder="LOCAL-SUR-2026-001" />
-        </label>
-        <label className="text-xs font-semibold text-slate-700">
-          <span className="block mb-1">{t('Assessed Surcharge (৳)','নির্ধারিত সারচার্জ (৳)')}</span>
-          <input aria-label={t('Assessed Surcharge','নির্ধারিত সারচার্জ')} inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} className="w-full p-2 border border-slate-300 rounded text-sm" placeholder="0.00" />
-        </label>
-        <label className="text-xs font-semibold text-slate-700">
-          <span className="block mb-1">{t('Assessment / Payment Date','নির্ধারণ / পরিশোধের তারিখ')}</span>
-          <input aria-label={t('Surcharge Date','সারচার্জের তারিখ')} type="date" value={date} onChange={(event) => setDate(event.target.value)} className="w-full p-2 border border-slate-300 rounded text-sm" />
-        </label>
+        <LedgerInput label={t('Tax & Payment Reference','Tax & Payment রেফারেন্স')} value={reference} required onValueChange={setReference} placeholder="LOCAL-SUR-2026-001"/>
+        <LedgerInput label={t('Assessed Surcharge (৳)','নির্ধারিত সারচার্জ (৳)')} aria-label={t('Assessed Surcharge','নির্ধারিত সারচার্জ')} inputMode="decimal" className="is-number" required value={amount} onValueChange={setAmount} placeholder="0.00"/>
+        <LedgerInput label={t('Assessment / Payment Date','নির্ধারণ / পরিশোধের তারিখ')} aria-label={t('Surcharge Date','সারচার্জের তারিখ')} required type="date" value={date} onValueChange={setDate}/>
         {error && <p role="alert" className="sm:col-span-3 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2">{error}</p>}
         {success && <p role="status" className="sm:col-span-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded p-2">{success}</p>}
-        <button type="submit" disabled={busy} className="sm:col-span-3 justify-self-start px-4 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded text-xs font-semibold">
+        <button type="submit" disabled={busy} className="eledger-button eledger-button-primary sm:col-span-3 justify-self-start">
           {busy ? t('Recording…','রেকর্ড হচ্ছে…') : t('Record Local Surcharge Transfer','স্থানীয় সারচার্জ রেকর্ড করুন')}
         </button>
       </form>
