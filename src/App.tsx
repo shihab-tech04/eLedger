@@ -15,6 +15,7 @@ import { AitView } from './features/ait/AitView.tsx';
 import { PaymentsView } from './features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from './features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from './components/modals/TaxPaymentStatusModal.tsx';
+import { LanguageProvider } from './context/LanguageContext.tsx';
 
 const AppContent: React.FC = () => {
   const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen, loadError } = useLedger();
@@ -72,8 +73,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <LedgerProvider>
-      <AppContent />
-    </LedgerProvider>
+    <LanguageProvider>
+      <LedgerProvider>
+        <AppContent />
+      </LedgerProvider>
+    </LanguageProvider>
   );
 }
