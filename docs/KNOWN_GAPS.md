@@ -1,4 +1,4 @@
-# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–8)
+# NBR eReturn Ledger — Known Gaps & Unresolved Requirements (Phases 0–9)
 
 This document tracks items where source evidence was interrupted or where live government infrastructure cannot be reached in a standalone client environment.
 
@@ -7,6 +7,8 @@ This document tracks items where source evidence was interrupted or where live g
 ## 1. Status Breakdown
 
 ### Implemented & Tested
+- [x] Phase 9: Mobile in-row form and modal breakdown layout, dynamic route-evidence badges, browser-local dates, and removal of public global reset
+- [x] Phase 9: Nested/corrupt claim evidence rejected before rendering; unreadable original saved data left unchanged
 - [x] Phase 8: Per-route claim evidence editor and persisted disclosure for service TDS, other TDS, Source Tax LTU, Section 154, Section 173, AIT Import, and Sanchayapatra
 - [x] Phase 8: Validate document amount against claimed credit, savings-issue dates, field applicability and length; old claims without evidence remain editable
 - [x] Phase 8: Keep inline-table row entry/edits and reset unsaved evidence when changing route; no automatic government verification

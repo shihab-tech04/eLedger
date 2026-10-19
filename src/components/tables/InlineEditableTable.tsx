@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { LedgerEntry, TaxCategory, LedgerRouteId, ClaimEvidence } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
+import { localDateInputValue } from '../../domain/localDate.ts';
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 
@@ -39,6 +40,67 @@ interface InlineEditableTableProps {
   allowEditDelete?: boolean;
 }
 
+type EditableRowFields = {
+  referenceNo: string;
+  sourceEntity: string;
+  sectionCode: string;
+  grossAmount: string;
+  taxDeducted: string;
+  date: string;
+};
+
+/** The same inline table row becomes a legible, labeled editor on phones. */
+export const MobileRowEditor: React.FC<{
+  values: EditableRowFields;
+  onFieldChange: (field: keyof EditableRowFields, value: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+  evidence: ClaimEvidence;
+  onEvidenceChange: (evidence: ClaimEvidence) => void;
+  routeId: LedgerRouteId;
+  isEdit: boolean;
+}> = ({ values, onFieldChange, onSave, onCancel, evidence, onEvidenceChange, routeId, isEdit }) => (
+  <tr className={`sm:hidden ${isEdit ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+    <td colSpan={8} className="p-0">
+      <div className={`sticky left-0 w-[calc(100vw-2rem)] max-w-full p-3 border-y-2 ${isEdit ? 'border-amber-500' : 'border-emerald-500'}`}>
+        <p className="text-sm font-semibold text-slate-800 mb-3">{isEdit ? 'Edit ledger entry' : 'New ledger entry'}</p>
+        <div className="grid grid-cols-1 gap-3">
+          {([
+            ['referenceNo', 'Reference / Challan No', 'text'],
+            ['sourceEntity', 'Deductor / Source Entity', 'text'],
+            ['sectionCode', 'Section', 'text'],
+            ['grossAmount', 'Gross Amount (৳)', 'number'],
+            ['taxDeducted', 'Tax Deducted (৳)', 'number'],
+            ['date', 'Date', 'date'],
+          ] as const).map(([field, label, type]) => (
+            <label key={field} className="block text-xs font-semibold text-slate-700">
+              <span className="block mb-1">{label}</span>
+              <input
+                type={type}
+                aria-label={`${isEdit ? 'Edit' : 'New'} ${label}`}
+                value={values[field]}
+                onChange={(event) => onFieldChange(field, event.target.value)}
+                min={type === 'number' ? '0' : undefined}
+                step={type === 'number' ? 'any' : undefined}
+                className="block w-full min-w-0 text-sm px-2.5 py-2 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
+              />
+            </label>
+          ))}
+          {getClaimEvidenceFields(routeId).length > 0 && (
+            <ClaimEvidenceFields routeId={routeId} evidence={evidence} onChange={onEvidenceChange} />
+          )}
+        </div>
+        <div className="flex justify-end gap-2 mt-3">
+          <button onClick={onCancel} className="px-4 py-2 bg-slate-200 text-slate-700 rounded text-xs font-semibold">Cancel</button>
+          <button onClick={onSave} className={`px-4 py-2 text-white rounded text-xs font-semibold ${isEdit ? 'bg-amber-600' : 'bg-emerald-700'}`}>
+            {isEdit ? 'Save Changes' : 'Save Entry'}
+          </button>
+        </div>
+      </div>
+    </td>
+  </tr>
+);
+
 export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   entries,
   routeId,
@@ -57,7 +119,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     sectionCode: defaultSection,
     grossAmount: '',
     taxDeducted: '',
-    date: new Date().toISOString().split('T')[0],
+    date: localDateInputValue(),
     remarks: '',
   });
   const [newRowError, setNewRowError] = useState<string | null>(null);
@@ -93,7 +155,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       sectionCode: defaultSection,
       grossAmount: '',
       taxDeducted: '',
-      date: new Date().toISOString().split('T')[0],
+      date: localDateInputValue(),
       remarks: '',
     });
     setNewRowError(null);
@@ -314,7 +376,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
             {/* Inline New Entry Row (Requirement #6) */}
             {isAddingRow && (
               <React.Fragment>
-              <tr className="bg-emerald-50/70 border-2 border-emerald-500 transition-all">
+              <tr className="hidden sm:table-row bg-emerald-50/70 border-2 border-emerald-500 transition-all">
                 {/* Reference Input */}
                 <td className="px-3 py-2">
                   <input
@@ -325,7 +387,6 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                     }
                     placeholder="e.g. CH-2026-901"
                     className="w-full text-xs px-2 py-1 bg-white border border-slate-300 rounded focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 outline-none"
-                    autoFocus
                   />
                 </td>
                 {/* Source Entity Input */}
@@ -421,8 +482,18 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                   </div>
                 </td>
               </tr>
+              <MobileRowEditor
+                values={newRowData}
+                onFieldChange={(field, value) => setNewRowData((previous) => ({ ...previous, [field]: value }))}
+                onSave={handleSaveAdd}
+                onCancel={handleCancelAdd}
+                evidence={newClaimEvidence}
+                onEvidenceChange={setNewClaimEvidence}
+                routeId={routeId}
+                isEdit={false}
+              />
               {hasEvidenceFields && (
-                <tr className="bg-emerald-50/70 border-b-2 border-emerald-500">
+                <tr className="hidden sm:table-row bg-emerald-50/70 border-b-2 border-emerald-500">
                   <td colSpan={8} className="px-3 pb-3">
                     <ClaimEvidenceFields routeId={routeId} evidence={newClaimEvidence} onChange={setNewClaimEvidence} />
                   </td>
@@ -451,7 +522,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                   return (
                     <React.Fragment key={entry.id}>
                     <tr
-                      className="bg-amber-50/70 border-2 border-amber-500 transition-all"
+                      className="hidden sm:table-row bg-amber-50/70 border-2 border-amber-500 transition-all"
                     >
                       <td className="px-3 py-2">
                         <input
@@ -541,8 +612,18 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                         </div>
                       </td>
                     </tr>
+                    <MobileRowEditor
+                      values={editRowData}
+                      onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
+                      onSave={() => handleSaveEdit(entry.id)}
+                      onCancel={handleCancelEdit}
+                      evidence={editClaimEvidence}
+                      onEvidenceChange={setEditClaimEvidence}
+                      routeId={routeId}
+                      isEdit
+                    />
                     {hasEvidenceFields && (
-                      <tr className="bg-amber-50/70 border-b-2 border-amber-500">
+                      <tr className="hidden sm:table-row bg-amber-50/70 border-b-2 border-amber-500">
                         <td colSpan={8} className="px-3 pb-3">
                           <ClaimEvidenceFields routeId={routeId} evidence={editClaimEvidence} onChange={setEditClaimEvidence} />
                         </td>

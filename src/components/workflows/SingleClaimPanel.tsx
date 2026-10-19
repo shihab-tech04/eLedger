@@ -9,6 +9,7 @@ import { useLedger } from '../../context/LedgerContext.tsx';
 import { LedgerEntry } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { CARRY_FORWARD_CLASSIFICATIONS, getPriorAssessmentYears, readCarryForwardDetails } from '../../domain/carryForward.ts';
+import { localDateInputValue } from '../../domain/localDate.ts';
 import { SlidersHorizontal, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface SingleClaimPanelProps {
@@ -85,7 +86,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         sectionCode: 'Sec 163',
         grossAmount: amount,
         taxDeducted: amount,
-        date: new Date().toISOString().split('T')[0],
+        date: localDateInputValue(),
         status: 'PENDING_VERIFICATION',
         workflow: 'SINGLE_CLAIM',
         isManual: true,
