@@ -50,6 +50,36 @@ type EditableRowFields = {
   date: string;
 };
 
+type TableFieldLabels = Pick<Record<keyof EditableRowFields, string>,
+  'referenceNo' | 'sourceEntity' | 'grossAmount' | 'taxDeducted'>;
+
+/** Financial workflow terminology must match what a row actually records. */
+export const getTableFieldLabels = (
+  category: TaxCategory,
+  t: (english: string, bengali: string) => string,
+): TableFieldLabels => ({
+  referenceNo: category === 'ADJUSTMENT'
+    ? t('Order / Adjustment Reference', 'আদেশ / সমন্বয়ের রেফারেন্স')
+    : t('Reference / Challan No', 'রেফারেন্স / চালান নম্বর'),
+  sourceEntity: category === 'PAYMENT'
+    ? t('Receiving Authority / Bank', 'গ্রহণকারী কর্তৃপক্ষ / ব্যাংক')
+    : category === 'ADJUSTMENT'
+      ? t('Issuing Authority / Circle', 'আদেশ প্রদানকারী কর্তৃপক্ষ / সার্কেল')
+      : t('Deductor / Source Entity', 'কর্তনকারী / উৎস প্রতিষ্ঠান'),
+  grossAmount: category === 'PAYMENT'
+    ? t('Payment Basis (৳)', 'পরিশোধের ভিত্তি (৳)')
+    : category === 'ADJUSTMENT'
+      ? t('Eligible Amount (৳)', 'যোগ্য অঙ্ক (৳)')
+      : t('Gross Amount', 'মোট অঙ্ক'),
+  taxDeducted: category === 'PAYMENT'
+    ? t('Tax Paid (৳)', 'পরিশোধিত কর (৳)')
+    : category === 'ADJUSTMENT'
+      ? t('Adjusted Amount (৳)', 'সমন্বিত অঙ্ক (৳)')
+      : category === 'AIT'
+        ? t('AIT Claimed (৳)', 'দাবিকৃত অগ্রিম কর (৳)')
+        : t('Tax Deducted (৳)', 'কর্তিত কর (৳)'),
+});
+
 /** The same inline table row becomes a legible, labeled editor on phones. */
 export const MobileRowEditor: React.FC<{
   values: EditableRowFields;
@@ -59,10 +89,12 @@ export const MobileRowEditor: React.FC<{
   evidence: ClaimEvidence;
   onEvidenceChange: (evidence: ClaimEvidence) => void;
   routeId: LedgerRouteId;
+  fieldLabels?: TableFieldLabels;
   isEdit: boolean;
   error?: string | null;
-}> = ({ values, onFieldChange, onSave, onCancel, evidence, onEvidenceChange, routeId, isEdit, error }) => {
+}> = ({ values, onFieldChange, onSave, onCancel, evidence, onEvidenceChange, routeId, fieldLabels, isEdit, error }) => {
   const t = useLedgerCopy();
+  const labels = fieldLabels ?? getTableFieldLabels('SOURCE_TAX', t);
   return (
   <tr className={`sm:hidden ${isEdit ? 'bg-amber-50' : 'bg-emerald-50'}`}>
     <td colSpan={8} className="p-0">
@@ -71,11 +103,11 @@ export const MobileRowEditor: React.FC<{
         {error && <p role="alert" className="text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2 mb-3">{error}</p>}
         <div className="grid grid-cols-1 gap-3">
           {([
-            ['referenceNo', t('Reference / Challan No','রেফারেন্স / চালান নম্বর'), 'text'],
-            ['sourceEntity', t('Deductor / Source Entity','কর্তনকারী / উৎস প্রতিষ্ঠান'), 'text'],
+            ['referenceNo', labels.referenceNo, 'text'],
+            ['sourceEntity', labels.sourceEntity, 'text'],
             ['sectionCode', t('Section','ধারা'), 'text'],
-            ['grossAmount', t('Gross Amount (৳)','মোট অঙ্ক (৳)'), 'number'],
-            ['taxDeducted', t('Tax Deducted (৳)','কর্তিত কর (৳)'), 'number'],
+            ['grossAmount', labels.grossAmount, 'number'],
+            ['taxDeducted', labels.taxDeducted, 'number'],
             ['date', t('Date','তারিখ'), 'date'],
           ] as const).map(([field, label, type]) => (
             <label key={field} className="block text-xs font-semibold text-slate-700">
@@ -119,6 +151,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   allowEditDelete = true,
 }) => {
   const t = useLedgerCopy();
+  const fieldLabels = getTableFieldLabels(category, t);
   // New row state
   const [isAddingRow, setIsAddingRow] = useState(false);
   const [newRowData, setNewRowData] = useState({
@@ -189,7 +222,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     }
     const taxNum = Number(newRowData.taxDeducted);
     if (!Number.isFinite(taxNum) || taxNum <= 0) {
-      setNewRowError('Tax Deducted must be a positive number.');
+      setNewRowError(`${fieldLabels.taxDeducted} must be a positive number.`);
       return;
     }
     const grossNum = Number(newRowData.grossAmount);
@@ -198,7 +231,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       return;
     }
     if (taxNum > grossNum) {
-      setNewRowError('Tax deducted cannot exceed gross amount.');
+      setNewRowError(`${fieldLabels.taxDeducted} cannot exceed ${fieldLabels.grossAmount}.`);
       return;
     }
 
@@ -254,7 +287,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
     }
     const taxNum = Number(editRowData.taxDeducted);
     if (!Number.isFinite(taxNum) || taxNum <= 0) {
-      setEditRowError('Tax Deducted must be a positive number.');
+      setEditRowError(`${fieldLabels.taxDeducted} must be a positive number.`);
       return;
     }
     const grossNum = Number(editRowData.grossAmount);
@@ -263,7 +296,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       return;
     }
     if (taxNum > grossNum) {
-      setEditRowError('Tax deducted cannot exceed gross amount.');
+      setEditRowError(`${fieldLabels.taxDeducted} cannot exceed ${fieldLabels.grossAmount}.`);
       return;
     }
 
@@ -369,15 +402,18 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       )}
 
       {/* Table responsive container */}
+      <p className="sm:hidden px-4 py-2 text-xs text-slate-600 bg-sky-50 border-b border-slate-200">
+        {t('Swipe the table sideways to see amounts, status and row actions.', 'অঙ্ক, অবস্থা ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}
+      </p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm text-slate-700">
           <thead className="bg-slate-100 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
             <tr>
-              <th scope="col" className="px-3 py-2.5">{t('Reference / Challan No','রেফারেন্স / চালান নম্বর')}</th>
-              <th scope="col" className="px-3 py-2.5">{t('Deductor / Source Entity','কর্তনকারী / উৎস প্রতিষ্ঠান')}</th>
+              <th scope="col" className="px-3 py-2.5">{fieldLabels.referenceNo}</th>
+              <th scope="col" className="px-3 py-2.5">{fieldLabels.sourceEntity}</th>
               <th scope="col" className="px-3 py-2.5">{t('Section','ধারা')}</th>
-              <th scope="col" className="px-3 py-2.5 text-right">{t('Gross Amount','মোট অঙ্ক')}</th>
-              <th scope="col" className="px-3 py-2.5 text-right">{t('Tax Deducted (৳)','কর্তিত কর (৳)')}</th>
+              <th scope="col" className="px-3 py-2.5 text-right">{fieldLabels.grossAmount}</th>
+              <th scope="col" className="px-3 py-2.5 text-right">{fieldLabels.taxDeducted}</th>
               <th scope="col" className="px-3 py-2.5">{t('Date','তারিখ')}</th>
               <th scope="col" className="px-3 py-2.5 text-center">{t('Status','অবস্থা')}</th>
               <th scope="col" className="px-3 py-2.5 text-right">{t('Actions','কাজ')}</th>
@@ -392,7 +428,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 <td className="px-3 py-2">
                   <input
                     type="text"
-                    aria-label={t('New Reference / Challan No','নতুন রেফারেন্স / চালান নম্বর')}
+                    aria-label={`${t('New','নতুন')} ${fieldLabels.referenceNo}`}
                     value={newRowData.referenceNo}
                     onChange={(e) =>
                       setNewRowData({ ...newRowData, referenceNo: e.target.value })
@@ -405,7 +441,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 <td className="px-3 py-2">
                   <input
                     type="text"
-                    aria-label={t('New Deductor / Source Entity','নতুন কর্তনকারী / উৎস প্রতিষ্ঠান')}
+                    aria-label={`${t('New','নতুন')} ${fieldLabels.sourceEntity}`}
                     value={newRowData.sourceEntity}
                     onChange={(e) =>
                       setNewRowData({ ...newRowData, sourceEntity: e.target.value })
@@ -431,7 +467,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 <td className="px-3 py-2 text-right">
                   <input
                     type="number"
-                    aria-label={t('Gross Amount Input','মোট অঙ্ক ইনপুট')}
+                    aria-label={fieldLabels.grossAmount}
                     value={newRowData.grossAmount}
                     onChange={(e) =>
                       setNewRowData({ ...newRowData, grossAmount: e.target.value })
@@ -446,7 +482,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 <td className="px-3 py-2 text-right">
                   <input
                     type="number"
-                    aria-label={t('Tax Deducted Input','কর্তিত কর ইনপুট')}
+                    aria-label={fieldLabels.taxDeducted}
                     value={newRowData.taxDeducted}
                     onChange={(e) =>
                       setNewRowData({ ...newRowData, taxDeducted: e.target.value })
@@ -505,6 +541,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                 evidence={newClaimEvidence}
                 onEvidenceChange={setNewClaimEvidence}
                 routeId={routeId}
+                fieldLabels={fieldLabels}
                 isEdit={false}
                 error={newRowError}
               />
@@ -543,7 +580,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       <td className="px-3 py-2">
                         <input
                           type="text"
-                          aria-label={t('Edit Reference / Challan No','রেফারেন্স / চালান নম্বর সম্পাদনা')}
+                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.referenceNo}`}
                           value={editRowData.referenceNo}
                           onChange={(e) =>
                             setEditRowData({ ...editRowData, referenceNo: e.target.value })
@@ -554,7 +591,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       <td className="px-3 py-2">
                         <input
                           type="text"
-                          aria-label={t('Edit Deductor / Source Entity','কর্তনকারী / উৎস প্রতিষ্ঠান সম্পাদনা')}
+                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.sourceEntity}`}
                           value={editRowData.sourceEntity}
                           onChange={(e) =>
                             setEditRowData({ ...editRowData, sourceEntity: e.target.value })
@@ -576,7 +613,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       <td className="px-3 py-2 text-right">
                         <input
                           type="number"
-                          aria-label={t('Edit Gross Amount','মোট অঙ্ক সম্পাদনা')}
+                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.grossAmount}`}
                           value={editRowData.grossAmount}
                           onChange={(e) =>
                             setEditRowData({ ...editRowData, grossAmount: e.target.value })
@@ -589,7 +626,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       <td className="px-3 py-2 text-right">
                         <input
                           type="number"
-                          aria-label={t('Edit Tax Deducted','কর্তিত কর সম্পাদনা')}
+                          aria-label={`${t('Edit','সম্পাদনা')} ${fieldLabels.taxDeducted}`}
                           value={editRowData.taxDeducted}
                           onChange={(e) =>
                             setEditRowData({ ...editRowData, taxDeducted: e.target.value })
@@ -642,6 +679,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       evidence={editClaimEvidence}
                       onEvidenceChange={setEditClaimEvidence}
                       routeId={routeId}
+                      fieldLabels={fieldLabels}
                       isEdit
                       error={editRowError}
                     />
