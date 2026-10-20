@@ -59,14 +59,14 @@ export const SurchargeTransferPanel: React.FC<{
       {success && <p role="status" className="eledger-claim-feedback">{success}</p>}
       {formOpen && <LedgerFormModal title={t('Add Entry','রেকর্ড যোগ করুন')} onClose={() => setFormOpen(false)}>
       <form onSubmit={submit} className="eledger-form-grid mt-4">
-        <LedgerInput label={t('Tax & Payment Reference','Tax & Payment রেফারেন্স')} value={reference} required onValueChange={setReference} placeholder="LOCAL-SUR-2026-001"/>
+        <LedgerInput label={t('Tax & Payment Reference','Tax & Payment রেফারেন্স')} value={reference} required onValueChange={setReference} placeholder={t('Reference number','রেফারেন্স নম্বর')}/>
         <LedgerInput label={t('Assessed Surcharge (৳)','নির্ধারিত সারচার্জ (৳)')} aria-label={t('Assessed Surcharge','নির্ধারিত সারচার্জ')} inputMode="decimal" className="is-number" required value={amount} onValueChange={setAmount} placeholder="0.00"/>
         <LedgerInput label={t('Assessment / Payment Date','নির্ধারণ / পরিশোধের তারিখ')} aria-label={t('Surcharge Date','সারচার্জের তারিখ')} required type="date" value={date} onValueChange={setDate}/>
         {error && <p role="alert" className="eledger-full-row text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2">{error}</p>}
         <div className="eledger-form-actions eledger-full-row">
         <button type="button" disabled={busy} onClick={() => setFormOpen(false)} className="eledger-button eledger-button-secondary">{t('Cancel','বাতিল')}</button>
         <button type="submit" disabled={busy} className="eledger-button eledger-button-primary">
-          {busy ? t('Recording…','রেকর্ড হচ্ছে…') : t('Record Local Surcharge Transfer','স্থানীয় সারচার্জ রেকর্ড করুন')}
+          {busy ? t('Saving…','সংরক্ষণ হচ্ছে…') : t('Save Entry','রেকর্ড সংরক্ষণ করুন')}
         </button>
         </div>
       </form>
