@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES } from '../../domain/officialLedgerFields.ts';
+import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
@@ -114,6 +115,11 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         setError(t('Enter all seven refund details.', 'ফেরত সমন্বয়ের সাতটি তথ্য পূরণ করুন।'));
         return null;
       }
+      if (!refundCirclesForZone(draft.zone).includes(draft.circle)) {
+        setError(t('Select a Circle belonging to the selected Tax Zone.',
+          'নির্বাচিত কর অঞ্চলের অন্তর্ভুক্ত সার্কেল নির্বাচন করুন।'));
+        return null;
+      }
       return {
         referenceNo: draft.reference.trim(), sourceEntity: draft.zone,
         sectionCode: defaultSection, grossAmount: total, taxDeducted: claim,
@@ -224,7 +230,8 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         <LedgerSelect label={t('Return Filing Circle','রিটার্ন দাখিল সার্কেল')} required value={draft.circle}
           onValueChange={(v) => change('circle', v)}>
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
-          {draft.circle && <option value={draft.circle}>{draft.circle}</option>}
+          {refundCirclesForZone(draft.zone).map((circle) =>
+            <option key={circle} value={circle}>{circle}</option>)}
         </LedgerSelect>
         <LedgerInput label={t('Refund Amount','ফেরতের অঙ্ক')} type="number" min="0.01" step="any" required
           value={draft.total} onValueChange={(v) => change('total', v)}/>

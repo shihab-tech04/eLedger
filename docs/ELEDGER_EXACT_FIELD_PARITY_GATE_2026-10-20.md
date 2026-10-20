@@ -32,18 +32,22 @@ are not reproduced by a local storage simulation.
 | AIT Import (120) | Read-only same 11 customs columns as source import | Read-only table | Live page |
 | Tax Paid with Return (173) | Challan No. only, Save/Reset; nine result fields + SL | One-input lookup; no manual treasury editor | Live page |
 | Environmental Surcharge | No fields in observed no-surcharge state | No manual surcharge form in empty state | Live page |
-| Refund Adjustment | AY, reference, submission date, zone dropdown, *zone-dependent circle dropdown*, refund amount, adjustment claim | Seven-field modal; circle must fail closed until authoritative options are available | Live Add row |
+| Refund Adjustment | AY, reference, submission date, zone dropdown, *zone-dependent circle dropdown*, refund amount, adjustment claim | Seven-field modal; all 50 current zone-to-circle lists observed and reproduced, with selected-zone validation | Live Add row + 50 zone selections on 20 October |
 | Carry-forward §163 | Claim action, no manual fields, pending status | One Claim action, no speculative five-field form; no false posting | Live page |
 | Tax Payment Status | Six read-only buckets; total | Read-only six-bucket status screen | Live page |
 
 ### Mandatory unresolved gates for 100% certification
 
-1. **Refund circle choices are dynamic.** The official server returns different
-   lists per zone (e.g. Zone-2 Dhaka offers Circle-23…44; Barishal has named
-   Company and Salary circles). We have not verified every zone-to-circle
-   mapping. The local selector therefore cannot be represented as 100%
-   functionally equivalent and blocks new refund submissions rather than
-   accepting an invented circle.
+1. **Refund circle option *snapshot* is complete for the observed year, but
+   server synchronization is not.** We selected each of the 50 official Tax
+   Zones in the authenticated AY 2026–2027 refund Add row and captured its
+   entire dependent Circle list, including exact special suffixes, case,
+   ordering and exceptional labels. `src/domain/refundCircleOptions.ts`
+   reproduces these 50 lists; selecting a different zone clears the old circle,
+   and a mismatched circle is rejected. This closes the *observed dropdown
+   parity* gap. It does not provide an authorized dynamic NBR endpoint to
+   refresh options when NBR changes them, nor a backend to verify or submit a
+   refund claim.
 2. **LTU file upload is not connected.** The local form displays the exact File
    input but currently records the filename only. It does not send evidence to
    the official NBR document service.
@@ -73,11 +77,17 @@ are not reproduced by a local storage simulation.
   show them; unsupported external claims remain fail-closed.
 - The code-level route/input manifest is
   `src/domain/officialLedgerFields.ts`.
+- The AY 2026–2027 zone-dependent Circle registry is
+  `src/domain/refundCircleOptions.ts`; 50/50 zone lists were observed.
 - The new source-backed manuals are
   `src/components/tables/OfficialManualClaimsTable.tsx`;
   the read-only table is `OfficialReadOnlyTable.tsx`.
 
+**Validation:** 135/135 local tests, TypeScript lint and Vite production build
+PASS for this updated checkpoint. That test count is not an official source-data
+transaction acceptance count.
+
 **Release decision:** NOT CERTIFIED for the user's strict "100% no more, no
-less" rule. Preserve this tested checkpoint on a review branch, but do not
-publish it to the main production eLedger URL until the unresolved exact-field
-and external-function gates pass.
+less" field **and function** rule. Preserve this tested checkpoint on a review
+branch, but do not publish it to the main production eLedger URL until the
+external-function, secure persistence and conditional-state gates pass.

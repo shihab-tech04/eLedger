@@ -68,6 +68,7 @@ import { OfficialManualClaimsTable } from '../components/tables/OfficialManualCl
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
 import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
 import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES } from '../domain/officialLedgerFields.ts';
+import { REFUND_CIRCLES_BY_ZONE, refundCirclesForZone } from '../domain/refundCircleOptions.ts';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
 import { PaymentsView } from '../features/payments/PaymentsView.tsx';
@@ -1923,6 +1924,26 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.ok(OTHER_TDS_PURPOSES.includes('Trade License Renewal [ Section-131]'));
     assert.ok(LTU_SECTIONS.includes('Salary [ Section-86]'));
     assert.ok(REFUND_TAX_ZONES.includes('Taxes zone-2, Dhaka'));
+  });
+
+  it('matches all 50 official refund zone-dependent Circle menus in source order', () => {
+    assert.equal(REFUND_TAX_ZONES.length, 50);
+    assert.deepEqual(Object.keys(REFUND_CIRCLES_BY_ZONE), [...REFUND_TAX_ZONES]);
+    for (const zone of REFUND_TAX_ZONES) {
+      const circles = refundCirclesForZone(zone);
+      assert.ok(circles.length >= 1, `No observed circle for ${zone}`);
+      assert.equal(new Set(circles).size, circles.length, `Duplicate circle for ${zone}`);
+    }
+    assert.deepEqual(refundCirclesForZone('Taxes zone-2, Dhaka'),
+      Array.from({ length: 22 }, (_, i) => `Circle-${i + 23}`));
+    assert.equal(refundCirclesForZone('Large Taxpayers Unit (Tax)')[0], 'Circle LTU(Tax)');
+    assert.equal(refundCirclesForZone('Taxes Zone, Barishal').at(-1), 'Circle-09');
+    assert.equal(refundCirclesForZone('Taxes Zone-3, Chattogram').at(-1), 'Circle-55');
+    assert.ok(refundCirclesForZone('Taxes Zone-1, Chattogram').includes('Circle-17 (Sitakundu)'));
+    assert.ok(refundCirclesForZone('18, Dhaka').includes('Circle-382 (Company'));
+    assert.ok(refundCirclesForZone('23, Dhaka').includes('Circle-505 (Salary) (Keraniganj-4)'));
+    assert.ok(refundCirclesForZone('Taxes Zone, Jashore').includes('CIRCLE-1'));
+    assert.deepEqual(refundCirclesForZone('Unknown zone'), []);
   });
 
   it('renders source-backed manual route tables with precisely the official columns', () => {
