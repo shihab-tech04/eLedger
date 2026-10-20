@@ -172,10 +172,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         {error && <div role="alert" className="eledger-salary-error">{error}</div>}
         {renderEditor()}
       </LedgerFormModal>}
-      {entries.length === 0 && activeId === null && <p className="eledger-entry-empty">
-        {t('No salary claims yet. Use Add Entry to record one.','এখনো বেতনের দাবি নেই। রেকর্ড যোগ করুন।')}
-      </p>}
-      {entries.length > 0 && <div className="eledger-salary-scroll">
+      <div className="eledger-salary-scroll">
         <table>
           <thead><tr>
             <th scope="col">{t('SL.','ক্রম')}</th><th scope="col">{t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}</th>
@@ -187,6 +184,9 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <th scope="col">{t('Action','কাজ')}</th>
           </tr></thead>
           <tbody>
+            {entries.length === 0 && <tr className="eledger-salary-empty-row">
+              <td colSpan={8} className="eledger-salary-empty-cell">{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td>
+            </tr>}
             {entries.map((entry, index) => (
               <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
                 <td data-label={t('SL.','ক্রম')} className="eledger-salary-row-index">{index + 1}</td>
@@ -206,7 +206,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             ))}
           </tbody>
         </table>
-      </div>}
+      </div>
     </section>
   );
 };
