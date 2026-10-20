@@ -615,6 +615,18 @@ describe('eLedger — Shared UI and responsive workflow guardrails', () => {
     assert.match(markup, /aria-current="page"[^>]*>AIT under Section 154/);
   });
 
+  it('keeps pending verification explicit to assistive technology without wrapping the table badge', () => {
+    const html = renderToStaticMarkup(React.createElement(InlineEditableTable, {
+      entries: [{ ...INITIAL_LEDGER_ENTRIES[0], status: 'PENDING_VERIFICATION' }],
+      category: 'SOURCE_TAX', routeId: 'other-tds', defaultSection: 'Sec 89',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
+    }));
+    assert.match(html, /aria-label="Pending Verification" title="Pending Verification"/);
+    assert.match(html, />Pending<\/span>/);
+    assert.doesNotMatch(html, /1 records/);
+  });
+
   it('gives surcharge payments route-specific labels instead of a tax-deduction label', () => {
     const labels = getTableFieldLabels('PAYMENT', (english) => english, 'environmental-surcharge');
     assert.equal(labels.grossAmount, 'Assessed Surcharge (৳)');
