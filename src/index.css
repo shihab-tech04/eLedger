@@ -617,7 +617,16 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-app :where(.eledger-ledger-table,.eledger-salary-table) { overflow: visible; }
 .eledger-ledger-table thead, .eledger-salary-table thead, .eledger-stage thead { background: #f1f6fa; color: var(--el-control-label); }
 .eledger-ledger-table thead th, .eledger-salary-table th { font-size: 12px; line-height: 1.45; font-weight: 700; text-transform: none; letter-spacing: normal; padding: 12px; border-bottom: 1px solid var(--el-border); }
-.eledger-ledger-table table { min-width: 850px; }
+.eledger-ledger-table table { width: 100%; min-width: 850px; table-layout: fixed; }
+.eledger-ledger-table th:nth-child(1) { width: 19%; }
+.eledger-ledger-table th:nth-child(2) { width: 17%; }
+.eledger-ledger-table th:nth-child(3) { width: 9%; }
+.eledger-ledger-table th:nth-child(4),.eledger-ledger-table th:nth-child(5) { width: 12%; }
+.eledger-ledger-table th:nth-child(6) { width: 12%; }
+.eledger-ledger-table th:nth-child(7) { width: 12%; }
+.eledger-ledger-table th:nth-child(8) { width: 7%; }
+.eledger-ledger-table td { overflow-wrap: anywhere; }
+.eledger-app { overflow-x: clip; }
 .eledger-ledger-table td, .eledger-salary-table td { font-size: 13px; line-height: 1.5; padding: 12px; }
 .eledger-ledger-table th:nth-child(6), .eledger-ledger-table td:nth-child(6),
 .eledger-salary-table th:nth-child(5), .eledger-salary-table td:nth-child(5) { text-align: center; white-space: nowrap; }
