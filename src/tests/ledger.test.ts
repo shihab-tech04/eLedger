@@ -2079,6 +2079,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /All amounts currently recorded in this Ledger/);
     assert.match(markup, /Separately authority-verified credit/);
     assert.match(markup, /eledger-payment-total/);
+    assert.match(markup, /Go to eReturn/);
+    assert.match(markup, /https:\/\/staging\.etaxnbr\.gov\.bd\/#\/user-panel\/home/);
+    assert.match(markup, /rel="noopener noreferrer"/);
     assert.doesNotMatch(markup, /Verified Tax Payments &amp; Deductions|Tax Payment Status &amp; Reconciliation/);
     assert.doesNotMatch(markup, /eledger-route-overview/);
     assert.equal(renderToStaticMarkup(React.createElement(LedgerProvider, null,
