@@ -1,4 +1,10 @@
-import type { LedgerRouteId } from './models.ts';
+import type { ClaimEvidence, LedgerRouteId } from './models.ts';
+
+/** Don't guess the document type when editing records saved before field parity. */
+export function observedDocumentTypeForEdit(evidence?: ClaimEvidence): 'CHALLAN' | 'CERTIFICATE' | '' {
+  return evidence?.paymentDocumentType === 'CHALLAN' || evidence?.paymentDocumentType === 'CERTIFICATE'
+    ? evidence.paymentDocumentType : '';
+}
 
 /**
  * Input inventories observed in the signed-in NBR eLedger on 20 October 2026.

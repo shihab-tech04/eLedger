@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
-import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES } from '../../domain/officialLedgerFields.ts';
+import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
@@ -48,6 +48,9 @@ const blank = (routeId: ManualRoute, ay: string): Draft => ({
 });
 const money = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 const dateLabel = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('-') : iso;
+export const hasUnsupportedLegacyDocumentType = (entry: LedgerEntry, routeId: ManualRoute): boolean =>
+  (routeId === 'service-payment' || routeId === 'other-tds') &&
+  entry.claimEvidence?.paymentDocumentType === 'OTHER';
 const cols: Record<ManualRoute, string[]> = {
   'service-payment': ['SL.', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
   'other-tds': ['SL.', 'Purpose of the Payment', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
@@ -58,7 +61,7 @@ const cols: Record<ManualRoute, string[]> = {
 const fromEntry = (entry: LedgerEntry, routeId: ManualRoute, ay: string): Draft => ({
   ...blank(routeId, ay),
   authority: entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity,
-  documentType: entry.claimEvidence?.paymentDocumentType ?? 'CHALLAN',
+  documentType: observedDocumentTypeForEdit(entry.claimEvidence),
   reference: entry.referenceNo,
   date: entry.date,
   total: String(entry.claimEvidence?.documentAmount ?? entry.grossAmount),
@@ -83,7 +86,14 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const change = (name: keyof Draft, value: string) => setDraft((prev) => ({ ...prev, [name]: value }));
   const cancel = () => { setActive(null); setError(null); };
   const openNew = () => { setDraft(blank(routeId, assessmentYear)); setError(null); setActive('new'); };
-  const openEdit = (entry: LedgerEntry) => { setDraft(fromEntry(entry, routeId, assessmentYear)); setError(null); setActive(entry.id); };
+  const openEdit = (entry: LedgerEntry) => {
+    if (hasUnsupportedLegacyDocumentType(entry, routeId)) {
+      setError(t('This older record uses a document type absent from the current form; it was preserved unchanged.',
+        'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
+      return;
+    }
+    setDraft(fromEntry(entry, routeId, assessmentYear)); setError(null); setActive(entry.id);
+  };
 
   const buildPayload = (): Payload | null => {
     const total = Number(draft.total);
@@ -186,7 +196,8 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
           value={draft.authority} onValueChange={(v) => change('authority', v)}/>
         <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} required
           value={draft.documentType} onValueChange={(v) => change('documentType', v)}>
-          {routeId === 'service-payment' && <option value="">{t('Select One','নির্বাচন করুন')}</option>}
+          {(routeId === 'service-payment' || (active !== 'new' && !draft.documentType)) &&
+            <option value="">{t('Select One','নির্বাচন করুন')}</option>}
           <option value="CHALLAN">{t('Challan','চালান')}</option>
           <option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
         </LedgerSelect>
@@ -281,7 +292,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
         <thead><tr>{cols[routeId].map((col) => <th scope="col" key={col}>{col}</th>)}</tr></thead>
-        <tbody>{entries.length === 0 ? <tr><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
+        <tbody>{entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
           entries.map((entry, index) => <tr key={entry.id}>
             <td data-label="SL.">{index + 1}</td>
             {rowValues(entry).map((value, i) => <td key={i} data-label={cols[routeId][i + 1]}>{value}</td>)}

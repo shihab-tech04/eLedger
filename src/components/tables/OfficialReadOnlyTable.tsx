@@ -23,7 +23,10 @@ const money = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 
 const dated = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('-') : iso;
 const empty = '—';
 
-function recordValues(entry: LedgerEntry, routeId: ReadOnlyRoute): Array<string | number> {
+function recordValues(
+  entry: LedgerEntry, routeId: ReadOnlyRoute,
+  labelStatus: (status: LedgerEntry['status']) => string,
+): Array<string | number> {
   const e = entry.claimEvidence;
   switch (routeId) {
     case 'bank-fi':
@@ -35,7 +38,7 @@ function recordValues(entry: LedgerEntry, routeId: ReadOnlyRoute): Array<string 
     case 'sanchayapatra':
       return [e?.savingsScheme || entry.sourceEntity, e?.savingsRegistration || entry.referenceNo,
         e?.savingsIssueDate ? dated(e.savingsIssueDate) : empty, money(entry.grossAmount),
-        money(entry.taxDeducted), entry.status];
+        money(entry.taxDeducted), labelStatus(entry.status)];
     case 'system-import':
     case 'ait-import':
       return [e?.customsBin || empty, e?.customsOfficeCode || empty,
@@ -64,16 +67,25 @@ export function isOfficialReadOnlyRoute(id: LedgerRouteId): id is ReadOnlyRoute 
 
 export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: LedgerEntry[] }> = ({ routeId, entries }) => {
   const t = useLedgerCopy();
+  const labelStatus = (status: LedgerEntry['status']) => {
+    switch (status) {
+      case 'VERIFIED': return t('Verified', 'যাচাইকৃত');
+      case 'SYNCED': return t('Income Synced', 'আয়তথ্য সমন্বিত');
+      case 'PENDING_VERIFICATION': return t('Pending', 'অপেক্ষমাণ');
+      case 'DRAFT': return t('Draft', 'খসড়া');
+      default: return t('Draft', 'খসড়া');
+    }
+  };
   const columns = OFFICIAL_READONLY_COLUMNS[routeId];
   return <section className="eledger-panel eledger-official-manual-table" aria-label={t('Tax details','করের বিবরণ')}>
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
         <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{column}</th>)}</tr></thead>
         <tbody>
-          {entries.length === 0 ? <tr><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
+          {entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
             entries.map((entry, index) => <tr key={entry.id}>
               <td data-label="SL.">{index + 1}</td>
-              {recordValues(entry, routeId).map((value, i) => <td data-label={columns[i + 1]} key={i}>{value}</td>)}
+              {recordValues(entry, routeId, labelStatus).map((value, i) => <td data-label={columns[i + 1]} key={i}>{value}</td>)}
             </tr>)}
         </tbody>
       </table>

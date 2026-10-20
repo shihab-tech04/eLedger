@@ -64,10 +64,10 @@ import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { LedgerGuideView } from '../features/ledger-guide/LedgerGuideView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
-import { OfficialManualClaimsTable } from '../components/tables/OfficialManualClaimsTable.tsx';
+import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType } from '../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
 import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
-import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES } from '../domain/officialLedgerFields.ts';
+import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../domain/officialLedgerFields.ts';
 import { REFUND_CIRCLES_BY_ZONE, refundCirclesForZone } from '../domain/refundCircleOptions.ts';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
@@ -1963,7 +1963,25 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       assert.match(markup, new RegExp(first));
       assert.match(markup, new RegExp(last));
       assert.doesNotMatch(markup, /<th[^>]*>Status<\/th>/);
+      assert.match(markup, /<tr class="eledger-empty-records-row"><td colSpan=/);
     }
+  });
+
+  it('preserves a legacy OTHER document type instead of silently converting it on edit', () => {
+    const record = {
+      ...INITIAL_LEDGER_ENTRIES[0],
+      claimEvidence: { paymentDocumentType: 'OTHER' as const },
+    };
+    assert.equal(hasUnsupportedLegacyDocumentType(record, 'service-payment'), true);
+    assert.equal(hasUnsupportedLegacyDocumentType(record, 'other-tds'), true);
+    assert.equal(hasUnsupportedLegacyDocumentType(record, 'source-ltu'), false);
+    assert.equal(hasUnsupportedLegacyDocumentType({ ...record, claimEvidence: {
+      paymentDocumentType: 'CHALLAN',
+    } }, 'service-payment'), false);
+    assert.equal(observedDocumentTypeForEdit(undefined), '');
+    assert.equal(observedDocumentTypeForEdit({ paymentDocumentType: 'OTHER' }), '');
+    assert.equal(observedDocumentTypeForEdit({ paymentDocumentType: 'CHALLAN' }), 'CHALLAN');
+    assert.equal(observedDocumentTypeForEdit({ paymentDocumentType: 'CERTIFICATE' }), 'CERTIFICATE');
   });
 
   it('renders source-fed columns with no invented manual Add or ledger status fields', () => {
@@ -1980,7 +1998,21 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     }));
     assert.match(markup, /Payment Mode/);
     assert.match(markup, /Circle/);
+    assert.match(markup, /<tr class="eledger-empty-records-row"><td colSpan=/);
     assert.doesNotMatch(markup, /Add Entry|Section|Status/);
+  });
+
+  it('shows human-readable, bilingual savings status without exposing internal state identifiers', () => {
+    const savingsEntry = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'sanchayapatra')!;
+    const english = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
+      routeId: 'sanchayapatra', entries: [savingsEntry],
+    }));
+    const bengali = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+      React.createElement(OfficialReadOnlyTable, { routeId: 'sanchayapatra', entries: [savingsEntry] })));
+    assert.match(english, /Income Synced/);
+    assert.match(bengali, /আয়তথ্য সমন্বিত/);
+    assert.doesNotMatch(english, /PENDING_VERIFICATION|SYNCED|DRAFT/);
+    assert.doesNotMatch(bengali, /PENDING_VERIFICATION|SYNCED|DRAFT/);
   });
 
   it('exposes only the observed Section 163 Claim action, with no speculative manual fields', () => {

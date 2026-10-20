@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
+import { observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../../components/ui/LedgerFormModal.tsx';
 
-type SalaryDocument = 'CHALLAN' | 'CERTIFICATE';
+type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | '';
 type SalaryDraft = {
   authority: string;
   documentType: SalaryDocument;
@@ -41,7 +42,7 @@ const blankDraft = (): SalaryDraft => ({
 });
 const draftFromEntry = (entry: LedgerEntry): SalaryDraft => ({
   authority: entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity,
-  documentType: entry.claimEvidence?.paymentDocumentType === 'CERTIFICATE' ? 'CERTIFICATE' : 'CHALLAN',
+  documentType: observedDocumentTypeForEdit(entry.claimEvidence),
   reference: entry.referenceNo,
   date: entry.date,
   documentAmount: String(entry.claimEvidence?.documentAmount ?? entry.grossAmount),
@@ -75,6 +76,11 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     const claimedAmount = Number(draft.claimedAmount);
     if (!draft.authority.trim() || !draft.reference.trim() || !draft.date) {
       setError(t('Depositing authority, challan/certificate reference and date are required.','জমাদানকারী কর্তৃপক্ষ, চালান/সনদ নম্বর ও তারিখ প্রয়োজন।'));
+      return;
+    }
+    if (draft.documentType !== 'CHALLAN' && draft.documentType !== 'CERTIFICATE') {
+      setError(t('Choose the document type from the original challan or certificate.',
+        'মূল চালান বা সনদ দেখে দলিলের ধরন নির্বাচন করুন।'));
       return;
     }
     if (!Number.isFinite(documentAmount) || documentAmount <= 0 ||
@@ -138,6 +144,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       <LedgerFormGrid>
         <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
         <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
+          {activeId !== 'new' && !draft.documentType && <option value="">{t('Select One','নির্বাচন করুন')}</option>}
           <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
         </LedgerSelect>
         <LedgerInput label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} required value={draft.reference} onValueChange={(value) => change('reference', value)}/>
