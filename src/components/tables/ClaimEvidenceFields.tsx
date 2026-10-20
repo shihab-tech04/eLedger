@@ -28,7 +28,7 @@ export const ClaimEvidenceFields: React.FC<ClaimEvidenceFieldsProps> = ({ routeI
   return (
     <div className="eledger-evidence-fields border rounded-md p-3">
       <p className="text-xs font-semibold text-slate-800 mb-2">{t('Supporting document details','সহায়ক দলিলের তথ্য')}</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="eledger-form-grid">
         {fields.map(({ key, label, kind, options, helperText }) => (
           <div key={key} className="min-w-0">
             {kind === 'select' ? (
@@ -74,7 +74,7 @@ export const ClaimEvidenceSummary: React.FC<{ routeId: LedgerRouteId; evidence?:
   if (!values.length) return null;
 
   return (
-    <details className="mt-1 text-[11px] text-slate-600 max-w-xs">
+    <details className="mt-1 text-xs text-slate-600 max-w-xs">
       <summary className="cursor-pointer text-sky-800">{t('Claim evidence','দাবির প্রমাণ')} ({values.length} {t('fields','তথ্য')})</summary>
       <dl className="pt-1 space-y-1">
         {values.map(({ label, value }) => (

@@ -44,7 +44,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="eledger-app min-h-screen text-slate-800 antialiased font-sans">
+    <div className="eledger-app min-h-screen antialiased" lang={language}>
       <Header />
       <div className="eledger-workspace">
         <Sidebar />

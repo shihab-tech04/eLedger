@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronLeft, FileCheck2 } from 'lucide-react';
+import { FileCheck2 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
@@ -9,6 +9,7 @@ import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
+import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
 
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
@@ -68,35 +69,25 @@ export const AitView: React.FC = () => {
     currentRoute.id === 'sec-154' ? 'AIT (154)' : currentRoute.title;
 
   return (
-    <div className="eledger-ait-page">
-      <header className="eledger-source-title">
-        <div className="eledger-source-title-line">
-          <button type="button" className="eledger-source-back" aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}
-            onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
-          <h1>{language === 'bn' ? currentRoute.bengaliTitle : title}</h1>
-        </div>
-        <p>{currentRoute.statutorySection}</p>
-      </header>
+    <div className="eledger-financial-page">
+      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+        title={language === 'bn' ? currentRoute.bengaliTitle : title}
+        caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 
       <RouteMobileTabs routes={aitRoutes} activeId={currentRoute.id}
         label={t('AIT categories','অগ্রিম করের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
-      <div className="eledger-ait-summary">
-        <div><span>{t('Total Claimed Amount','মোট দাবিকৃত অঙ্ক')}</span><strong>{money(totalTaxForRoute)}</strong></div>
-        <div><span>{t('Records','রেকর্ড')}</span><strong>{routeEntries.length}</strong></div>
-        <p>{language === 'bn' ? 'এই খাতের রেকর্ডকৃত দাবি; সরকারি যাচাই এখনো সংযুক্ত নয়।' : currentRoute.description}</p>
-      </div>
+      <LedgerSummary amountLabel={t('Total claimed','মোট দাবি')} amount={money(totalTaxForRoute)} count={routeEntries.length}
+        note={language === 'bn' ? 'রেকর্ডকৃত দাবি স্বতন্ত্র যাচাই ছাড়া নিশ্চিত কর ক্রেডিট নয়।' : 'Recorded claims require independent verification.'}/>
 
       {currentRoute.supportsLookup && (
-        <section className="eledger-ait-lookup" aria-label={t('Local AIT reference lookup','স্থানীয় অগ্রিম কর রেফারেন্স অনুসন্ধান')}>
-          <header><FileCheck2 size={16}/><div><strong>{t('Reference lookup','রেফারেন্স অনুসন্ধান')}</strong>
-            <span>{t('Local demonstration records only; not an official verification response.','শুধু স্থানীয় নমুনা রেকর্ড; এটি সরকারি যাচাইয়ের ফল নয়।')}</span></div></header>
-          <SystemLookupPanel
-            routeId={currentRoute.id} category="AIT"
-            defaultSection={currentRoute.statutorySection}
-            lookupPlaceholder={lookupProps.placeholder} helperText={language === 'bn' ? 'শুধু স্থানীয় নমুনা রেফারেন্স খুঁজুন; সরকারি BRTA/ট্রেজারি যাচাই সংযুক্ত নেই।' : lookupProps.helper}
-          />
-        </section>
+        <SystemLookupPanel
+          heading={t('Reference lookup','রেফারেন্স অনুসন্ধান')}
+          routeId={currentRoute.id} category="AIT"
+          defaultSection={currentRoute.statutorySection}
+          lookupPlaceholder={lookupProps.placeholder}
+          helperText={`${t('Local demonstration records only; not an official verification response.','শুধু স্থানীয় নমুনা রেকর্ড; সরকারি যাচাই নয়।')} ${language === 'bn' ? 'BRTA/ট্রেজারি যাচাই সংযুক্ত নেই।' : lookupProps.helper}`}
+        />
       )}
 
       {currentRoute.id === 'ait-import' && (
@@ -120,7 +111,6 @@ export const AitView: React.FC = () => {
           allowEditDelete={currentRoute.supportsManualEntry}
         />
       </section>
-      <p className="eledger-ait-integrity">{t('Locally recorded AIT claims remain pending until independently verified. No government registry connection is configured.','স্থানীয়ভাবে রেকর্ডকৃত অগ্রিম করের দাবি স্বতন্ত্র যাচাই ছাড়া অনিষ্পন্ন থাকবে। সরকারি রেজিস্ট্রির সঙ্গে কোনো সংযোগ নেই।')}</p>
     </div>
   );
 };

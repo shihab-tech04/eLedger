@@ -15,7 +15,7 @@ import { validateExternalLookupMatch } from '../../domain/validation.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { Search, ShieldCheck, AlertOctagon, CheckCircle2 } from 'lucide-react';
-import { LedgerInput } from '../ui/LedgerForm.tsx';
+import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
 
 interface SystemLookupPanelProps {
   routeId: LedgerRouteId;
@@ -23,6 +23,7 @@ interface SystemLookupPanelProps {
   defaultSection: string;
   lookupPlaceholder: string;
   helperText: string;
+  heading?: string;
 }
 
 export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
@@ -31,6 +32,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   defaultSection,
   lookupPlaceholder,
   helperText,
+  heading,
 }) => {
   const t = useLedgerCopy();
   const { taxpayer, assessmentYear, addEntry } = useLedger();
@@ -151,17 +153,14 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 mb-4 shadow-xs">
-      <div className="pb-3 border-b border-slate-200">
+    <section className="eledger-panel p-4 mb-4">
+      <div className="eledger-workflow-heading">
         <div className="flex items-center space-x-2">
-          <h4 className="text-xs sm:text-sm font-semibold text-slate-800">
-            {t('System Reference Lookup','সিস্টেম রেফারেন্স অনুসন্ধান')}
-          </h4>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-            {t('Workflow: System Lookup','কাজ: সিস্টেম অনুসন্ধান')}
-          </span>
+          <h2>
+            {heading ?? t('System Reference Lookup','সিস্টেম রেফারেন্স অনুসন্ধান')}
+          </h2>
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">{helperText}</p>
+        <LedgerTip label={t('How lookup works','অনুসন্ধানের বিবরণ')}>{helperText}</LedgerTip>
       </div>
 
       <form onSubmit={handleLookup} className="mt-3 flex flex-col sm:flex-row gap-2">
@@ -266,6 +265,6 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };

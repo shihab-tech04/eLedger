@@ -4,6 +4,7 @@ import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.
 import { getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { LedgerRouteId, RouteRegistryEntry } from '../../domain/models.ts';
 import { ArrowRight, BookOpen, CarFront, ChevronRight, FileCheck2, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react';
+import { LedgerPageHeader } from '../../components/ui/LedgerPage.tsx';
 
 /** The reference dashboard uses Bangladeshi digit grouping without a currency prefix. */
 const amount = (value: number) => value.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -103,16 +104,11 @@ export const DashboardView: React.FC = () => {
 
   return (
     <div className="eledger-dashboard">
-      <header className="eledger-dashboard-heading">
-        <div>
-          <span className="eledger-dashboard-eyebrow">ERETURN LEDGER</span>
-          <h1>{t('Dashboard','ড্যাশবোর্ড')}</h1>
-          <p>{t('See the current Ledger tax, AIT, adjustments and total amount at a glance.','বর্তমান লেজারে উৎস কর, অগ্রিম কর, সমন্বয় ও মোট অঙ্ক একনজরে দেখুন।')}</p>
-        </div>
-        <button type="button" className="eledger-dashboard-status-button" onClick={() => setIsStatusModalOpen(true)}>
-          <FileCheck2 size={16} aria-hidden="true"/>{t('View Tax Payment Status','কর পরিশোধের অবস্থা দেখুন')}
-        </button>
-      </header>
+      <LedgerPageHeader title={t('Dashboard','ড্যাশবোর্ড')}
+        caption={t('Tax records and totals at a glance.','কর রেকর্ড ও মোট অঙ্ক একনজরে।')}
+        action={<button type="button" className="eledger-button eledger-button-secondary" onClick={() => setIsStatusModalOpen(true)}>
+          <FileCheck2 size={16} aria-hidden="true"/>{t('Tax Payment Status','কর পরিশোধের অবস্থা')}
+        </button>}/>
 
       <section className="eledger-summary-cards" aria-label={t('Tax records summary','কর রেকর্ডের সারাংশ')}>
         {cards.map((card) => {

@@ -22,6 +22,7 @@ export function LanguageProvider({ children, initialLanguage }: { children?: Rea
   });
   useEffect(() => {
     try { window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language); } catch { /* Private browsing may deny persistence. */ }
+    document.documentElement.lang = language;
   }, [language]);
   return <LanguageContext.Provider value={{ language, setLanguage }}>{children}</LanguageContext.Provider>;
 }

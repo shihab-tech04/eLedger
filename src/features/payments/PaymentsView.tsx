@@ -14,8 +14,8 @@ import { InlineEditableTable } from '../../components/tables/InlineEditableTable
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
 import { SurchargeTransferPanel } from '../../components/workflows/SurchargeTransferPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
-import { ChevronLeft, FileCheck2 } from 'lucide-react';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
+import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
 
 export const PaymentsView: React.FC = () => {
   const {
@@ -111,34 +111,23 @@ export const PaymentsView: React.FC = () => {
   };
 
   return (
-    <div className="eledger-ait-page">
-      <header className="eledger-source-title">
-        <div className="eledger-source-title-line">
-          <button type="button" className="eledger-source-back" aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}
-            onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
-          <h1>{language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'sec-173' ? 'Tax Paid with Return (173)' : currentRoute.title}</h1>
-        </div>
-        <p>{currentRoute.statutorySection}</p>
-      </header>
+    <div className="eledger-financial-page">
+      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+        title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'sec-173' ? 'Tax Paid with Return (173)' : currentRoute.title}
+        caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 
       <RouteMobileTabs routes={paymentRoutes} activeId={currentRoute.id}
         label={t('Payment categories','কর পরিশোধের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
-      <div className="eledger-ait-summary">
-        <div><span>{t('Total Recorded Payment','মোট রেকর্ডকৃত পরিশোধ')}</span><strong>{formatLedgerAmount(totalTaxForRoute)}</strong></div>
-        <div><span>{t('Records','রেকর্ড')}</span><strong>{routeEntries.length}</strong></div>
-        <p>{language === 'bn' ? 'এই খাতের স্থানীয় রেকর্ড; সরকারি পরিশোধ নিশ্চিতকরণ নয়।' : currentRoute.description}</p>
-      </div>
+      <LedgerSummary amountLabel={t('Total payment','মোট পরিশোধ')} amount={formatLedgerAmount(totalTaxForRoute)} count={routeEntries.length}
+        note={language === 'bn' ? 'রেকর্ডকৃত পরিশোধের সরকারি নিশ্চিতকরণ আলাদাভাবে প্রয়োজন।' : 'Recorded payments require separate official confirmation.'}/>
 
       {currentRoute.supportsLookup && (
-        <section className="eledger-ait-lookup" aria-label={t('Local payment reference lookup','স্থানীয় কর পরিশোধ রেফারেন্স অনুসন্ধান')}>
-          <header><FileCheck2 size={16}/><div><strong>{t('A-Challan reference lookup','এ-চালান রেফারেন্স অনুসন্ধান')}</strong>
-            <span>{t('Local demonstration records only; no treasury payment confirmation.','শুধু স্থানীয় নমুনা রেকর্ড; ট্রেজারির পরিশোধ নিশ্চিতকরণ নয়।')}</span></div></header>
-          <SystemLookupPanel routeId={currentRoute.id} category="PAYMENT"
+        <SystemLookupPanel routeId={currentRoute.id} category="PAYMENT"
+            heading={t('A-Challan reference lookup','এ-চালান রেফারেন্স অনুসন্ধান')}
             defaultSection={currentRoute.statutorySection}
             lookupPlaceholder={currentRoute.id === 'sec-173' ? 'e.g. ACHALLAN-2026-788102' : 'e.g. ACHALLAN-Q1-2026-5541'}
-            helperText={t('Check local A-Challan reference examples; national treasury verification is not connected.','স্থানীয় এ-চালান নমুনা রেফারেন্স দেখুন; জাতীয় ট্রেজারি যাচাই সংযুক্ত নেই।')} />
-        </section>
+            helperText={t('Local demonstration records only; national treasury verification is not connected.','শুধু স্থানীয় নমুনা রেকর্ড; জাতীয় ট্রেজারি যাচাই সংযুক্ত নেই।')} />
       )}
 
       {currentRoute.id === 'environmental-surcharge' && (
@@ -153,7 +142,6 @@ export const PaymentsView: React.FC = () => {
           allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'environmental-surcharge'}
           allowEditDelete={currentRoute.supportsManualEntry} />
       </section>
-      <p className="eledger-ait-integrity">{t('Locally recorded payments, A-Challan examples and surcharge transfers are not official proof of settlement or verified tax credit.','স্থানীয়ভাবে রেকর্ডকৃত পরিশোধ, এ-চালান নমুনা ও সারচার্জ স্থানান্তর সরকারি পরিশোধের প্রমাণ বা যাচাইকৃত কর ক্রেডিট নয়।')}</p>
     </div>
   );
 };

@@ -45,21 +45,20 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
   };
 
   return (
-    <section className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs space-y-3">
-      <div>
-        <h4 className="text-sm font-semibold text-slate-800">{t('Section 120 — Local CSV Batch Import','ধারা ১২০ — স্থানীয় CSV আমদানি')}</h4>
-        <p className="text-xs text-slate-600 mt-1">{t('Choose a CSV or paste rows. Claims stay pending verification.','CSV বাছুন বা সারি পেস্ট করুন। দাবিগুলো যাচাই অপেক্ষমাণ থাকবে।')}</p>
+    <section className="eledger-panel p-4 space-y-3">
+      <div className="eledger-workflow-heading">
+        <h2>{t('Section 120 · CSV import','ধারা ১২০ · CSV আমদানি')}</h2>
         <LedgerTip label={t('CSV format and limits','CSV ফরম্যাট ও সীমা')}>
           <p>{t('Use this exact column order:','এই ক্রমে কলাম ব্যবহার করুন:')}</p>
           <code className="block my-1 break-all">{SECTION120_CSV_HEADERS.join(',')}</code>
           <p>{t('1–100 rows; all-or-nothing local import for TIN','১–১০০টি সারি; নির্বাচিত TIN-এর জন্য একসঙ্গে স্থানীয় আমদানি')} {taxpayer.tin}, {t('AY','করবর্ষ')} {assessmentYear}. {t('No live customs verification.','সরাসরি কাস্টমস যাচাই নেই।')}</p>
         </LedgerTip>
       </div>
-      <label className="block text-xs text-slate-700 font-medium">
+      <label className="eledger-form-field">
         <span className="block mb-1">{t('Choose a local CSV file (optional)','স্থানীয় CSV ফাইল বাছুন (ঐচ্ছিক)')}</span>
-        <input type="file" accept=".csv,text/csv" onChange={readLocalFile} className="block w-full text-xs file:mr-3 file:px-3 file:py-2 file:rounded file:border file:border-slate-300 file:bg-slate-50 file:text-slate-800" />
+        <input type="file" accept=".csv,text/csv" onChange={readLocalFile} className="eledger-file-control" />
       </label>
-      <label className="block text-xs text-slate-700 font-medium">
+      <label className="eledger-form-field">
         <span className="block mb-1">{t('CSV data preview / paste','CSV তথ্য দেখুন / পেস্ট করুন')}</span>
         <textarea
           aria-label={t('Section 120 CSV data','ধারা ১২০ CSV তথ্য')}

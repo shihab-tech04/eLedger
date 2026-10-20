@@ -104,20 +104,14 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-5 shadow-xs mb-4">
+    <section className="eledger-panel p-4 mb-4">
       <div className="pb-3 border-b border-slate-200">
         <div className="flex items-center space-x-2">
-          <SlidersHorizontal className="w-4 h-4 text-emerald-700" />
-          <h4 className="text-sm font-semibold text-slate-800">
-            {t('Adjustment of Carry-Forward Tax under Section 163','ধারা ১৬৩ অনুসারে পূর্ববর্তী কর সমন্বয়')}
-          </h4>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
-            Section 163
-          </span>
+          <SlidersHorizontal className="w-4 h-4 text-sky-700" />
+          <h2 className="text-base font-semibold text-slate-800">
+            {t('Carry-forward adjustment · Section 163','পূর্ববর্তী কর সমন্বয় · ধারা ১৬৩')}
+          </h2>
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {t('Record the prior-year minimum-tax adjustment supported by the relevant assessment and payment evidence.','আগের বছরের ন্যূনতম কর সমন্বয় যথাযথ নির্ধারণ ও পরিশোধের প্রমাণসহ রেকর্ড করুন।')}
-        </p>
       </div>
 
       {message && (
@@ -137,7 +131,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         </div>
       )}
 
-      <form onSubmit={handleSaveClaim} className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={handleSaveClaim} className="eledger-form-grid mt-4">
         <div>
           <label htmlFor="carry-prior-year" className="block text-xs font-medium text-slate-700 mb-1">
             {t('Prior Assessment Year of Origin','পূর্ববর্তী করবর্ষ')}
@@ -167,7 +161,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
             className="eledger-control"
           >
             {(existingClaim ? CARRY_FORWARD_CLASSIFICATIONS : CARRY_FORWARD_CLASSIFICATIONS.slice(0, 1)).map((classification) => (
-              <option key={classification} value={classification}>{classification}</option>
+              <option key={classification} value={classification}>{classification === 'Unabsorbed Minimum Tax Credit (Sec 163)' ? t(classification,'অব্যবহৃত ন্যূনতম কর ক্রেডিট (ধারা ১৬৩)') : classification}</option>
             ))}
           </select>
         </div>
@@ -202,7 +196,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
           />
         </div>
 
-        <div className="sm:col-span-2">
+        <div className="eledger-full-row">
           <label htmlFor="carry-credit" className="block text-xs font-medium text-slate-700 mb-1">
             {t('Claimable Credit Amount (৳)','দাবিযোগ্য ক্রেডিটের অঙ্ক (৳)')}
           </label>
@@ -220,12 +214,9 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
               required
             />
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">
-            {t('Subject to statutory limitation rules under Income Tax Act 2023.','আয়কর আইন ২০২৩-এর প্রযোজ্য সীমাবদ্ধতার অধীন।')}
-          </span>
         </div>
 
-        <div className="sm:col-span-2 flex items-center justify-between pt-2">
+        <div className="eledger-full-row flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="text-xs text-slate-600">
             {existingClaim ? (
               <span>{t('Currently Recorded:','বর্তমানে রেকর্ডকৃত:')} <strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></span>
@@ -241,6 +232,6 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
           </button>
         </div>
       </form>
-    </div>
+    </section>
   );
 };
