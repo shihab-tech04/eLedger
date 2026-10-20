@@ -32,7 +32,7 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({ is
     const dismissOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
       if (event.key !== 'Tab') return;
-      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? [])
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]') ?? [])
         .filter((button) => button.getClientRects().length > 0);
       if (controls.length === 0) return;
       const first = controls[0];
@@ -135,6 +135,14 @@ export const TaxPaymentStatusModal: React.FC<TaxPaymentStatusModalProps> = ({ is
             {formatLedgerAmount(recordedTotal)}
           </strong>
         </footer>
+        <div className="eledger-payment-return">
+          <span>{t('Done?', 'সম্পন্ন?')}</span>
+          <a className="eledger-button eledger-button-primary"
+            href="https://staging.etaxnbr.gov.bd/#/user-panel/home"
+            target="_blank" rel="noopener noreferrer">
+            {t('Go to eReturn', 'ই-রিটার্নে যান')}
+          </a>
+        </div>
       </section>
     </div>
   );
