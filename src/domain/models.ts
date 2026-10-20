@@ -83,6 +83,21 @@ export interface ClaimEvidence {
   savingsRegistration?: string;
   savingsIssueDate?: string;
   attachmentFileName?: string;
+  // Fields observed in the authenticated NBR eLedger route tables (20 Oct 2026).
+  // These describe supporting documents, not an attested source lookup.
+  accountType?: string;
+  accountNumber?: string;
+  registrationNo?: string;
+  chassisNo?: string;
+  customsBin?: string;
+  customsOfficeCode?: string;
+  receiptNo?: string;
+  receiptDate?: string;
+  invoiceValue?: number;
+  totalTaxAndDuties?: number;
+  refundAssessmentYear?: string;
+  returnFilingZone?: string;
+  returnFilingCircle?: string;
 }
 
 export interface LedgerEntry {

@@ -62,6 +62,12 @@ button, select, input, textarea { font: inherit; }
 .eledger-button-secondary { background: #fff; border-color: var(--el-control-border); color: #40546e; }
 .eledger-button-secondary:hover { background: #eef5fa; }
 .eledger-button:disabled { opacity: .55; cursor: not-allowed; }
+.eledger-workflow-disclosure { margin: 0 0 12px; }
+.eledger-workflow-disclosure > summary { list-style: none; width: fit-content; user-select: none; }
+.eledger-workflow-disclosure > summary::-webkit-details-marker { display: none; }
+.eledger-workflow-disclosure > summary:focus-visible { outline: 2px solid var(--el-blue); outline-offset: 3px; }
+.eledger-workflow-disclosure[open] > summary { margin-bottom: 8px; }
+.eledger-workflow-disclosure[open] .eledger-workflow-chevron { transform: rotate(180deg); }
 .eledger-tip { position: relative; min-width: 0; color: #5f7188; font-size: 12px; font-weight: 400; }
 .eledger-tip summary { display: inline-flex; align-items: center; gap: 5px; color: var(--el-blue); cursor: pointer; list-style: none; font-weight: 600; }
 .eledger-tip summary::-webkit-details-marker { display: none; }

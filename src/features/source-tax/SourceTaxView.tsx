@@ -145,7 +145,10 @@ export const SourceTaxView: React.FC = () => {
               key={currentRoute.id} entries={routeEntries} category="SOURCE_TAX"
               routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
               onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
-              onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.supportsManualEntry}
+              onDeleteEntry={handleDeleteEntry}
+              // The authenticated Bank/FI view is populated from Income;
+              // preserve editing old manual rows but don't create new ones.
+              allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'bank-fi'}
               allowEditDelete={currentRoute.supportsManualEntry}
             />
           </div>

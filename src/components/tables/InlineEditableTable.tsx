@@ -52,7 +52,7 @@ type EditableRowFields = {
 };
 
 type TableFieldLabels = Pick<Record<keyof EditableRowFields, string>,
-  'referenceNo' | 'sourceEntity' | 'grossAmount' | 'taxDeducted'>;
+  'referenceNo' | 'sourceEntity' | 'grossAmount' | 'taxDeducted' | 'date'>;
 
 /** Financial workflow terminology must match what a row actually records. */
 export const getTableFieldLabels = (
@@ -60,22 +60,38 @@ export const getTableFieldLabels = (
   t: (english: string, bengali: string) => string,
   routeId?: LedgerRouteId,
 ): TableFieldLabels => ({
-  referenceNo: category === 'ADJUSTMENT'
+  referenceNo: routeId === 'system-import' || routeId === 'ait-import'
+    ? t('Bill of Entry No', 'বিল অব এন্ট্রি নম্বর')
+    : routeId === 'refund'
+      ? t('Return Register / Reference No', 'রিটার্ন রেজিস্টার / রেফারেন্স নম্বর')
+      : category === 'ADJUSTMENT'
     ? t('Order / Adjustment Reference', 'আদেশ / সমন্বয়ের রেফারেন্স')
     : t('Reference / Challan No', 'রেফারেন্স / চালান নম্বর'),
-  sourceEntity: category === 'PAYMENT'
+  sourceEntity: routeId === 'system-import' || routeId === 'ait-import'
+    ? t('Customs Office / Importer', 'কাস্টমস অফিস / আমদানিকারক')
+    : routeId === 'refund'
+      ? t('Return Filing Authority', 'রিটার্ন দাখিল কর্তৃপক্ষ')
+      : category === 'PAYMENT'
     ? t('Receiving Authority / Bank', 'গ্রহণকারী কর্তৃপক্ষ / ব্যাংক')
     : category === 'ADJUSTMENT'
       ? t('Issuing Authority / Circle', 'আদেশ প্রদানকারী কর্তৃপক্ষ / সার্কেল')
       : t('Deductor / Source Entity', 'কর্তনকারী / উৎস প্রতিষ্ঠান'),
-  grossAmount: routeId === 'environmental-surcharge'
+  grossAmount: routeId === 'system-import' || routeId === 'ait-import'
+    ? t('Assessable Value (৳)', 'শুল্কায়নযোগ্য মূল্য (৳)')
+    : routeId === 'refund'
+      ? t('Refund Amount (৳)', 'ফেরতের অঙ্ক (৳)')
+      : routeId === 'environmental-surcharge'
     ? t('Assessed Surcharge (৳)', 'নির্ধারিত সারচার্জ (৳)')
     : category === 'PAYMENT'
     ? t('Payment Basis (৳)', 'পরিশোধের ভিত্তি (৳)')
     : category === 'ADJUSTMENT'
       ? t('Eligible Amount (৳)', 'যোগ্য অঙ্ক (৳)')
       : t('Gross Amount', 'মোট অঙ্ক'),
-  taxDeducted: routeId === 'environmental-surcharge'
+  taxDeducted: routeId === 'system-import' || routeId === 'ait-import'
+    ? t('Tax Claimed (৳)', 'দাবিকৃত কর (৳)')
+    : routeId === 'refund'
+      ? t('Adjustment Claim (৳)', 'সমন্বয়ের দাবি (৳)')
+      : routeId === 'environmental-surcharge'
     ? t('Recorded Surcharge (৳)', 'রেকর্ডকৃত সারচার্জ (৳)')
     : category === 'PAYMENT'
     ? t('Tax Paid (৳)', 'পরিশোধিত কর (৳)')
@@ -84,6 +100,11 @@ export const getTableFieldLabels = (
       : category === 'AIT'
         ? t('AIT Claimed (৳)', 'দাবিকৃত অগ্রিম কর (৳)')
         : t('Tax Deducted (৳)', 'কর্তিত কর (৳)'),
+  date: routeId === 'refund'
+    ? t('Return Submission Date', 'রিটার্ন দাখিলের তারিখ')
+    : routeId === 'system-import' || routeId === 'ait-import'
+      ? t('Bill of Entry Date', 'বিল অব এন্ট্রির তারিখ')
+      : t('Date', 'তারিখ'),
 });
 
 /** Full-width labeled editor shared by all manual ledger routes at every width. */
@@ -118,7 +139,7 @@ export const LedgerEntryEditor: React.FC<{
           ['sectionCode', t('Section','ধারা'), 'text'],
           ['grossAmount', labels.grossAmount, 'number'],
           ['taxDeducted', labels.taxDeducted, 'number'],
-          ['date', t('Date','তারিখ'), 'date'],
+          ['date', labels.date, 'date'],
         ] as const).map(([field, label, type], index) => (
           <LedgerInput key={field} label={label} autoFocus={index === 0} required
             type={type} aria-label={`${isEdit ? t('Edit','সম্পাদনা') : t('New','নতুন')} ${label}`}

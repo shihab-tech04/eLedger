@@ -10,6 +10,13 @@ const bengaliEvidenceNames: Partial<Record<keyof ClaimEvidence, string>> = {
   paymentMode: 'পরিশোধ পদ্ধতি', taxZone: 'কর অঞ্চল', taxCircle: 'কর সার্কেল',
   paymentPurpose: 'পরিশোধের উদ্দেশ্য / বিবরণ', attachmentFileName: 'প্রমাণ ফাইলের নাম (শুধু রেফারেন্স)',
   savingsScheme: 'সঞ্চয় প্রকল্প', savingsRegistration: 'নিবন্ধন / সনদ নম্বর', savingsIssueDate: 'সনদ ইস্যুর তারিখ',
+  accountType: 'হিসাবের ধরন', accountNumber: 'হিসাব নম্বর',
+  registrationNo: 'যানবাহনের নিবন্ধন নম্বর', chassisNo: 'চ্যাসিস নম্বর',
+  customsBin: 'বিআইএন', customsOfficeCode: 'কাস্টমস অফিস কোড',
+  receiptNo: 'রসিদ নম্বর', receiptDate: 'রসিদের তারিখ',
+  invoiceValue: 'ইনভয়েস মূল্য (৳)', totalTaxAndDuties: 'মোট কর ও শুল্ক (৳)',
+  refundAssessmentYear: 'ফেরতের করবর্ষ', returnFilingZone: 'রিটার্ন দাখিলের কর অঞ্চল',
+  returnFilingCircle: 'রিটার্ন দাখিলের সার্কেল',
 };
 
 interface ClaimEvidenceFieldsProps {

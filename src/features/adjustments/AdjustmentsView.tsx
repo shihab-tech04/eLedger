@@ -9,7 +9,7 @@ import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
-import { LedgerEntry } from '../../domain/models.ts';
+import { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
@@ -44,6 +44,7 @@ export const AdjustmentsView: React.FC = () => {
     taxDeducted: number;
     date: string;
     remarks?: string;
+    claimEvidence?: ClaimEvidence;
   }) => {
     const res = await addEntry({
       taxpayerTin: taxpayer.tin,
@@ -61,6 +62,7 @@ export const AdjustmentsView: React.FC = () => {
       isManual: true,
       externalVerified: false,
       remarks: entryData.remarks,
+      claimEvidence: entryData.claimEvidence,
     });
 
     if (res.success) {

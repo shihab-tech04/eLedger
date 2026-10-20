@@ -22,8 +22,11 @@ export class IncomeSyncService {
     try {
       const data = this.storage.getItem(SYNC_STORAGE_KEY);
       if (!data) {
-        this.storage.setItem(SYNC_STORAGE_KEY, JSON.stringify(INITIAL_INCOME_SYNC_ITEMS));
-        return INITIAL_INCOME_SYNC_ITEMS.map((item) => ({ ...item }));
+        // The authenticated eLedger only offers "Sync from Income" for
+        // declarations already entered in eReturn. Never manufacture those
+        // declarations for a new browser merely to populate the screen.
+        this.storage.setItem(SYNC_STORAGE_KEY, '[]');
+        return [];
       }
       const parsed: unknown = JSON.parse(data);
       if (!Array.isArray(parsed) || !parsed.every((item) =>
