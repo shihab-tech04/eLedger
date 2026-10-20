@@ -99,12 +99,16 @@ export const AdjustmentsView: React.FC = () => {
 
       {currentRoute.id === 'carry-forward' && <SingleClaimPanel existingClaim={routeEntries[0]}/>}
 
-      <section className="eledger-ait-records" aria-label={t('Recorded tax adjustments','রেকর্ডকৃত কর সমন্বয়')}>
-        <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="ADJUSTMENT"
-          routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
-          onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
-          onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.id === 'refund'} />
-      </section>
+      {/* Carry-forward already has a dedicated Add Entry action. Do not show a
+          second empty record panel until there is a record to inspect. */}
+      {(currentRoute.id !== 'carry-forward' || routeEntries.length > 0) && (
+        <section className="eledger-ait-records" aria-label={t('Recorded tax adjustments','রেকর্ডকৃত কর সমন্বয়')}>
+          <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="ADJUSTMENT"
+            routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
+            onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+            onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.id === 'refund'} />
+        </section>
+      )}
     </div>
   );
 };

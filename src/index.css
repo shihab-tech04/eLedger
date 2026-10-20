@@ -40,6 +40,14 @@ button, select, input, textarea { font: inherit; }
 .eledger-control.is-readonly { background: #f5f8fb; color: #53657b; cursor: default; }
 .eledger-form-field { display: flex; flex-direction: column; min-width: 0; gap: 5px; color: #344760; font-size: 12px; font-weight: 600; }
 .eledger-evidence-fields { border-color: var(--el-border); background: #f7fafc; }
+.eledger-evidence-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--el-text); }
+.eledger-evidence-summary::marker { color: var(--el-muted); }
+.eledger-evidence-summary-hint { color: var(--el-muted); font-size: 12px; font-weight: 400; margin-left: auto; }
+.eledger-evidence-fields[open] > .eledger-form-grid { margin-top: 12px; }
+.eledger-lookup-examples > summary { display: list-item; width: fit-content; cursor: pointer; color: var(--el-muted); }
+.eledger-lookup-examples-list { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.eledger-reference-example { background: var(--el-surface); border: 1px solid var(--el-border); border-radius: 6px; padding: 5px 8px; color: var(--el-text); font: inherit; font-size: 12px; }
+.eledger-reference-example:hover, .eledger-reference-example:focus-visible { border-color: var(--el-blue); color: var(--el-blue); }
 .eledger-form-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
 .eledger-entry-editor { padding: 16px 20px; border-bottom: 1px solid var(--el-border); background: #f5faff; }
 .eledger-entry-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
@@ -726,4 +734,27 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-form-modal .eledger-form-actions { gap: 8px; }
   .eledger-form-modal .eledger-form-actions .eledger-button { flex: 1 1 auto; }
   .eledger-claim-summary-content { padding: 14px 16px; }
+}
+
+/* Both ledger record tables share the same mobile record-card layout. The
+   complete labels remain in the table markup for assistive technologies. */
+@media (max-width: 850px) {
+  .eledger-ledger-table .overflow-x-auto, .eledger-salary-scroll { overflow: visible; }
+  .eledger-ledger-table table, .eledger-salary-table table { display: block; width: 100%; min-width: 0; table-layout: auto; }
+  .eledger-ledger-table thead, .eledger-salary-table thead,
+  .eledger-ledger-table tfoot { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .eledger-ledger-table tbody, .eledger-salary-table tbody { display: grid; gap: 10px; padding: 12px; }
+  .eledger-ledger-table tbody tr, .eledger-salary-table tbody tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 14px; padding: 8px 14px; border: 1px solid var(--el-border); border-radius: var(--el-control-radius); background: var(--el-surface); }
+  .eledger-ledger-table tbody td, .eledger-salary-table tbody td { display: block; min-width: 0; height: auto; min-height: 0; padding: 7px 0; border: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+  .eledger-ledger-table tbody td::before, .eledger-salary-table tbody td::before { display: block; content: attr(data-label); margin-bottom: 2px; color: var(--el-muted); font-family: var(--el-font); font-weight: 500; font-size: 11px; line-height: 1.45; }
+  .eledger-app[lang="bn"] :where(.eledger-ledger-table tbody td::before,.eledger-salary-table tbody td::before) { font-family: 'Noto Sans Bengali Variable',sans-serif; }
+  .eledger-ledger-table tbody td:first-child, .eledger-ledger-table tbody td:last-child,
+  .eledger-salary-table tbody td:nth-child(2), .eledger-salary-table tbody td:nth-child(4),
+  .eledger-salary-table tbody td:last-child { grid-column: 1 / -1; }
+  .eledger-ledger-table tbody td:nth-child(4), .eledger-ledger-table tbody td:nth-child(5),
+  .eledger-salary-table tbody td:nth-child(5), .eledger-salary-table tbody td:nth-child(6),
+  .eledger-salary-table tbody td:nth-child(7) { text-align: left; white-space: normal; }
+  .eledger-ledger-table tbody td:last-child, .eledger-salary-table tbody td:last-child { border-top: 1px solid var(--el-border); margin-top: 5px; padding-top: 10px; }
+  .eledger-ledger-table tbody td:last-child > div, .eledger-salary-table tbody td:last-child > div { justify-content: flex-start; }
+  .eledger-salary-table tbody td.eledger-salary-row-index { font-size: 11px; color: var(--el-muted); }
 }

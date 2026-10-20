@@ -166,7 +166,6 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       {entries.length === 0 && activeId === null && <p className="eledger-entry-empty">
         {t('No salary claims yet. Use Add Entry to record one.','এখনো বেতনের দাবি নেই। রেকর্ড যোগ করুন।')}
       </p>}
-      {entries.length > 0 && <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>}
       {entries.length > 0 && <div className="eledger-salary-scroll">
         <table>
           <thead><tr>
@@ -181,17 +180,17 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
           <tbody>
             {entries.map((entry, index) => (
               <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
-                <td className="eledger-salary-row-index">{index + 1}</td>
-                <td>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
-                <td>{entry.claimEvidence?.paymentDocumentType
+                <td data-label={t('SL.','ক্রম')} className="eledger-salary-row-index">{index + 1}</td>
+                <td data-label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
+                <td data-label={t('Payment Document Type','পরিশোধ দলিলের ধরন')}>{entry.claimEvidence?.paymentDocumentType
                   ? entry.claimEvidence.paymentDocumentType[0] + entry.claimEvidence.paymentDocumentType.slice(1).toLowerCase()
                   : '—'}</td>
-                <td>{entry.referenceNo}</td>
-                <td>{humanDate(entry.date)}</td>
-                <td className="eledger-salary-number">{money(entry.claimEvidence?.documentAmount ?? entry.grossAmount)}</td>
-                <td className="eledger-salary-number claimed">{money(entry.taxDeducted)}</td>
-                <td>{[entry.claimEvidence?.bankName, entry.claimEvidence?.branchName].filter(Boolean).join(' / ') || '—'}</td>
-                <td><div className="eledger-salary-row-actions">
+                <td data-label={t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর')}>{entry.referenceNo}</td>
+                <td data-label={t('Challan/ Certificate Date','চালান/সনদের তারিখ')}>{humanDate(entry.date)}</td>
+                <td data-label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} className="eledger-salary-number">{money(entry.claimEvidence?.documentAmount ?? entry.grossAmount)}</td>
+                <td data-label={t('Claimed Amount','দাবিকৃত অঙ্ক')} className="eledger-salary-number claimed">{money(entry.taxDeducted)}</td>
+                <td data-label={t('Bank / Branch','ব্যাংক / শাখা')}>{[entry.claimEvidence?.bankName, entry.claimEvidence?.branchName].filter(Boolean).join(' / ') || '—'}</td>
+                <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
                   <button type="button" className="edit" aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`} title={t('Edit','সম্পাদনা')} onClick={() => openEdit(entry)} disabled={activeId !== null}><Pencil size={16}/></button>
                   <button type="button" className="delete" aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`} title={t('Delete','মুছুন')} onClick={() => remove(entry)} disabled={activeId !== null}><Trash2 size={16}/></button>
                 </div></td>

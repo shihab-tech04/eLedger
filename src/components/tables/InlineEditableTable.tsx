@@ -420,9 +420,6 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
       </p>}
 
       {/* Table responsive container */}
-      {entries.length > 0 && <p className="sm:hidden px-4 py-2 text-xs text-slate-600 bg-sky-50 border-b border-slate-200">
-        {t('Swipe the table sideways to see amounts, status and row actions.', 'অঙ্ক, অবস্থা ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}
-      </p>}
       {entries.length > 0 && <div className="overflow-x-auto">
         <table className="w-full text-left text-xs sm:text-sm text-slate-700">
           <thead className="bg-slate-100 text-slate-700 uppercase text-[11px] font-semibold tracking-wider border-b border-slate-200">
@@ -456,7 +453,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
 
                 return (
                   <tr key={entry.id} className={`${isEditing ? 'eledger-row-being-edited' : ''} hover:bg-slate-50 transition-colors`}>
-                    <td className="px-3 py-2.5 font-medium text-slate-900">
+                    <td data-label={fieldLabels.referenceNo} className="px-3 py-2.5 font-medium text-slate-900">
                       <div>{entry.referenceNo}</div>
                       {entry.remarks && (
                         <div className="text-[11px] text-slate-500 truncate max-w-xs font-normal">
@@ -465,25 +462,25 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       )}
                       <ClaimEvidenceSummary routeId={routeId} evidence={entry.claimEvidence} />
                     </td>
-                    <td className="px-3 py-2.5 text-slate-700">
+                    <td data-label={fieldLabels.sourceEntity} className="px-3 py-2.5 text-slate-700">
                       {entry.sourceEntity}
                     </td>
-                    <td className="px-3 py-2.5 text-slate-600 font-mono text-xs">
+                    <td data-label={t('Section','ধারা')} className="px-3 py-2.5 text-slate-600 font-mono text-xs">
                       {entry.sectionCode}
                     </td>
-                    <td className="px-3 py-2.5 text-right text-slate-600">
+                    <td data-label={fieldLabels.grossAmount} className="px-3 py-2.5 text-right text-slate-600">
                       {entry.grossAmount > 0 ? formatCurrencyBDT(entry.grossAmount) : '—'}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-emerald-800">
+                    <td data-label={fieldLabels.taxDeducted} className="px-3 py-2.5 text-right font-semibold text-emerald-800">
                       {formatCurrencyBDT(entry.taxDeducted)}
                     </td>
-                    <td className="px-3 py-2.5 text-slate-600 text-xs">
+                    <td data-label={t('Date','তারিখ')} className="px-3 py-2.5 text-slate-600 text-xs">
                       {entry.date}
                     </td>
-                    <td className="px-3 py-2.5 text-center">
+                    <td data-label={t('Status','অবস্থা')} className="px-3 py-2.5 text-center">
                       {renderStatusBadge(entry.status)}
                     </td>
-                    <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                    <td data-label={t('Actions','কাজ')} className="px-3 py-2.5 text-right whitespace-nowrap">
                       {allowEditDelete && <div className="flex items-center justify-end space-x-1.5">
                         <button disabled={editingRowId !== null || isAddingRow}
                           onClick={() => handleStartEdit(entry)}

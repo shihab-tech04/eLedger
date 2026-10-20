@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ClaimEvidence, LedgerRouteId } from '../../domain/models.ts';
 import { getClaimEvidenceFields } from '../../domain/claimEvidence.ts';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
@@ -23,11 +23,17 @@ export const ClaimEvidenceFields: React.FC<ClaimEvidenceFieldsProps> = ({ routeI
   const { language } = useLedgerLanguage();
   const fieldName = (key: keyof ClaimEvidence, label: string) => language === 'bn' ? bengaliEvidenceNames[key] ?? label : label;
   const fields = getClaimEvidenceFields(routeId);
+  const savedEvidenceCount = fields.filter(({ key }) => evidence[key] !== undefined && evidence[key] !== '').length;
+  const [expanded, setExpanded] = useState(savedEvidenceCount > 0);
   if (!fields.length) return null;
 
   return (
-    <div className="eledger-evidence-fields border rounded-md p-3">
-      <p className="text-xs font-semibold text-slate-800 mb-2">{t('Supporting document details','সহায়ক দলিলের তথ্য')}</p>
+    <details className="eledger-evidence-fields border rounded-md p-3" open={expanded}
+      onToggle={(event) => setExpanded(event.currentTarget.open)}>
+      <summary className="eledger-evidence-summary">
+        <span>{t('Supporting document details','সহায়ক দলিলের তথ্য')}{savedEvidenceCount > 0 ? ` (${savedEvidenceCount})` : ''}</span>
+        <span className="eledger-evidence-summary-hint">{t('Optional','ঐচ্ছিক')}</span>
+      </summary>
       <div className="eledger-form-grid">
         {fields.map(({ key, label, kind, options, helperText }) => (
           <div key={key} className="min-w-0">
@@ -59,7 +65,7 @@ export const ClaimEvidenceFields: React.FC<ClaimEvidenceFieldsProps> = ({ routeI
           </div>
         ))}
       </div>
-    </div>
+    </details>
   );
 };
 

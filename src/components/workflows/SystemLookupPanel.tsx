@@ -185,22 +185,19 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
       {/* Route-specific local examples, not references from unrelated tax heads. */}
       {sampleReferences.length > 0 && (
-        <div className="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
-          <span className="font-medium text-slate-600">{t('Sample references:','নমুনা রেফারেন্স:')}</span>
-          {sampleReferences.map((sample, index) => (
-            <React.Fragment key={sample.referenceNo}>
-              {index > 0 && <span>•</span>}
-              <button
-                type="button"
-                onClick={() => changeReference(sample.referenceNo)}
-                className={`underline font-mono text-[11px] ${sample.label === 'TIN Mismatch Test' ? 'hover:text-rose-700' : 'hover:text-emerald-700'}`}
-                title={sample.label === 'TIN Mismatch Test' ? 'Tests TIN mismatch rejection' : undefined}
-              >
-                {sample.referenceNo} ({sample.label})
+        <details className="eledger-lookup-examples mt-2 text-xs text-slate-600">
+          <summary>{t('Example references','উদাহরণ রেফারেন্স')}</summary>
+          <div className="eledger-lookup-examples-list">
+            {sampleReferences.map((sample) => (
+              <button key={sample.referenceNo}
+                type="button" onClick={() => changeReference(sample.referenceNo)}
+                className="eledger-reference-example"
+                title={sample.label === 'TIN Mismatch Test' ? t('Tests TIN mismatch rejection','টিআইএন অমিল পরীক্ষা') : undefined}>
+                {sample.referenceNo}
               </button>
-            </React.Fragment>
-          ))}
-        </div>
+            ))}
+          </div>
+        </details>
       )}
 
       {/* Success Notification */}

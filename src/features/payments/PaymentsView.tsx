@@ -133,14 +133,18 @@ export const PaymentsView: React.FC = () => {
         <SurchargeTransferPanel key={`${taxpayer.tin}-${assessmentYear}`} onRecord={recordLocalSurcharge} />
       )}
 
-      <section className="eledger-ait-records" aria-label={t('Recorded tax payments','রেকর্ডকৃত কর পরিশোধ')}>
-        <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="PAYMENT"
-          routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
-          onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
-          onDeleteEntry={handleDeleteEntry}
-          allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'environmental-surcharge'}
-          allowEditDelete={currentRoute.supportsManualEntry} />
-      </section>
+      {/* The surcharge card owns the first Add Entry action; show the record
+          table after an entry exists so a fresh route has one clear action. */}
+      {(currentRoute.id !== 'environmental-surcharge' || routeEntries.length > 0) && (
+        <section className="eledger-ait-records" aria-label={t('Recorded tax payments','রেকর্ডকৃত কর পরিশোধ')}>
+          <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="PAYMENT"
+            routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
+            onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+            onDeleteEntry={handleDeleteEntry}
+            allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'environmental-surcharge'}
+            allowEditDelete={currentRoute.supportsManualEntry} />
+        </section>
+      )}
     </div>
   );
 };

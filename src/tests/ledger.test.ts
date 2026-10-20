@@ -52,6 +52,7 @@ import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimE
 import { localDateInputValue } from '../domain/localDate.ts';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../domain/csvImport.ts';
 import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransferPanel.tsx';
+import { SystemLookupPanel } from '../components/workflows/SystemLookupPanel.tsx';
 import { CsvImportPanel } from '../components/workflows/CsvImportPanel.tsx';
 import { SingleClaimPanel } from '../components/workflows/SingleClaimPanel.tsx';
 import { createLocalLedgerBackup } from '../services/ledgerBackup.ts';
@@ -701,7 +702,9 @@ describe('eLedger — Final Workflow UX Audit', () => {
         onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
       }));
       assert.ok(html.includes(expected));
-      assert.match(html, /Swipe the table sideways/);
+      assert.ok(html.includes(`data-label="${getTableFieldLabels(category, translate).referenceNo}"`));
+      assert.match(html, /data-label="Actions"/);
+      assert.doesNotMatch(html, /Swipe the table sideways/);
     }
   });
 });
@@ -1730,6 +1733,13 @@ describe('eLedger — Phase 8 Historic Claim Evidence Parity', () => {
     assert.match(fields, /Depositing Authority/);
     assert.match(fields, /Payment Document Type/);
     assert.match(fields, /Total Challan/);
+    assert.match(fields, /<details[^>]*open=""/);
+    assert.match(fields, /Optional/);
+    const blankFields = renderToStaticMarkup(React.createElement(ClaimEvidenceFields, {
+      routeId: 'service-payment', evidence: {}, onChange: () => {},
+    }));
+    assert.match(blankFields, /<details/);
+    assert.doesNotMatch(blankFields, /<details[^>]*open=""/);
     const summary = renderToStaticMarkup(React.createElement(ClaimEvidenceSummary, {
       routeId: 'service-payment', evidence: { documentAmount: 1000, paymentDocumentType: 'CHALLAN' },
     }));
@@ -1809,12 +1819,26 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Challan\/ Certificate Reference No/);
     assert.match(markup, /Claimed Amount/);
     assert.match(markup, /Bank \/ Branch/);
+    assert.match(markup, /data-label="Bank \/ Branch"/);
+    assert.doesNotMatch(markup, /Swipe the table sideways/);
     assert.match(markup, /Employer Accounts/);
     assert.match(markup, /Certificate/);
     assert.match(markup, /Test Bank \/ Main/);
     assert.match(markup, /Edit /);
     assert.match(markup, /Delete /);
     assert.match(markup, /Add Entry/);
+  });
+
+  it('keeps sample lookup fixtures available without crowding the primary reference form', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(SystemLookupPanel, {
+        routeId: 'car-ait', category: 'AIT', defaultSection: 'Sec 153',
+        lookupPlaceholder: 'Reference', helperText: 'Local records',
+      })));
+    assert.match(markup, /<details class="eledger-lookup-examples/);
+    assert.match(markup, /Example references/);
+    assert.match(markup, /eledger-reference-example/);
+    assert.doesNotMatch(markup, /Sample references:/);
   });
 
   it('keeps iBAS++ local payroll records read-only without fabricating a live official lookup', () => {
