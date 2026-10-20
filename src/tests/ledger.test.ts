@@ -52,6 +52,8 @@ import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimE
 import { localDateInputValue } from '../domain/localDate.ts';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../domain/csvImport.ts';
 import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransferPanel.tsx';
+import { CsvImportPanel } from '../components/workflows/CsvImportPanel.tsx';
+import { SingleClaimPanel } from '../components/workflows/SingleClaimPanel.tsx';
 import { createLocalLedgerBackup } from '../services/ledgerBackup.ts';
 import { SYNC_STORAGE_KEY } from '../services/incomeSyncService.ts';
 import { LedgerProvider } from '../context/LedgerContext.tsx';
@@ -68,6 +70,7 @@ import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../components/ui/LedgerForm.tsx';
 import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/ui/LedgerPage.tsx';
+import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
@@ -571,15 +574,39 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
 });
 
 describe('eLedger — Shared UI and responsive workflow guardrails', () => {
+  it('uses one accessible modal shell for add and edit, without redundant top-level back buttons', () => {
+    const dialog = renderToStaticMarkup(React.createElement(LanguageProvider, null,
+      React.createElement(LedgerFormModal, { title: 'Add Entry', onClose: () => {} },
+        React.createElement('form', null, React.createElement('input', { 'aria-label': 'Reference' })))));
+    assert.match(dialog, /role="dialog"/);
+    assert.match(dialog, /aria-modal="true"/);
+    assert.match(dialog, /eledger-form-modal-body/);
+    assert.match(dialog, /Close form/);
+    const header = renderToStaticMarkup(React.createElement(LedgerPageHeader, { title: 'Salary (Others)' }));
+    assert.doesNotMatch(header, /eledger-page-back/);
+  });
+
+  it('shows import and carry-forward as record actions rather than bare input pages', () => {
+    const importMarkup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(CsvImportPanel, { routeId: 'system-import' })));
+    const carryMarkup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(SingleClaimPanel)));
+    assert.match(importMarkup, /Import CSV/);
+    assert.doesNotMatch(importMarkup, /type="file"/);
+    assert.match(carryMarkup, /Add Entry/);
+    assert.doesNotMatch(carryMarkup, /id="carry-order"/);
+  });
+
   it('uses one responsive page heading, one total summary and one field grid in both languages', () => {
     for (const language of ['en', 'bn'] as const) {
       const markup = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: language },
         React.createElement('main', { lang: language },
-          React.createElement(LedgerPageHeader, { title: language === 'bn' ? 'উৎস কর' : 'Source Tax', onBack: () => {} }),
+          React.createElement(LedgerPageHeader, { title: language === 'bn' ? 'উৎস কর' : 'Source Tax' }),
           React.createElement(LedgerSummary, { amountLabel: language === 'bn' ? 'মোট দাবি' : 'Total claimed', amount: '12,500', count: 2, note: language === 'bn' ? 'বিস্তারিত' : 'Details' }),
           React.createElement(LedgerFormGrid, null, React.createElement(LedgerInput, { label: language === 'bn' ? 'রেফারেন্স' : 'Reference', value: '', onValueChange: () => {} }))
         )));
       assert.match(markup, /eledger-page-header/);
+      assert.doesNotMatch(markup, /eledger-page-back/);
       assert.match(markup, /eledger-summary-strip/);
       assert.match(markup, /eledger-form-grid/);
       assert.match(markup, /12,500/);
@@ -736,7 +763,7 @@ describe('eLedger — Phase 9 Mobile and Data-Safety Regression', () => {
     assert.equal((await repo.getEntryById(newer.id))?.claimEvidence?.documentAmount, 250);
   });
 
-  it('keeps mobile add/edit controls and optional evidence within labeled inline table rows', () => {
+  it('keeps mobile add/edit forms and optional evidence within labeled shared controls', () => {
     const table = renderToStaticMarkup(React.createElement(InlineEditableTable, {
       entries: [], category: 'SOURCE_TAX', routeId: 'service-payment', defaultSection: 'Sec 89',
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
@@ -875,13 +902,14 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
     }), /Duplicate/);
   });
 
-  it('labels the surcharge handoff as a local pending simulation', () => {
+  it('keeps the surcharge entry form behind the shared Add Entry action', () => {
     const markup = renderToStaticMarkup(React.createElement(SurchargeTransferPanel, {
       onRecord: async () => ({ success: true }),
     }));
     assert.match(markup, /Tax &amp; Payment/);
     assert.match(markup, /No tax rate is calculated/);
-    assert.match(markup, /Record Local Surcharge Transfer/);
+    assert.match(markup, /Add Entry/);
+    assert.doesNotMatch(markup, /Record Local Surcharge Transfer/);
   });
 });
 
@@ -1495,7 +1523,7 @@ describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
     const locked = renderToStaticMarkup(React.createElement(InlineEditableTable, {
       ...props, allowAdd: false, allowEditDelete: false,
     }));
-    assert.doesNotMatch(locked, /title="Edit row inline"/);
+    assert.doesNotMatch(locked, /title="Edit entry"/);
     assert.doesNotMatch(locked, /title="Delete row"/);
     assert.doesNotMatch(locked, />Add Entry</);
     assert.match(locked, /IBAS\/GOV\/2026\/08821/);
@@ -1504,7 +1532,7 @@ describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
       ...props, entries: INITIAL_LEDGER_ENTRIES.filter((entry) => entry.routeId === 'service-payment'),
       routeId: 'service-payment', allowAdd: true, allowEditDelete: true,
     }));
-    assert.match(manual, /title="Edit row inline"/);
+    assert.match(manual, /title="Edit entry"/);
     assert.match(manual, /title="Delete row"/);
     assert.match(manual, />Add Entry</);
   });
@@ -1722,7 +1750,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /বাংলা/);
     assert.match(markup, /English/);
     assert.match(markup, /eledger-sidebar/);
-    assert.match(markup, /Home/);
+    assert.doesNotMatch(markup, /eledger-home-link/);
     assert.match(markup, /Dashboard/);
     assert.match(markup, /Ledger Guide/);
     assert.match(markup, /Claim Source Tax/);
@@ -1736,7 +1764,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Environmental Surcharge/);
     assert.match(markup, /carry forward tax u\/s 163/);
     assert.match(markup, /Tax Payment Status/);
-    assert.match(markup, /Need Help/);
+    assert.doesNotMatch(markup, /Need Help/);
     assert.match(markup, /09643717171/);
     assert.doesNotMatch(markup, /bg-emerald-950/);
     assert.equal(getCurrentRoutesByGroup('Source Tax').length, 10);

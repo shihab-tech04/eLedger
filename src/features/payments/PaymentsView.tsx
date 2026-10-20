@@ -22,7 +22,6 @@ export const PaymentsView: React.FC = () => {
     entries,
     activeRouteId,
     setActiveRouteId,
-    setActiveNavTab,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -112,7 +111,7 @@ export const PaymentsView: React.FC = () => {
 
   return (
     <div className="eledger-financial-page">
-      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+      <LedgerPageHeader
         title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'sec-173' ? 'Tax Paid with Return (173)' : currentRoute.title}
         caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 

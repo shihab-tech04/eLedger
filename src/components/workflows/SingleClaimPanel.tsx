@@ -11,7 +11,8 @@ import { LedgerEntry } from '../../domain/models.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { CARRY_FORWARD_CLASSIFICATIONS, getPriorAssessmentYears, readCarryForwardDetails } from '../../domain/carryForward.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
-import { SlidersHorizontal, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Pencil, Plus } from 'lucide-react';
+import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
 
 interface SingleClaimPanelProps {
   existingClaim?: LedgerEntry;
@@ -34,6 +35,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
   );
   const [lossOrCreditType, setLossOrCreditType] = useState(existingDetails.classification);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   // The first saved claim or a deleted claim changes this panel from create to
   // edit (or back) without changing routes. Keep fields in the correct mode.
@@ -74,6 +76,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
       });
       if (res.success) {
         setMessage({ type: 'success', text: t('Carry-forward claim updated successfully.','পূর্ববর্তী কর সমন্বয় সফলভাবে হালনাগাদ হয়েছে।') });
+        setFormOpen(false);
       } else {
         setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to update claim.' });
       }
@@ -97,6 +100,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
       });
       if (res.success) {
         setMessage({ type: 'success', text: t('Carry-forward claim recorded successfully into ledger.','পূর্ববর্তী কর সমন্বয় সফলভাবে লেজারে রেকর্ড হয়েছে।') });
+        setFormOpen(false);
       } else {
         setMessage({ type: 'error', text: Object.values(res.validation?.errors || {})[0] || 'Failed to record claim.' });
       }
@@ -104,17 +108,16 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
   };
 
   return (
-    <section className="eledger-panel p-4 mb-4">
-      <div className="pb-3 border-b border-slate-200">
-        <div className="flex items-center space-x-2">
-          <SlidersHorizontal className="w-4 h-4 text-sky-700" />
-          <h2 className="text-base font-semibold text-slate-800">
-            {t('Carry-forward adjustment · Section 163','পূর্ববর্তী কর সমন্বয় · ধারা ১৬৩')}
-          </h2>
-        </div>
+    <section className="eledger-panel eledger-claim-summary mb-4">
+      <div className="eledger-ledger-toolbar">
+        <h2>{t('Carry-forward adjustment · Section 163','পূর্ববর্তী কর সমন্বয় · ধারা ১৬৩')}</h2>
+        <button type="button" className="eledger-button eledger-button-primary" onClick={() => { setMessage(null); setFormOpen(true); }}>
+          {existingClaim ? <Pencil size={16}/> : <Plus size={16}/>}
+          {existingClaim ? t('Edit claim','দাবি সম্পাদনা') : t('Add Entry','রেকর্ড যোগ করুন')}
+        </button>
       </div>
 
-      {message && (
+      {message?.type === 'success' && (
         <div
           className={`mt-3 p-3 rounded-lg text-xs flex items-center space-x-2 ${
             message.type === 'success'
@@ -131,7 +134,13 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
         </div>
       )}
 
-      <form onSubmit={handleSaveClaim} className="eledger-form-grid mt-4">
+      <div className="eledger-claim-summary-content">
+        {existingClaim ? <><span>{existingClaim.referenceNo}</span><strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></>
+          : <p>{t('No carry-forward claim recorded.','কোনো পূর্ববর্তী কর সমন্বয় রেকর্ড নেই।')}</p>}
+      </div>
+      {formOpen && <LedgerFormModal title={existingClaim ? t('Edit claim','দাবি সম্পাদনা') : t('Add Entry','রেকর্ড যোগ করুন')} onClose={() => setFormOpen(false)}>
+      {message?.type === 'error' && <p role="alert" className="eledger-claim-modal-error">{message.text}</p>}
+      <form onSubmit={handleSaveClaim} className="eledger-form-grid eledger-single-claim-form">
         <div>
           <label htmlFor="carry-prior-year" className="block text-xs font-medium text-slate-700 mb-1">
             {t('Prior Assessment Year of Origin','পূর্ববর্তী করবর্ষ')}
@@ -216,7 +225,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
           </div>
         </div>
 
-        <div className="eledger-full-row flex flex-wrap items-center justify-between gap-3 pt-2">
+        <div className="eledger-full-row eledger-form-actions">
           <div className="text-xs text-slate-600">
             {existingClaim ? (
               <span>{t('Currently Recorded:','বর্তমানে রেকর্ডকৃত:')} <strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></span>
@@ -224,6 +233,9 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
               <span>{t(`No carry-forward claim currently registered for AY ${assessmentYear}.`,`${assessmentYear} করবর্ষে কোনো পূর্ববর্তী কর সমন্বয় রেকর্ড হয়নি।`)}</span>
             )}
           </div>
+          <button type="button" className="eledger-button eledger-button-secondary" onClick={() => setFormOpen(false)}>
+            {t('Cancel','বাতিল')}
+          </button>
           <button
             type="submit"
             className="eledger-button eledger-button-primary"
@@ -232,6 +244,7 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
           </button>
         </div>
       </form>
+      </LedgerFormModal>}
     </section>
   );
 };

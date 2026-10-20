@@ -1,20 +1,15 @@
 import type { ReactNode } from 'react';
-import { ChevronLeft } from 'lucide-react';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerTip } from './LedgerForm.tsx';
 
 /** The single heading pattern for dashboard, guide and every financial route. */
-export function LedgerPageHeader({ title, caption, onBack, action }: {
+export function LedgerPageHeader({ title, caption, action }: {
   title: string;
   caption?: string;
-  onBack?: () => void;
   action?: ReactNode;
 }) {
-  const t = useLedgerCopy();
   return <header className="eledger-page-header">
     <div className="eledger-page-heading">
-      {onBack && <button type="button" className="eledger-page-back" onClick={onBack}
-        aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}><ChevronLeft size={20}/></button>}
       <div><h1>{title}</h1>{caption && <p>{caption}</p>}</div>
     </div>
     {action && <div className="eledger-page-actions">{action}</div>}

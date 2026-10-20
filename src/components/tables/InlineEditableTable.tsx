@@ -1,11 +1,10 @@
 /**
  * Inline Editable Table Component
  * Conforms strictly to Requirement #6:
- * - Clicking 'Add Entry' inserts an editable row directly inside the table.
- * - Editable row includes relevant inputs, Save, Cancel.
+ * - 'Add Entry' and Edit open the same accessible, reusable form dialog.
+ * - The record table remains visible as a review surface.
  * - After Save, appears as normal table row.
  * - Preserves row edit and delete behavior.
- * - No separate modal for adding rows!
  */
 
 import React, { useState } from 'react';
@@ -17,6 +16,7 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
+import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
 
 interface InlineEditableTableProps {
   entries: LedgerEntry[];
@@ -188,7 +188,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   const [editRowError, setEditRowError] = useState<string | null>(null);
   const [editClaimEvidence, setEditClaimEvidence] = useState<ClaimEvidence>({});
 
-  // Start adding new inline row
+  // Start a new claim in the shared entry dialog.
   const handleStartAdd = () => {
     setIsAddingRow(true);
     setNewRowData({
@@ -397,18 +397,22 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
         </div>
       )}
 
-      {isAddingRow && <LedgerEntryEditor
-        values={newRowData} onFieldChange={(field, value) => setNewRowData((previous) => ({ ...previous, [field]: value }))}
-        onSave={handleSaveAdd} onCancel={handleCancelAdd}
-        evidence={newClaimEvidence} onEvidenceChange={setNewClaimEvidence}
-        routeId={routeId} fieldLabels={fieldLabels} isEdit={false} error={newRowError}
-      />}
-      {editingRowId && <LedgerEntryEditor
-        values={editRowData} onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
-        onSave={() => handleSaveEdit(editingRowId)} onCancel={handleCancelEdit}
-        evidence={editClaimEvidence} onEvidenceChange={setEditClaimEvidence}
-        routeId={routeId} fieldLabels={fieldLabels} isEdit error={editRowError}
-      />}
+      {isAddingRow && <LedgerFormModal title={t('Add Entry','রেকর্ড যোগ করুন')} onClose={handleCancelAdd}>
+        <LedgerEntryEditor
+          values={newRowData} onFieldChange={(field, value) => setNewRowData((previous) => ({ ...previous, [field]: value }))}
+          onSave={handleSaveAdd} onCancel={handleCancelAdd}
+          evidence={newClaimEvidence} onEvidenceChange={setNewClaimEvidence}
+          routeId={routeId} fieldLabels={fieldLabels} isEdit={false} error={newRowError}
+        />
+      </LedgerFormModal>}
+      {editingRowId && <LedgerFormModal title={t('Edit Entry','রেকর্ড সম্পাদনা')} onClose={handleCancelEdit}>
+        <LedgerEntryEditor
+          values={editRowData} onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
+          onSave={() => handleSaveEdit(editingRowId)} onCancel={handleCancelEdit}
+          evidence={editClaimEvidence} onEvidenceChange={setEditClaimEvidence}
+          routeId={routeId} fieldLabels={fieldLabels} isEdit error={editRowError}
+        />
+      </LedgerFormModal>}
 
       {entries.length === 0 && !isAddingRow && <p className="eledger-entry-empty">
         {t('No ledger entries yet.','এখনো কোনো লেজার রেকর্ড নেই।')}
@@ -485,7 +489,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                           onClick={() => handleStartEdit(entry)}
                           aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
                           className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                          title={t('Edit row inline','সারিটি সম্পাদনা করুন')}
+                          title={t('Edit entry','রেকর্ড সম্পাদনা করুন')}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                           <span className="sr-only">{t('Edit','সম্পাদনা')}</span>

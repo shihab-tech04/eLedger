@@ -5,6 +5,7 @@ import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
+import { LedgerFormModal } from '../../components/ui/LedgerFormModal.tsx';
 
 type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | 'OTHER';
 type SalaryDraft = {
@@ -120,8 +121,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     if (!(await onDeleteEntry(entry.id))) setError('This entry could not be deleted and has been preserved.');
   };
 
-  // Edit inside the same table section, but keep controls and actions inside
-  // the available width at every viewport rather than in a 1330px-wide row.
+  // Reuse the same modal contract as the other ledger record forms.
   const renderEditor = () => (
     <form className="eledger-salary-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}
       aria-label={t('Salary claim editor','বেতনের দাবি সম্পাদনা')}>
@@ -156,8 +156,13 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         <h2>{t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
         <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
       </div>
-      {error && <div role="alert" className="eledger-salary-error">{error}</div>}
-      {activeId !== null && renderEditor()}
+      {error && activeId === null && <div role="alert" className="eledger-salary-error">{error}</div>}
+      {activeId !== null && <LedgerFormModal
+        title={activeId === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
+        onClose={() => { if (!saving) cancel(); }}>
+        {error && <div role="alert" className="eledger-salary-error">{error}</div>}
+        {renderEditor()}
+      </LedgerFormModal>}
       {entries.length === 0 && activeId === null && <p className="eledger-entry-empty">
         {t('No salary claims yet. Use Add Entry to record one.','এখনো বেতনের দাবি নেই। রেকর্ড যোগ করুন।')}
       </p>}

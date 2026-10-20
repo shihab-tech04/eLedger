@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-  BookOpen, Car, ChevronDown, ChevronRight, CircleHelp, FileCheck2,
-  Home, LayoutDashboard, Menu, PhoneCall, ReceiptText, RotateCcw,
+  BookOpen, Car, ChevronDown, ChevronRight, FileCheck2,
+  LayoutDashboard, Menu, PhoneCall, ReceiptText, RotateCcw,
   ShieldCheck, X,
 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
@@ -123,9 +123,6 @@ export const Sidebar: React.FC = () => {
           <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
-          <button type="button" className="eledger-side-link eledger-home-link" onClick={() => navigate('dashboard')}>
-            <Home size={17}/><span>{bn ? 'হোম' : 'Home'}</span>
-          </button>
           <button type="button" className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
@@ -177,15 +174,6 @@ export const Sidebar: React.FC = () => {
           </a>
         </nav>
         <div className="eledger-sidebar-bottom">
-          <button type="button" className="eledger-help-title" onClick={() => navigate('ledger-guide')}>
-            <CircleHelp size={15}/><span>{bn ? 'সাহায্য প্রয়োজন?' : 'Need Help?'}</span>
-          </button>
-          <div className="eledger-guide-links">
-            <BookOpen size={14}/>
-            <button type="button" onClick={() => navigate('ledger-guide')}>{bn ? 'ব্যবহার নির্দেশিকা' : 'User Guide'}</button>
-            <span aria-hidden="true">•</span>
-            <button type="button" onClick={() => navigate('ledger-guide')}>{bn ? 'প্রশ্নোত্তর' : 'FAQs'}</button>
-          </div>
           <a className="eledger-helpline" href="tel:09643717171">
             <PhoneCall size={16}/><span><strong>09643717171</strong><small>{bn ? 'কর সহায়তা' : 'Taxes Helpline'}</small></span>
           </a>
