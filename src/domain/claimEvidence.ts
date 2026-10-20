@@ -37,7 +37,31 @@ const treasuryFields: EvidenceFieldDefinition[] = [
   { key: 'taxCircle', label: 'Tax Circle', kind: 'text' },
 ];
 
+/** The official Import (120) source-tax and AIT tables use these identical columns. */
+const customsFields: EvidenceFieldDefinition[] = [
+  { key: 'customsBin', label: 'BIN', kind: 'text' },
+  { key: 'customsOfficeCode', label: 'Customs Office Code', kind: 'text' },
+  { key: 'receiptNo', label: 'Receipt No', kind: 'text' },
+  { key: 'receiptDate', label: 'Receipt Date', kind: 'date' },
+  { key: 'invoiceValue', label: 'Invoice Value (৳)', kind: 'number' },
+  { key: 'totalTaxAndDuties', label: 'Total Tax & Duties (৳)', kind: 'number' },
+];
+
+const vehicleFields: EvidenceFieldDefinition[] = [
+  { key: 'registrationNo', label: 'Vehicle Registration No', kind: 'text' },
+  { key: 'chassisNo', label: 'Chassis No', kind: 'text' },
+];
+
 const fieldsByRoute: Partial<Record<LedgerRouteId, EvidenceFieldDefinition[]>> = {
+  'bank-fi': [
+    { key: 'accountType', label: 'Account Type', kind: 'text' },
+    { key: 'branchName', label: 'Branch Name', kind: 'text' },
+    { key: 'accountNumber', label: 'Account Number', kind: 'text' },
+  ],
+  dividend: [
+    { key: 'depositingAuthority', label: 'Depositing Authority / Company', kind: 'text' },
+    documentType, documentAmount,
+  ],
   'salary-others': [
     { key: 'depositingAuthority', label: 'Depositing Authority', kind: 'text' },
     documentType,
@@ -61,9 +85,20 @@ const fieldsByRoute: Partial<Record<LedgerRouteId, EvidenceFieldDefinition[]>> =
     { key: 'paymentPurpose', label: 'Description', kind: 'text' },
     { key: 'attachmentFileName', label: 'Evidence File Name (reference only)', kind: 'text', helperText: 'The file itself is not uploaded or stored in this local-only application.' },
   ],
+  'system-import': customsFields,
+  'commercial-source': vehicleFields,
+  'commercial-vehicle': vehicleFields,
+  'car-ait': vehicleFields,
   'sec-154': [documentType, documentAmount, ...treasuryFields],
   'sec-173': [documentType, documentAmount, ...treasuryFields],
-  'ait-import': [documentType, documentAmount, ...treasuryFields],
+  // Keep older manually entered Treasury fields readable/editable; the customs
+  // columns are appended and the new document evidence remains optional.
+  'ait-import': [documentType, documentAmount, ...treasuryFields, ...customsFields],
+  refund: [
+    { key: 'refundAssessmentYear', label: 'Refund Assessment Year', kind: 'text' },
+    { key: 'returnFilingZone', label: 'Return Filing Zone', kind: 'text' },
+    { key: 'returnFilingCircle', label: 'Return Filing Circle', kind: 'text' },
+  ],
   'sanchayapatra': [
     { key: 'savingsScheme', label: 'Savings Scheme', kind: 'text' },
     { key: 'savingsRegistration', label: 'Registration / Certificate No', kind: 'text' },

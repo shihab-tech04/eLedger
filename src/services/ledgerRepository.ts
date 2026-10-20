@@ -42,8 +42,11 @@ export class LocalStorageLedgerRepository implements ILedgerRepository {
     try {
       const data = this.storage.getItem(LEDGER_STORAGE_KEY);
       if (!data) {
-        this.storage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES));
-        return INITIAL_LEDGER_ENTRIES.map((entry) => ({ ...entry }));
+        // Browser-originated balances must never default to fabricated NBR
+        // credits. Existing stored records (including older sample data)
+        // remain intact, so this changes only first-time visits.
+        this.storage.setItem(LEDGER_STORAGE_KEY, '[]');
+        return [];
       }
       const parsed: unknown = JSON.parse(data);
       if (!Array.isArray(parsed) || !parsed.every((entry) =>

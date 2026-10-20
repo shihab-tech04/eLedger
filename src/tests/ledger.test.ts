@@ -74,6 +74,74 @@ import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/u
 import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
+describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+  it('starts a new browser without invented tax credits or Income declarations', async () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    };
+    const repository = new LocalStorageLedgerRepository(storage);
+    const sync = new IncomeSyncService(storage);
+    assert.deepEqual(await repository.getAllEntries(), []);
+    assert.deepEqual(await sync.getSyncItemsForRoute('123456789012', '2026-2027', 'bank-fi'), []);
+    assert.equal(values.get(LEDGER_STORAGE_KEY), '[]');
+    assert.equal(values.get(SYNC_STORAGE_KEY), '[]');
+  });
+
+  it('preserves existing user entries and Income declarations without replacing them', async () => {
+    const values = new Map<string, string>([
+      [LEDGER_STORAGE_KEY, JSON.stringify(INITIAL_LEDGER_ENTRIES)],
+      [SYNC_STORAGE_KEY, JSON.stringify(INITIAL_INCOME_SYNC_ITEMS)],
+    ]);
+    const storage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => { values.set(key, value); },
+    };
+    assert.equal((await new LocalStorageLedgerRepository(storage).getAllEntries()).length, INITIAL_LEDGER_ENTRIES.length);
+    assert.ok((await new IncomeSyncService(storage).getSyncItemsForRoute('123456789012', '2026-2027', 'bank-fi')).length > 0);
+    assert.equal(values.get(LEDGER_STORAGE_KEY), JSON.stringify(INITIAL_LEDGER_ENTRIES));
+  });
+
+  it('covers authenticated import, refund, banking, vehicle and dividend evidence columns', () => {
+    const keys = (route: Parameters<typeof getClaimEvidenceFields>[0]) => getClaimEvidenceFields(route).map((field) => field.key);
+    assert.ok(keys('system-import').every((key) => keys('ait-import').includes(key)));
+    for (const key of ['customsBin', 'customsOfficeCode', 'receiptNo', 'receiptDate', 'invoiceValue', 'totalTaxAndDuties']) {
+      assert.ok(keys('system-import').includes(key as never), key);
+    }
+    for (const key of ['refundAssessmentYear', 'returnFilingZone', 'returnFilingCircle']) {
+      assert.ok(keys('refund').includes(key as never), key);
+    }
+    for (const key of ['accountType', 'branchName', 'accountNumber']) {
+      assert.ok(keys('bank-fi').includes(key as never), key);
+    }
+    assert.deepEqual(keys('car-ait'), keys('commercial-source'));
+    assert.ok(keys('dividend').includes('documentAmount'));
+  });
+
+  it('rejects impossible receipt dates and current-year refunds before they enter totals', () => {
+    const entry = {
+      taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const,
+      category: 'AIT' as const, routeId: 'ait-import' as const,
+      referenceNo: 'BOE-NEW-402', sourceEntity: 'Customs', sectionCode: 'Sec 120',
+      grossAmount: 50000, taxDeducted: 5000, date: '2026-05-10',
+      isManual: true, workflow: 'MANUAL_ENTRY' as const,
+    };
+    assert.equal(validateLedgerEntry({ ...entry, claimEvidence: { receiptDate: '2026-02-30' } }, []).isValid, false);
+    assert.equal(validateLedgerEntry({ ...entry, claimEvidence: { receiptDate: '2026-05-11' } }, []).isValid, true);
+    const refund = { ...entry, category: 'ADJUSTMENT' as const, routeId: 'refund' as const };
+    assert.equal(validateLedgerEntry({ ...refund, claimEvidence: { refundAssessmentYear: '2026-2027' } }, []).isValid, false);
+    assert.equal(validateLedgerEntry({ ...refund, claimEvidence: { refundAssessmentYear: '2025-2026' } }, []).isValid, true);
+  });
+
+  it('uses authentic route labels in the shared modal without changing its component layout', () => {
+    const t = (english: string) => english;
+    assert.equal(getTableFieldLabels('SOURCE_TAX', t, 'system-import').referenceNo, 'Bill of Entry No');
+    assert.equal(getTableFieldLabels('ADJUSTMENT', t, 'refund').date, 'Return Submission Date');
+    assert.equal(getTableFieldLabels('AIT', t, 'ait-import').taxDeducted, 'Tax Claimed (৳)');
+  });
+});
+
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
   // Test 1 & 2: Route Registry and Navigation Integrity (18 Functional Routes)
   describe('1. Route Registry & Navigation Structure', () => {
@@ -691,18 +759,18 @@ describe('eLedger — Final Workflow UX Audit', () => {
     assert.equal(adjustment.taxDeducted, 'Adjusted Amount (৳)');
     assert.equal(adjustment.sourceEntity, 'Issuing Authority / Circle');
 
-    for (const [category, expected] of [
-      ['SOURCE_TAX', 'Tax Deducted (৳)'], ['AIT', 'AIT Claimed (৳)'],
-      ['PAYMENT', 'Tax Paid (৳)'], ['ADJUSTMENT', 'Adjusted Amount (৳)'],
-    ] as const) {
+    for (const category of ['SOURCE_TAX', 'AIT', 'PAYMENT', 'ADJUSTMENT'] as const) {
       const html = renderToStaticMarkup(React.createElement(InlineEditableTable, {
         entries: [INITIAL_LEDGER_ENTRIES[0]], category, routeId: category === 'PAYMENT' ? 'sec-173'
           : category === 'ADJUSTMENT' ? 'refund' : category === 'AIT' ? 'car-ait' : 'other-tds',
         defaultSection: 'Sec 173', onSaveNewEntry: async () => ({ success: true }),
         onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
       }));
-      assert.ok(html.includes(expected));
-      assert.ok(html.includes(`data-label="${getTableFieldLabels(category, translate).referenceNo}"`));
+      const route = category === 'PAYMENT' ? 'sec-173'
+        : category === 'ADJUSTMENT' ? 'refund' : category === 'AIT' ? 'car-ait' : 'other-tds';
+      const routeLabels = getTableFieldLabels(category, translate, route);
+      assert.ok(html.includes(routeLabels.taxDeducted));
+      assert.ok(html.includes(`data-label="${routeLabels.referenceNo}"`));
       assert.match(html, /data-label="Actions"/);
       assert.doesNotMatch(html, /Swipe the table sideways/);
     }
@@ -883,7 +951,7 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
     const original = state.saved;
     await assert.rejects(repo.addEntriesBatch(parseSection120Csv(csv, context)), /could not be saved/);
     assert.equal(state.saved, original);
-    assert.equal((await repo.getAllEntries()).length, INITIAL_LEDGER_ENTRIES.length);
+    assert.equal((await repo.getAllEntries()).length, 0);
   });
 
   it('keeps an explicit local surcharge separate from regular tax and out of verified credits', async () => {

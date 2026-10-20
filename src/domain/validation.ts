@@ -153,14 +153,23 @@ export function validateLedgerEntry(
       if (typeof typed.documentAmount === 'number' && typed.documentAmount < taxDeducted) {
         errors.documentAmount = 'Document amount must cover the positive amount claimed.';
       }
-      if (typeof typed.savingsIssueDate === 'string' && typed.savingsIssueDate) {
-        const [year, month, day] = typed.savingsIssueDate.split('-').map(Number);
+      for (const key of ['savingsIssueDate', 'receiptDate'] as const) {
+        const evidenceDate = typed[key];
+        if (typeof evidenceDate !== 'string' || !evidenceDate) continue;
+        const [year, month, day] = evidenceDate.split('-').map(Number);
         const d = new Date(Date.UTC(year, month - 1, day));
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(typed.savingsIssueDate) ||
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(evidenceDate) ||
           d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) {
-          errors.savingsIssueDate = 'Enter a valid savings certificate issue date.';
-        } else if (entry.date && typed.savingsIssueDate > entry.date) {
+          errors[key] = 'Enter a valid document date.';
+        } else if (key === 'savingsIssueDate' && entry.date && evidenceDate > entry.date) {
           errors.savingsIssueDate = 'Savings certificate issue date cannot be later than deduction date.';
+        }
+      }
+      if (typeof typed.refundAssessmentYear === 'string' && typed.refundAssessmentYear) {
+        const yearMatch = /^(\d{4})-(\d{4})$/.exec(typed.refundAssessmentYear);
+        if (!yearMatch || Number(yearMatch[2]) !== Number(yearMatch[1]) + 1 ||
+          !entry.assessmentYear || Number(yearMatch[1]) >= Number(entry.assessmentYear.slice(0, 4))) {
+          errors.refundAssessmentYear = 'Refund assessment year must be a valid year before the current assessment year.';
         }
       }
     }

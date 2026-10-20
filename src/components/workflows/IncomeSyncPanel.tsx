@@ -10,7 +10,7 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { IncomeSyncItem } from '../../domain/models.ts';
 import { incomeSyncService } from '../../services/incomeSyncService.ts';
 import { formatCurrencyBDT } from '../../domain/calculations.ts';
-import { RefreshCw, CheckCircle, ArrowDownToLine, AlertCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle, ArrowDownToLine, AlertCircle, ChevronDown } from 'lucide-react';
 
 interface IncomeSyncPanelProps {
   routeId: string;
@@ -85,11 +85,15 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
   };
 
   return (
+    <details className="eledger-workflow-disclosure">
+      <summary className="eledger-button eledger-button-secondary">
+        <ArrowDownToLine size={15}/>{t('Sync from Income','আয় থেকে সমন্বয়')}<ChevronDown size={15} className="eledger-workflow-chevron"/>
+      </summary>
     <section className="eledger-panel p-4 mb-4">
       <div className="eledger-workflow-heading">
         <div>
           <div className="flex items-center space-x-2">
-            <h2>{t('Sync income:','আয় সমন্বয়:')} {title}</h2>
+            <h2>{title}</h2>
           </div>
         </div>
         <button
@@ -190,5 +194,6 @@ export const IncomeSyncPanel: React.FC<IncomeSyncPanelProps> = ({
         )}
       </div>
     </section>
+    </details>
   );
 };
