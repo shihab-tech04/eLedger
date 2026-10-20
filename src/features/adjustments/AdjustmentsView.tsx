@@ -13,8 +13,8 @@ import { LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
-import { ChevronLeft } from 'lucide-react';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
+import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
 
 export const AdjustmentsView: React.FC = () => {
   const {
@@ -87,24 +87,16 @@ export const AdjustmentsView: React.FC = () => {
   };
 
   return (
-    <div className="eledger-ait-page">
-      <header className="eledger-source-title">
-        <div className="eledger-source-title-line">
-          <button type="button" className="eledger-source-back" aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}
-            onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
-          <h1>{language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'refund' ? 'Adjustment of Tax Refund' : 'Adjustment of carry forward tax u/s 163'}</h1>
-        </div>
-        <p>{currentRoute.statutorySection}</p>
-      </header>
+    <div className="eledger-financial-page">
+      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+        title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'refund' ? 'Adjustment of Tax Refund' : 'Adjustment of carry forward tax u/s 163'}
+        caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 
       <RouteMobileTabs routes={adjustmentRoutes} activeId={currentRoute.id}
         label={t('Adjustment categories','কর সমন্বয়ের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
-      <div className="eledger-ait-summary">
-        <div><span>{t('Total Recorded Adjustment','মোট রেকর্ডকৃত সমন্বয়')}</span><strong>{formatLedgerAmount(totalTaxForRoute)}</strong></div>
-        <div><span>{t('Records','রেকর্ড')}</span><strong>{routeEntries.length}</strong></div>
-        <p>{language === 'bn' ? 'এই খাতের সমন্বয় দাবির জন্য উপযুক্ত প্রমাণ সংরক্ষণ করুন।' : currentRoute.description}</p>
-      </div>
+      <LedgerSummary amountLabel={t('Total adjustment','মোট সমন্বয়')} amount={formatLedgerAmount(totalTaxForRoute)} count={routeEntries.length}
+        note={language === 'bn' ? 'সমন্বয় দাবির সহায়ক প্রমাণ সংরক্ষণ করুন।' : 'Keep supporting evidence for adjustment claims.'}/>
 
       {currentRoute.id === 'carry-forward' && <SingleClaimPanel existingClaim={routeEntries[0]}/>}
 
@@ -114,7 +106,6 @@ export const AdjustmentsView: React.FC = () => {
           onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
           onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.id === 'refund'} />
       </section>
-      <p className="eledger-ait-integrity">{t('Locally recorded adjustments are not government-authorized credits until independently verified.','স্বতন্ত্র যাচাই ছাড়া স্থানীয়ভাবে রেকর্ডকৃত সমন্বয় সরকারি অনুমোদিত ক্রেডিট নয়।')}</p>
     </div>
   );
 };

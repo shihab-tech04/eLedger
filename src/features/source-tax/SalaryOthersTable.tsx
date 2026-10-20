@@ -4,6 +4,7 @@ import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
+import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
 
 type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | 'OTHER';
 type SalaryDraft = {
@@ -130,7 +131,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
           {t('Enter the date printed on the supporting challan or certificate. Do not assume today is the deduction date.','চালান বা সনদে লেখা তারিখ দিন। আজকের তারিখকে কর্তনের তারিখ ধরে নেবেন না।')}
         </LedgerTip>
       </div>
-      <div className="eledger-salary-editor-fields">
+      <LedgerFormGrid>
         <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
         <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
           <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option><option value="OTHER">{t('Other','অন্যান্য')}</option>
@@ -141,7 +142,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.claimedAmount} onValueChange={(value) => change('claimedAmount', value)}/>
         <LedgerInput label={t('Bank Name','ব্যাংকের নাম')} value={draft.bank} onValueChange={(value) => change('bank', value)}/>
         <LedgerInput label={t('Branch Name','শাখার নাম')} value={draft.branch} onValueChange={(value) => change('branch', value)}/>
-      </div>
+      </LedgerFormGrid>
       <div className="eledger-form-actions">
         <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>
         <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{t('Save claim','দাবি সংরক্ষণ')}</button>
@@ -150,16 +151,15 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   );
 
   return (
-    <section className="eledger-salary-table" aria-label={t('Salary Others claims','অন্যান্য বেতনের দাবি')}>
-      <div className="eledger-salary-toolbar">
-        <div className="eledger-salary-stat"><span>{t('Total Claimed Amount','মোট দাবিকৃত অঙ্ক')}</span><strong>{money(entries.reduce((sum, entry) => sum + Number(entry.taxDeducted), 0))}</strong></div>
-        <div className="eledger-salary-stat"><span>{t('Records','রেকর্ড')}</span><strong>{entries.length}</strong></div>
-        <button type="button" className="eledger-salary-add" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add new','নতুন যোগ করুন')}</button>
+    <section className="eledger-salary-table eledger-panel" aria-label={t('Salary Others claims','অন্যান্য বেতনের দাবি')}>
+      <div className="eledger-ledger-toolbar">
+        <h2>{t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
+        <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
       </div>
       {error && <div role="alert" className="eledger-salary-error">{error}</div>}
       {activeId !== null && renderEditor()}
       {entries.length === 0 && activeId === null && <p className="eledger-entry-empty">
-        {t('No salary claims yet. Use Add new to record one.','এখনো বেতনের দাবি নেই। নতুন যোগ করুন দিয়ে রেকর্ড করুন।')}
+        {t('No salary claims yet. Use Add Entry to record one.','এখনো বেতনের দাবি নেই। রেকর্ড যোগ করুন।')}
       </p>}
       {entries.length > 0 && <p className="eledger-salary-mobile-hint">{t('Swipe the table sideways to review certificates, amounts and row actions.','সনদ, অঙ্ক ও সারির কাজ দেখতে টেবিলটি পাশে সরান।')}</p>}
       {entries.length > 0 && <div className="eledger-salary-scroll">
@@ -195,7 +195,6 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
           </tbody>
         </table>
       </div>}
-      <p className="eledger-salary-disclaimer">{t('These are recorded claims, not confirmed credits. Payment verification requires an independent authoritative source.','এগুলো রেকর্ডকৃত দাবি, নিশ্চিত ক্রেডিট নয়। পরিশোধ যাচাইয়ের জন্য স্বতন্ত্র সরকারি প্রমাণ প্রয়োজন।')}</p>
     </section>
   );
 };

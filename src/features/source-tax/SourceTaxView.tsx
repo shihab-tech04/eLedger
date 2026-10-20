@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Building, ChevronLeft, Search, ShieldCheck } from 'lucide-react';
+import { Building, Search, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
@@ -11,6 +11,7 @@ import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.
 import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 import { LedgerTip } from '../../components/ui/LedgerForm.tsx';
+import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
 
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -68,19 +69,16 @@ export const SourceTaxView: React.FC = () => {
     : caption;
 
   return (
-    <div className="eledger-source-page">
-      <header className="eledger-source-title">
-        <div className="eledger-source-title-line">
-          <button type="button" className="eledger-source-back" aria-label={t('Back to dashboard','ড্যাশবোর্ডে ফিরুন')}
-            onClick={() => setActiveNavTab('dashboard')}><ChevronLeft size={20}/></button>
-          <h1>{language === 'bn' ? currentRoute.bengaliTitle : heading}</h1>
-        </div>
-        <p>{localizedCaption}</p>
-      </header>
+    <div className="eledger-financial-page">
+      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+        title={language === 'bn' ? currentRoute.bengaliTitle : heading} caption={localizedCaption}/>
 
       {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
       <RouteMobileTabs routes={sourceTaxRoutes} activeId={currentRoute.id}
         label={t('Source Tax categories','উৎস করের খাতসমূহ')} onSelect={setActiveRouteId}/>
+
+      <LedgerSummary amountLabel={t('Total claimed','মোট দাবি')} amount={money(totalTaxForRoute)} count={routeEntries.length}
+        note={t('These are recorded claims, not independently verified tax credits.','রেকর্ডকৃত দাবি এখনো স্বতন্ত্রভাবে যাচাইকৃত কর ক্রেডিট নয়।')}/>
 
       {isIbas && (
         <section className="eledger-ibas-workflow">
@@ -118,13 +116,6 @@ export const SourceTaxView: React.FC = () => {
         />
       ) : (
         <>
-          {!isIbas && (
-            <div className="eledger-source-record-summary">
-              <span>{t('Total Claimed Amount','মোট দাবিকৃত অঙ্ক')} <strong>{money(totalTaxForRoute)}</strong></span>
-              <span>{t('Records','রেকর্ড')} <strong>{routeEntries.length}</strong></span>
-              <small>{language === 'bn' ? 'এই খাতের দাবি স্থানীয়ভাবে রেকর্ড করা হয়েছে; সরকারি যাচাই সম্পন্ন হয়নি।' : currentRoute.description}</small>
-            </div>
-          )}
           {currentRoute.supportsIncomeSync && (
             <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.title}/>
           )}

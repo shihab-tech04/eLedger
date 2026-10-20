@@ -16,6 +16,7 @@ import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
+import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
 
 interface InlineEditableTableProps {
   entries: LedgerEntry[];
@@ -110,7 +111,7 @@ export const LedgerEntryEditor: React.FC<{
         </LedgerTip>
       </div>
       {error && <p role="alert" className="eledger-entry-error">{error}</p>}
-      <div className="eledger-entry-editor-fields">
+      <LedgerFormGrid>
         {([
           ['referenceNo', labels.referenceNo, 'text'],
           ['sourceEntity', labels.sourceEntity, 'text'],
@@ -125,7 +126,7 @@ export const LedgerEntryEditor: React.FC<{
             min={type === 'number' ? '0.01' : undefined} step={type === 'number' ? 'any' : undefined}
             className={type === 'number' ? 'is-number' : ''}/>
         ))}
-      </div>
+      </LedgerFormGrid>
       {getClaimEvidenceFields(routeId).length > 0 && (
         <ClaimEvidenceFields routeId={routeId} evidence={evidence} onChange={onEvidenceChange} />
       )}
@@ -367,25 +368,19 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
   };
 
   return (
-    <div className="eledger-ledger-table bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+    <div className="eledger-ledger-table eledger-panel">
       {/* Table Top Action Bar */}
-      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+      <div className="eledger-ledger-toolbar">
         <div className="flex items-center space-x-2">
-          <h3 className="text-sm font-semibold text-slate-800">
+          <h2>
             {t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})
-          </h3>
-          <span className="text-xs text-slate-500 font-normal">
-            {category === 'AIT' ? t('Advance Income Tax claims','অগ্রিম আয়কর দাবি')
-              : category === 'PAYMENT' ? t('Tax payment records','কর পরিশোধের রেকর্ড')
-              : category === 'ADJUSTMENT' ? t('Adjustment claims','কর সমন্বয়ের দাবি')
-              : t('Tax Deducted at Source / Credit Records','উৎসে কর্তিত কর / ক্রেডিট রেকর্ড')}
-          </span>
+          </h2>
         </div>
 
         {allowAdd && !isAddingRow && (
           <button
             onClick={handleStartAdd}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-xs font-semibold shadow-xs transition-colors"
+            className="eledger-button eledger-button-primary"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{t('Add Entry','রেকর্ড যোগ করুন')}</span>

@@ -39,19 +39,20 @@ export const SurchargeTransferPanel: React.FC<{
   };
 
   return (
-    <section className="bg-white rounded-lg border border-slate-200 p-4 shadow-xs">
-      <h4 className="text-sm font-semibold text-slate-800">{t('Tax & Payment → Environmental Surcharge (local handoff)','Tax & Payment → পরিবেশ সারচার্জ (স্থানীয় হস্তান্তর)')}</h4>
-      <p className="text-xs text-slate-600 mt-2">{t('Record an already-assessed surcharge and its source reference.','আগে নির্ধারিত সারচার্জ ও উৎস রেফারেন্স রেকর্ড করুন।')}</p>
-      <LedgerTip label={t('About this record','এই রেকর্ড সম্পর্কে')}>
+    <section className="eledger-panel p-4">
+      <div className="eledger-workflow-heading">
+        <h2>{t('Environmental surcharge','পরিবেশ সারচার্জ')}</h2>
+        <LedgerTip label={t('About this record','এই রেকর্ড সম্পর্কে')}>
         {t('No tax rate is calculated, no payment is transmitted, and no NBR verification is performed.','এখানে করহার গণনা, অর্থ পরিশোধ বা এনবিআর যাচাই করা হয় না।')}
-      </LedgerTip>
-      <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+        </LedgerTip>
+      </div>
+      <form onSubmit={submit} className="eledger-form-grid mt-4">
         <LedgerInput label={t('Tax & Payment Reference','Tax & Payment রেফারেন্স')} value={reference} required onValueChange={setReference} placeholder="LOCAL-SUR-2026-001"/>
         <LedgerInput label={t('Assessed Surcharge (৳)','নির্ধারিত সারচার্জ (৳)')} aria-label={t('Assessed Surcharge','নির্ধারিত সারচার্জ')} inputMode="decimal" className="is-number" required value={amount} onValueChange={setAmount} placeholder="0.00"/>
         <LedgerInput label={t('Assessment / Payment Date','নির্ধারণ / পরিশোধের তারিখ')} aria-label={t('Surcharge Date','সারচার্জের তারিখ')} required type="date" value={date} onValueChange={setDate}/>
-        {error && <p role="alert" className="sm:col-span-3 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2">{error}</p>}
-        {success && <p role="status" className="sm:col-span-3 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded p-2">{success}</p>}
-        <button type="submit" disabled={busy} className="eledger-button eledger-button-primary sm:col-span-3 justify-self-start">
+        {error && <p role="alert" className="eledger-full-row text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded p-2">{error}</p>}
+        {success && <p role="status" className="eledger-full-row text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded p-2">{success}</p>}
+        <button type="submit" disabled={busy} className="eledger-button eledger-button-primary eledger-full-row justify-self-start">
           {busy ? t('Recording…','রেকর্ড হচ্ছে…') : t('Record Local Surcharge Transfer','স্থানীয় সারচার্জ রেকর্ড করুন')}
         </button>
       </form>

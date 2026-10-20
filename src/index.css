@@ -12,14 +12,25 @@
   --el-control-radius: 7px;
   --el-control-height: 40px;
   --el-control-border: #c7d5e3;
+  --el-surface: #ffffff;
+  --el-surface-muted: #f6f8fb;
+  --el-control-label: #344760;
+  --el-radius: 10px;
+  --el-space-1: 4px;
+  --el-space-2: 8px;
+  --el-space-3: 12px;
+  --el-space-4: 16px;
+  --el-space-6: 24px;
+  --el-font: 'Inter Variable', 'Noto Sans Bengali Variable', sans-serif;
   --el-sidebar-width: 260px;
   --el-header-height: 68px;
   color: var(--el-text);
   background: var(--el-bg);
 }
-body { font-family: 'Inter', 'Noto Sans Bengali', sans-serif; }
+html, body { font-family: var(--el-font); }
 button, select, input, textarea { font: inherit; }
-.eledger-app { font-size: 14px; line-height: 1.5; }
+.eledger-app { font-family: var(--el-font); font-size: 14px; line-height: 1.55; }
+.eledger-app[lang="bn"] { line-height: 1.65; }
 .eledger-app :where(input, textarea, select) { max-width: 100%; }
 .eledger-app :where(input[type="number"], .is-number) { text-align: right; font-variant-numeric: tabular-nums; }
 .eledger-app input[type="date"] { font-variant-numeric: tabular-nums; }
@@ -125,7 +136,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-helpline small { color: #77869b; font-size: 11px; }
 .eledger-sidebar-mobile-heading,.eledger-mobile-nav,.eledger-sidebar-scrim { display: none; }
 .eledger-stage { min-width: 0; flex: 1; display: flex; flex-direction: column; }
-.eledger-main { padding: 28px 54px 30px; flex: 1; }
+.eledger-main { padding: 28px 54px 30px; flex: 1; min-width: 0; }
 .eledger-footer { border-top: 1px solid #e0e8f0; background: #fff; color: #8a97aa; font-size: 11px; padding: 13px 26px; display: flex; justify-content: space-between; gap: 12px; }
 .eledger-load-error { margin: 16px 26px 0; background: #fff1f2; border: 1px solid #fecaca; color: #8a1a2b; padding: 12px; border-radius: 8px; font-size: 13px; }
 
@@ -553,4 +564,118 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-payment-footer { padding: 12px 15px; gap: 12px; align-items: flex-start; }
   .eledger-payment-total { font-size: 18px; }
   .eledger-payment-footer p { font-size: 10px; }
+}
+
+/* Canonical eLedger UI: one hierarchy, two-column forms and one panel language. */
+.eledger-app { color: var(--el-text); }
+.eledger-app :where(h1,h2,h3,h4) { letter-spacing: normal; font-weight: 700; }
+.eledger-app :where(h2,h3,h4) { line-height: 1.45; }
+.eledger-app[lang="bn"] :where(h1,h2,h3,h4,button,label) { letter-spacing: normal; }
+.eledger-financial-page { width: 100%; max-width: 1560px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--el-space-4); min-width: 0; }
+.eledger-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--el-space-4); min-width: 0; margin-bottom: 2px; }
+.eledger-page-heading { display: flex; align-items: flex-start; gap: var(--el-space-2); min-width: 0; }
+.eledger-page-heading > div { min-width: 0; }
+.eledger-page-heading h1 { font-size: 26px; line-height: 1.35; font-weight: 700; color: var(--el-text); margin: 0; }
+.eledger-page-heading p { margin-top: 3px; font-size: 13px; color: var(--el-muted); font-style: normal; }
+.eledger-page-back { width: 30px; height: 38px; flex: 0 0 30px; display: grid; place-items: center; color: var(--el-muted); border-radius: var(--el-control-radius); cursor: pointer; }
+.eledger-page-back:hover { background: var(--el-blue-soft); color: var(--el-blue); }
+.eledger-page-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--el-space-2); padding-top: 1px; }
+.eledger-dashboard .eledger-page-header { margin-bottom: 18px; }
+.eledger-summary-strip { background: var(--el-surface); border: 1px solid var(--el-border); border-radius: var(--el-radius); display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; padding: 14px 20px; min-height: 77px; }
+.eledger-summary-fact { display: flex; flex-direction: column; gap: 2px; min-width: 115px; padding-right: 22px; border-right: 1px solid var(--el-border); }
+.eledger-summary-fact:nth-child(2) { border-right: 0; min-width: 62px; }
+.eledger-summary-fact span { font-size: 12px; color: var(--el-muted); }
+.eledger-summary-fact strong { font-size: 19px; line-height: 1.25; color: var(--el-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.eledger-summary-help { margin-left: auto; }
+.eledger-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 16px; }
+.eledger-full-row { grid-column: 1 / -1; }
+.eledger-workflow-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--el-border); }
+.eledger-workflow-heading h2 { font-size: 16px; font-weight: 700; color: var(--el-text); }
+.eledger-income-card { border-radius: var(--el-control-radius); }
+.eledger-file-control { display: block; width: 100%; max-width: 100%; border: 1px dashed var(--el-control-border); border-radius: var(--el-control-radius); background: var(--el-surface-muted); padding: 10px; font-size: 13px; color: var(--el-text); }
+.eledger-file-control::file-selector-button { padding: 7px 12px; margin-right: 12px; border: 1px solid var(--el-control-border); border-radius: var(--el-control-radius); background: white; color: var(--el-text); cursor: pointer; }
+.eledger-panel, .eledger-ait-lookup, .eledger-ibas-facts, .eledger-ibas-claim,
+.eledger-ledger-composition, .eledger-category-panel, .eledger-dashboard-quick-actions,
+.eledger-dashboard-next-step { background: var(--el-surface); border: 1px solid var(--el-border); border-radius: var(--el-radius); box-shadow: none; }
+.eledger-ledger-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 13px 18px; border-bottom: 1px solid var(--el-border); background: var(--el-surface); }
+.eledger-ledger-toolbar h2 { font-size: 16px; font-weight: 700; color: var(--el-text); }
+.eledger-control, .eledger-app main :where(input:not([type="checkbox"]):not([type="file"]),select,textarea) { min-height: 40px; border-radius: var(--el-control-radius); border: 1px solid var(--el-control-border); font-family: inherit; font-size: 14px; color: var(--el-text); background-color: var(--el-surface); }
+.eledger-app main :where(input,select,textarea):focus-visible { outline: 2px solid var(--el-blue); outline-offset: 1px; }
+.eledger-form-field { font-size: 13px; font-weight: 600; color: var(--el-control-label); gap: 6px; }
+.eledger-app main :where(label) { font-size: 13px; }
+.eledger-button, .eledger-salary-add, .eledger-dashboard-status-button { min-height: 40px; font-size: 13px; font-weight: 600; border-radius: var(--el-control-radius); }
+.eledger-app main .eledger-button-primary { background: var(--el-blue); color: var(--el-surface); }
+.eledger-app main .eledger-button-primary:hover { background: #075b94; }
+.eledger-app main .eledger-button-secondary { background: var(--el-surface); border-color: var(--el-control-border); color: var(--el-text); }
+.eledger-entry-editor, .eledger-salary-editor { background: #f5faff; padding: 18px 20px; border-bottom: 1px solid var(--el-border); }
+.eledger-entry-editor-heading, .eledger-salary-editor-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.eledger-entry-editor-heading strong, .eledger-salary-editor-heading strong { font-size: 16px; font-weight: 700; color: var(--el-text); }
+.eledger-form-actions { gap: var(--el-space-2); margin-top: var(--el-space-4); }
+.eledger-tip { font-size: 12px; }
+.eledger-tip summary { color: var(--el-blue); font-size: 12px; }
+.eledger-tip-content { position: absolute; right: 0; top: calc(100% + 5px); z-index: 20; width: min(270px,80vw); max-width: unset; border: 1px solid var(--el-border); border-radius: var(--el-control-radius); background: var(--el-surface); box-shadow: 0 8px 24px #1d294024; padding: 12px; color: var(--el-text); }
+.eledger-app :where(.eledger-ledger-table,.eledger-salary-table) { overflow: visible; }
+.eledger-ledger-table thead, .eledger-salary-table thead, .eledger-stage thead { background: #f1f6fa; color: var(--el-control-label); }
+.eledger-ledger-table thead th, .eledger-salary-table th { font-size: 12px; line-height: 1.45; font-weight: 700; text-transform: none; letter-spacing: normal; padding: 12px; border-bottom: 1px solid var(--el-border); }
+.eledger-ledger-table table { min-width: 850px; }
+.eledger-ledger-table td, .eledger-salary-table td { font-size: 13px; line-height: 1.5; padding: 12px; }
+.eledger-ledger-table th:nth-child(6), .eledger-ledger-table td:nth-child(6),
+.eledger-salary-table th:nth-child(5), .eledger-salary-table td:nth-child(5) { text-align: center; white-space: nowrap; }
+.eledger-ledger-table :where(td:nth-child(4),td:nth-child(5)),
+.eledger-salary-table :where(td:nth-child(6),td:nth-child(7)) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.eledger-ledger-table :where(td:nth-child(5)), .eledger-salary-table td.claimed { color: var(--el-text); font-weight: 700; }
+.eledger-ledger-table tfoot, .eledger-salary-table tfoot { background: var(--el-surface-muted); }
+.eledger-entry-empty { padding: 22px 18px; font-size: 13px; }
+.eledger-ait-lookup > header, .eledger-ait-records > header { background: var(--el-surface); }
+.eledger-ait-lookup h4, .eledger-app main h4 { font-size: 16px; }
+.eledger-app main .text-emerald-800, .eledger-app main .text-emerald-900 { color: var(--el-text); }
+.eledger-guide { border: 0; overflow: visible; }
+.eledger-guide-content { padding: 20px; font-size: 14px; line-height: 1.7; }
+.eledger-guide-content h2 { font-size: 16px; }
+.eledger-guide-content li { margin-top: 8px; }
+.eledger-guide-search { margin-top: 18px; padding-top: 18px; }
+.eledger-guide-info { margin-top: 18px; background: var(--el-surface-muted); border-color: var(--el-border); }
+.eledger-guide-info h3 { color: var(--el-text); font-size: 15px; }
+.eledger-summary-card, .eledger-summary-card.total { background: var(--el-surface); border-color: var(--el-border); border-radius: var(--el-radius); }
+.eledger-summary-card :where(.eledger-summary-symbol),
+.eledger-summary-card.source .eledger-summary-symbol, .eledger-summary-card.ait .eledger-summary-symbol,
+.eledger-summary-card.other .eledger-summary-symbol, .eledger-summary-card.total .eledger-summary-symbol { background: var(--el-blue-soft); border-color: var(--el-border); color: var(--el-blue); }
+.eledger-summary-card .eledger-card-label { font-size: 13px; font-weight: 600; color: var(--el-muted); }
+.eledger-summary-count, .eledger-summary-caption, .eledger-category-name small { font-size: 12px; }
+.eledger-summary-amount { font-size: 24px; font-weight: 700; }
+.eledger-category-heading h2, .eledger-composition-heading h2, .eledger-dashboard-quick-actions h2 { font-size: 16px; }
+.eledger-category-list button, .eledger-category-list strong { font-size: 13px; }
+.eledger-category-heading p, .eledger-composition-heading p, .eledger-dashboard-action-list small { font-size: 12px; }
+.eledger-dashboard-action-list strong { font-size: 13px; }
+.eledger-payment-dialog { border-radius: var(--el-radius); }
+.eledger-payment-header { padding: 16px 20px; }
+.eledger-payment-header h2 { font-size: 18px; }
+.eledger-payment-scroll { padding: 16px 20px; background: var(--el-surface-muted); }
+.eledger-payment-panel { border-radius: var(--el-radius); }
+.eledger-payment-panel-heading { padding: 14px 16px; }
+.eledger-payment-panel-heading h3 { font-size: 16px; }
+.eledger-payment-row { font-size: 14px; padding: 13px 16px; }
+.eledger-payment-footer { padding: 14px 20px; }
+.eledger-payment-total { font-size: 24px; }
+.eledger-side-link, .eledger-route-link { font-size: 13px; }
+.eledger-sidebar-bottom :where(small,.eledger-guide-links) { font-size: 12px; }
+.eledger-app :where(button,summary) { transition: background-color .15s, color .15s, border-color .15s; }
+.eledger-app :where(.eledger-panel,.eledger-summary-strip) { min-width: 0; }
+@media (max-width: 670px) {
+  .eledger-financial-page { gap: 12px; }
+  .eledger-page-header { flex-direction: column; gap: 12px; }
+  .eledger-page-heading h1 { font-size: 23px; }
+  .eledger-page-actions { align-self: flex-start; }
+  .eledger-form-grid { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .eledger-summary-strip { padding: 12px; gap: 12px; }
+  .eledger-summary-fact { padding-right: 12px; min-width: 95px; }
+  .eledger-summary-fact strong { font-size: 17px; }
+  .eledger-summary-help { width: 100%; margin-left: 0; }
+  .eledger-entry-editor, .eledger-salary-editor { padding: 13px; }
+  .eledger-form-actions .eledger-button { flex: 1; }
+  .eledger-guide-content { padding: 16px; }
+  .eledger-payment-header { padding: 14px 16px; }
+  .eledger-payment-scroll { padding: 10px; }
+  .eledger-payment-row { padding: 12px; font-size: 13px; }
+  .eledger-payment-footer { padding: 12px 16px; }
 }

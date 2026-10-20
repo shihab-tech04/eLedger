@@ -67,6 +67,7 @@ import { PaymentsView } from '../features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../components/ui/LedgerForm.tsx';
+import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/ui/LedgerPage.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
@@ -570,6 +571,23 @@ describe('NBR eReturn Ledger — Phase 1 Recovery Tests', () => {
 });
 
 describe('eLedger — Shared UI and responsive workflow guardrails', () => {
+  it('uses one responsive page heading, one total summary and one field grid in both languages', () => {
+    for (const language of ['en', 'bn'] as const) {
+      const markup = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: language },
+        React.createElement('main', { lang: language },
+          React.createElement(LedgerPageHeader, { title: language === 'bn' ? 'উৎস কর' : 'Source Tax', onBack: () => {} }),
+          React.createElement(LedgerSummary, { amountLabel: language === 'bn' ? 'মোট দাবি' : 'Total claimed', amount: '12,500', count: 2, note: language === 'bn' ? 'বিস্তারিত' : 'Details' }),
+          React.createElement(LedgerFormGrid, null, React.createElement(LedgerInput, { label: language === 'bn' ? 'রেফারেন্স' : 'Reference', value: '', onValueChange: () => {} }))
+        )));
+      assert.match(markup, /eledger-page-header/);
+      assert.match(markup, /eledger-summary-strip/);
+      assert.match(markup, /eledger-form-grid/);
+      assert.match(markup, /12,500/);
+      assert.match(markup, /<details class="eledger-tip"/);
+      assert.match(markup, language === 'bn' ? /রেফারেন্স/ : /Reference/);
+    }
+  });
+
   it('renders accessible shared inputs, selects and optional help disclosures', () => {
     const field = renderToStaticMarkup(React.createElement(LedgerInput, {
       label: 'Challan Date', type: 'date', value: '', onValueChange: () => {}, required: true,
@@ -1717,8 +1735,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
   it('restores the original September dashboard composition without misrepresenting verified credit', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(DashboardView)));
-    assert.match(markup, /ERETURN LEDGER/);
-    assert.match(markup, /See the current Ledger tax, AIT, adjustments and total amount at a glance/);
+    assert.match(markup, /eledger-page-header/);
+    assert.match(markup, /Tax records and totals at a glance/);
     assert.match(markup, /eledger-summary-cards/);
     assert.match(markup, /Other Tax &amp; Adjustments/);
     assert.match(markup, /Ledger Total/);
@@ -1729,7 +1747,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /eledger-composition-bar/);
     assert.match(markup, /Salary \(iBAS\+\+\)/);
     assert.match(markup, /Quick actions/);
-    assert.match(markup, /View Tax Payment Status/);
+    assert.match(markup, /Tax Payment Status/);
     assert.match(markup, /Independently authorized verified credit/);
     assert.doesNotMatch(markup, /eledger-welcome|eledger-progress-ring|Recent ledger activity/);
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
@@ -1745,7 +1763,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true,
     }));
-    assert.match(markup, /Total Claimed Amount/);
+    assert.match(markup, /Recorded Ledger Entries/);
     assert.match(markup, /Depositing Authority/);
     assert.match(markup, /Payment Document Type/);
     assert.match(markup, /Challan\/ Certificate Reference No/);
@@ -1756,7 +1774,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Test Bank \/ Main/);
     assert.match(markup, /Edit /);
     assert.match(markup, /Delete /);
-    assert.match(markup, /Add new/);
+    assert.match(markup, /Add Entry/);
   });
 
   it('keeps iBAS++ local payroll records read-only without fabricating a live official lookup', () => {
@@ -1773,11 +1791,11 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(AitView)));
     assert.match(markup, /AIT on Car/);
-    assert.match(markup, /Total Claimed Amount/);
+    assert.match(markup, /Total claimed/);
     assert.match(markup, /Reference lookup/);
     assert.match(markup, /Local demonstration records only/);
-    assert.match(markup, /Advance Income Tax claims/);
-    assert.match(markup, /Locally recorded AIT claims remain pending/);
+    assert.match(markup, /Recorded Ledger Entries/);
+    assert.match(markup, /Recorded claims require independent verification/);
     assert.doesNotMatch(markup, /eledger-route-overview/);
     assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
     assert.deepEqual(getClaimEvidenceFields('sec-154').slice(0, 2).map((field) => field.key), [
@@ -1825,7 +1843,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const payment = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(PaymentsView)));
     assert.match(payment, /Tax Paid with Return \(173\)/);
-    assert.match(payment, /Total Recorded Payment/);
+    assert.match(payment, /Total payment/);
     assert.match(payment, /A-Challan reference lookup/);
     assert.match(payment, /national treasury verification is not connected/);
     assert.match(payment, /Recorded tax payments/);
@@ -1833,17 +1851,17 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const adjustments = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(AdjustmentsView)));
     assert.match(adjustments, /Adjustment of Tax Refund/);
-    assert.match(adjustments, /Total Recorded Adjustment/);
+    assert.match(adjustments, /Total adjustment/);
     assert.match(adjustments, /Recorded tax adjustments/);
-    assert.match(adjustments, /not government-authorized credits/);
+    assert.match(adjustments, /Keep supporting evidence for adjustment claims/);
     assert.doesNotMatch(adjustments, /eledger-route-overview/);
   });
 
   it('restores the September Ledger Guide article and protects against fictitious online confirmation', () => {
     const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(LedgerGuideView)));
-    assert.match(html, /eledger-guide-heading/);
-    assert.match(html, /eReturn LEDGER/);
+    assert.match(html, /eledger-page-header/);
+    assert.match(html, /Ledger Guide/);
     assert.match(html, /1 July 2025 – 30 June 2026/);
     assert.match(html, /Search Option/);
     assert.match(html, /Important/);
@@ -1869,7 +1887,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true }));
     assert.match(salary, /এখনো বেতনের দাবি নেই/);
-    assert.match(salary, /নতুন যোগ করুন/);
+    assert.match(salary, /রেকর্ড যোগ করুন/);
   });
 
   it('localizes all route headings and supplies keyboard-friendly labels to reconciliation and carry-forward forms', () => {

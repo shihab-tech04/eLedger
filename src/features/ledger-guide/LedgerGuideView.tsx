@@ -3,6 +3,7 @@ import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { LedgerTip } from '../../components/ui/LedgerForm.tsx';
+import { LedgerPageHeader } from '../../components/ui/LedgerPage.tsx';
 
 export const LedgerGuideView: React.FC = () => {
   const { assessmentYear } = useLedger();
@@ -25,8 +26,10 @@ export const LedgerGuideView: React.FC = () => {
   ];
 
   return (
-    <article className="eledger-guide" lang={bn ? 'bn' : 'en'}>
-      <header className="eledger-guide-heading"><h1>eReturn LEDGER</h1></header>
+    <div className="eledger-financial-page">
+      <LedgerPageHeader title={bn ? 'লেজার নির্দেশিকা' : 'Ledger Guide'}
+        caption={bn ? 'উৎস কর, অগ্রিম কর ও সমন্বয়' : 'Source tax, AIT and adjustments'}/>
+      <article className="eledger-guide eledger-panel" lang={bn ? 'bn' : 'en'}>
       <div className="eledger-guide-content">
         <section aria-labelledby="eledger-guide-update-heading">
           <h2 id="eledger-guide-update-heading">{bn
@@ -48,6 +51,7 @@ export const LedgerGuideView: React.FC = () => {
           <p>{bn ? 'এই লেজারের দাবি সরকারি যাচাইকৃত কর নয়। চালান ও সনদের প্রমাণ রাখুন; দাখিল ও পরিশোধ সরকারি ই-রিটার্নে করুন।' : 'Recorded claims are not government-verified tax credits. Keep supporting documents and use official eReturn to file or pay.'}</p>
         </aside>
       </div>
-    </article>
+      </article>
+    </div>
   );
 };
