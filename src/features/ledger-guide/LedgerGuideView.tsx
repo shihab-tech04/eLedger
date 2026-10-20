@@ -1,4 +1,4 @@
-/** September 21 custom eLedger Guide. Describes implemented local behavior honestly. */
+/** September 21 "How eReturn Ledger Works" content, reached from Dashboard. */
 import React from 'react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerLanguage } from '../../context/LanguageContext.tsx';
@@ -27,7 +27,7 @@ export const LedgerGuideView: React.FC = () => {
 
   return (
     <div className="eledger-financial-page">
-      <LedgerPageHeader title={bn ? 'লেজার নির্দেশিকা' : 'Ledger Guide'}
+      <LedgerPageHeader title={bn ? 'ই-রিটার্ন লেজার যেভাবে কাজ করে' : 'How eReturn Ledger Works'}
         caption={bn ? 'উৎস কর, অগ্রিম কর ও সমন্বয়' : 'Source tax, AIT and adjustments'}/>
       <article className="eledger-guide eledger-panel" lang={bn ? 'bn' : 'en'}>
       <div className="eledger-guide-content">

@@ -9,9 +9,12 @@ Payment Status. Inspected all 18 routes, opened the original Add interface on
 Salary (Others), Service Payment, Others, LTU and Refund, and inspected Select
 options without saving taxpayer data.
 
-This document is a **field-level release gate**, not a production verification
-certificate. The source system's authority, backends and live taxpayer records
-are not reproduced by a local storage simulation.
+This document tracks **frontend-only reconstruction parity**. The user confirmed
+on 20 October 2026 that this project does **not** require an API or SQL backend.
+Its release scope is the observed fields, labels, options, layout, navigation,
+client-side validation, and local interactions—not government-data integration
+or authoritative tax-credit verification. The source system's backends and live
+taxpayer records are not reproduced by the frontend.
 
 ## Original forms and reconstructed surfaces
 
@@ -36,7 +39,7 @@ are not reproduced by a local storage simulation.
 | Carry-forward §163 | Claim action, no manual fields, pending status | One Claim action, no speculative five-field form; no false posting | Live page |
 | Tax Payment Status | Six read-only buckets; total | Read-only six-bucket status screen | Live page |
 
-### Mandatory unresolved gates for 100% certification
+### Boundaries and unobserved states (not frontend deployment blockers)
 
 1. **Refund circle option *snapshot* is complete for the observed year, but
    server synchronization is not.** We selected each of the 50 official Tax
@@ -45,27 +48,26 @@ are not reproduced by a local storage simulation.
    ordering and exceptional labels. `src/domain/refundCircleOptions.ts`
    reproduces these 50 lists; selecting a different zone clears the old circle,
    and a mismatched circle is rejected. This closes the *observed dropdown
-   parity* gap. It does not provide an authorized dynamic NBR endpoint to
-   refresh options when NBR changes them, nor a backend to verify or submit a
-   refund claim.
-2. **LTU file upload is not connected.** The local form displays the exact File
-   input but currently records the filename only. It does not send evidence to
-   the official NBR document service.
-3. **External source-fed behavior is absent.** CGA/iBAS++, withholding-agent
+   parity* gap. As a snapshot, the options require re-observation if the
+   official frontend changes in a later assessment year.
+2. **LTU file selection is local-only.** The local form displays the exact File
+   control and records the selected filename. The project does not claim to
+   upload evidence to an NBR document service.
+3. **External source-fed data is outside frontend scope.** CGA/iBAS++, withholding-agent
    feeds, bank, savings, NBR eReturn Income sync, customs ASYCUDA, BRTA,
    A-Challan/Treasury, prior-year credits and the tax payment backend cannot
-   be certified in a browser-local ledger. An empty table is *not proof* that
+   be fetched in a browser-local reconstruction. An empty table is *not proof* that
    the route is generally read-only in every possible taxpayer state.
 4. **Conditional form paths are not exhausted.** Vehicle searches, positive
    environmental surcharge, earned prior-year carry-forward and populated
    imported/synced records were not submitted or modified in the taxpayer's
    original account. Live taxpayer writes were deliberately avoided.
-5. **Official challan Save is not equivalent to local reference search.**
-   The visible input count and output columns match, but verification and
-   persistence semantics require the actual authorized treasury API.
-6. **No backend/application SQL parity certification.** The reconstructed
-   eLedger still uses browser-local records, not the same authorized NBR
-   databases. Manual local records do not prove a verified tax credit.
+5. **Local challan lookup is a frontend interaction.** The visible input count
+   and output columns match; local lookup cannot represent official treasury
+   verification or confer verified tax credit.
+6. **Client-side record persistence.** The reconstruction intentionally keeps
+   manual records in browser-local storage; backend/SQL parity is not part of
+   this frontend release.
 
 ## Safeguards and current validation
 
@@ -87,7 +89,8 @@ are not reproduced by a local storage simulation.
 PASS for this updated checkpoint. That test count is not an official source-data
 transaction acceptance count.
 
-**Release decision:** NOT CERTIFIED for the user's strict "100% no more, no
-less" field **and function** rule. Preserve this tested checkpoint on a review
-branch, but do not publish it to the main production eLedger URL until the
-external-function, secure persistence and conditional-state gates pass.
+**Frontend release decision:** The observed 18-route field/control checkpoint
+is eligible for a gated frontend deployment after passing CI, a verified
+off-GitHub backup, and a production smoke test. Do **not** describe this as
+100% parity across unobserved official conditional states or as an integrated
+government ledger. No API/SQL integration is required for this project.

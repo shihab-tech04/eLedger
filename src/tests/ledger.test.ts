@@ -1835,7 +1835,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /eledger-sidebar/);
     assert.doesNotMatch(markup, /eledger-home-link/);
     assert.match(markup, /Dashboard/);
-    assert.match(markup, /Ledger Guide/);
+    assert.doesNotMatch(markup, /Ledger Guide/);
+    assert.doesNotMatch(markup, /Go to eReturn/);
     assert.match(markup, /Claim Source Tax/);
     assert.match(markup, /eledger-source-route-list/);
     assert.match(markup, /Salary \(iBAS\+\+\)/);
@@ -2084,11 +2085,11 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.doesNotMatch(adjustments, /eledger-route-overview/);
   });
 
-  it('restores the September Ledger Guide article and protects against fictitious online confirmation', () => {
+  it('keeps the September ledger guidance under How eReturn Ledger Works, off the navigation', () => {
     const html = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(LedgerGuideView)));
     assert.match(html, /eledger-page-header/);
-    assert.match(html, /Ledger Guide/);
+    assert.match(html, /How eReturn Ledger Works/);
     assert.match(html, /1 July 2025 – 30 June 2026/);
     assert.match(html, /Search Option/);
     assert.match(html, /Important/);
