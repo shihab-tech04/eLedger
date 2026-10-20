@@ -128,7 +128,10 @@ export const SourceTaxView: React.FC = () => {
             <div className="eledger-source-import-note">
               <Building size={18}/>
               <div><strong>{t('Customs ASYCUDA World Port Clearance Import','কাস্টমস ASYCUDA World আমদানি তথ্য')}</strong>
-                <p>{t('Record customs references with Add Entry or the local CSV importer. Live ASYCUDA imports are not connected.','কাস্টমস রেফারেন্স এন্ট্রি যোগ করে বা স্থানীয় CSV দিয়ে রেকর্ড করুন। সরাসরি ASYCUDA সংযোগ নেই।')}</p>
+                <p>{t('Add customs references or import a CSV.','কাস্টমস রেফারেন্স যোগ করুন বা CSV আমদানি করুন।')}</p>
+                <LedgerTip label={t('About customs records','কাস্টমস রেকর্ড সম্পর্কে')}>
+                  {t('These records are entered locally. No live ASYCUDA connection or official verification is available.','এই রেকর্ডগুলো স্থানীয়ভাবে যোগ করা হয়। সরাসরি ASYCUDA সংযোগ বা সরকারি যাচাই নেই।')}
+                </LedgerTip>
               </div>
             </div>
           )}

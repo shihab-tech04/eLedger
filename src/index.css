@@ -574,6 +574,11 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-app[lang="bn"] { font-family: 'Noto Sans Bengali Variable','Inter Variable',sans-serif; font-synthesis: none; line-height: 1.75; }
 .eledger-app[lang="bn"] :where(input,select,textarea,button) { font-family: inherit; }
 .eledger-app[lang="bn"] :where(.eledger-side-link,.eledger-form-field,.eledger-summary-fact span) { line-height: 1.65; }
+.eledger-app[lang="bn"] :where(h1,h2,h3,h4) { font-weight: 600; }
+.eledger-app[lang="bn"] :where(.eledger-side-link,.eledger-route-link) { font-size: 14px; font-weight: 400; line-height: 1.6; }
+.eledger-app[lang="bn"] :where(.eledger-side-link.is-active,.eledger-route-link.is-active) { font-weight: 600; }
+.eledger-app[lang="bn"] :where(.eledger-form-field,.eledger-ledger-toolbar h2,.eledger-summary-card .eledger-card-label) { font-weight: 500; }
+.eledger-app[lang="bn"] :where(.eledger-button,.eledger-salary-add) { font-weight: 600; }
 .eledger-financial-page { width: 100%; max-width: 1560px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--el-space-4); min-width: 0; }
 .eledger-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--el-space-4); min-width: 0; margin-bottom: 2px; }
 .eledger-page-heading { display: flex; align-items: flex-start; gap: var(--el-space-2); min-width: 0; }
