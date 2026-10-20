@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-  BookOpen, Car, ChevronDown, ChevronRight, FileCheck2,
-  LayoutDashboard, Menu, PhoneCall, ReceiptText, RotateCcw,
+  Car, ChevronDown, ChevronRight, FileCheck2,
+  LayoutDashboard, Menu, PhoneCall, ReceiptText,
   ShieldCheck, X,
 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
@@ -127,11 +127,6 @@ export const Sidebar: React.FC = () => {
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </button>
-          <button type="button" className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
-            aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined} onClick={() => navigate('ledger-guide')}>
-            <BookOpen size={16}/><span>{bn ? 'লেজার নির্দেশিকা' : 'Ledger Guide'}</span>
-          </button>
-
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
               aria-expanded={expanded.source} onClick={() => setExpanded((current) => ({ ...current, source: !current.source }))}>
@@ -169,9 +164,6 @@ export const Sidebar: React.FC = () => {
           <button type="button" className="eledger-side-link eledger-status-link" onClick={openStatus}>
             <FileCheck2 size={16}/><span>{bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}</span>
           </button>
-          <a className="eledger-return-link" href="https://etaxnbr.gov.bd/" target="_blank" rel="noopener noreferrer">
-            <RotateCcw size={16}/><span>{bn ? 'ই-রিটার্নে যান' : 'Go to eReturn'}</span><ChevronRight size={15}/>
-          </a>
         </nav>
         <div className="eledger-sidebar-bottom">
           <a className="eledger-helpline" href="tel:09643717171">

@@ -1,14 +1,15 @@
 import React, { useRef } from 'react';
-import { Building, List, ShieldCheck } from 'lucide-react';
+import { List, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SalaryOthersTable } from './SalaryOthersTable.tsx';
+import { OfficialManualClaimsTable } from '../../components/tables/OfficialManualClaimsTable.tsx';
+import { OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../../components/tables/OfficialReadOnlyTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
-import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 import { LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
@@ -30,6 +31,8 @@ export const SourceTaxView: React.FC = () => {
   const totalTaxForRoute = routeEntries.reduce((sum, entry) => sum + (Number(entry.taxDeducted) || 0), 0);
   const isSalaryOthers = currentRoute.id === 'salary-others';
   const isIbas = currentRoute.id === 'salary-ibas';
+  const isOfficialManual = currentRoute.id === 'service-payment' ||
+    currentRoute.id === 'other-tds' || currentRoute.id === 'source-ltu';
 
   const handleSaveNewEntry = async (entryData: {
     referenceNo: string; sourceEntity: string; sectionCode: string;
@@ -80,7 +83,7 @@ export const SourceTaxView: React.FC = () => {
       <LedgerSummary amountLabel={t('Total claimed','মোট দাবি')} amount={money(totalTaxForRoute)} count={routeEntries.length}
         note={t('These are recorded claims, not independently verified tax credits.','রেকর্ডকৃত দাবি এখনো স্বতন্ত্রভাবে যাচাইকৃত কর ক্রেডিট নয়।')}/>
 
-      {isIbas && (
+      {isIbas && routeEntries.length > 0 && (
         <section className="eledger-ibas-workflow">
           <div className="eledger-ibas-search-row">
             <button type="button" onClick={() => localClaimsRef.current?.scrollIntoView({ behavior: 'smooth' })}>
@@ -114,9 +117,21 @@ export const SourceTaxView: React.FC = () => {
           onUpdateEntry={handleUpdateEntry}
           onDeleteEntry={handleDeleteEntry}
         />
-      ) : (
+      ) : isOfficialManual ? (
         <>
           {currentRoute.supportsIncomeSync && (
+            <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
+              title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.title}/>
+          )}
+          <OfficialManualClaimsTable key={currentRoute.id} entries={routeEntries}
+            routeId={currentRoute.id as 'service-payment' | 'other-tds' | 'source-ltu'}
+            assessmentYear={assessmentYear} defaultSection={currentRoute.statutorySection}
+            onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+            onDeleteEntry={handleDeleteEntry}/>
+        </>
+      ) : (
+        <>
+          {currentRoute.id === 'dividend' && (
             <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.title}/>
           )}
           {currentRoute.id === 'commercial-source' && (
@@ -124,23 +139,14 @@ export const SourceTaxView: React.FC = () => {
               defaultSection={currentRoute.statutorySection} lookupPlaceholder={t('Unique Key (Transaction No.)','অনন্য কী (লেনদেন নম্বর)')}
               helperText={t('Enter the commercial vehicle transaction key to check the available reference record.','সংশ্লিষ্ট স্থানীয় রেকর্ড খুঁজতে বাণিজ্যিক গাড়ির লেনদেন কী দিন।')}/>
           )}
-          {currentRoute.id === 'system-import' && (
-            <div className="eledger-source-import-note">
-              <Building size={18}/>
-              <div><strong>{t('Customs ASYCUDA World Port Clearance Import','কাস্টমস ASYCUDA World আমদানি তথ্য')}</strong>
-                <p>{t('Add customs references or import a CSV.','কাস্টমস রেফারেন্স যোগ করুন বা CSV আমদানি করুন।')}</p>
-                <LedgerTip label={t('About customs records','কাস্টমস রেকর্ড সম্পর্কে')}>
-                  {t('These records are entered locally. No live ASYCUDA connection or official verification is available.','এই রেকর্ডগুলো স্থানীয়ভাবে যোগ করা হয়। সরাসরি ASYCUDA সংযোগ বা সরকারি যাচাই নেই।')}
-                </LedgerTip>
-              </div>
-            </div>
-          )}
-          {currentRoute.id === 'system-import' && (
-            <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-system-import`} routeId="system-import"/>
-          )}
           <div ref={localClaimsRef} className="eledger-source-record-list">
             {isIbas && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
               {t('Saved iBAS++-style records are local demonstration entries; they do not establish authoritative tax credits.','সংরক্ষিত iBAS++-ধাঁচের রেকর্ড স্থানীয় নমুনা মাত্র; এগুলো সরকারি যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
+            {isOfficialReadOnlyRoute(currentRoute.id) ? (
+              <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+            ) : isIbas && routeEntries.length === 0 ? (
+              <section className="eledger-panel eledger-entry-empty">{t('No TDS data found','কোনো উৎস করের তথ্য পাওয়া যায়নি')}</section>
+            ) : (
             <InlineEditableTable
               key={currentRoute.id} entries={routeEntries} category="SOURCE_TAX"
               routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
@@ -148,9 +154,10 @@ export const SourceTaxView: React.FC = () => {
               onDeleteEntry={handleDeleteEntry}
               // The authenticated Bank/FI view is populated from Income;
               // preserve editing old manual rows but don't create new ones.
-              allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'bank-fi'}
-              allowEditDelete={currentRoute.supportsManualEntry}
+              allowAdd={false}
+              allowEditDelete={false}
             />
+            )}
           </div>
         </>
       )}

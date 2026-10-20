@@ -41,10 +41,18 @@ The NBR home page additionally distinguishes verified source amounts from merely
 4. **No fabricated first-visit balances**: fresh browser storage begins with empty claims/declarations, not seeded taxpayer credits. Previously saved browser data is not migrated, cleared, or overwritten. Local fixtures continue to power isolated tests.
 5. **Boundary validation**: reject invalid receipt dates and claims that label the *current* AY as a prior-year refund. Preserve Section 120 duplicate prevention, tenancy/year isolation, status fail-closed, and old records.
 
-## Critical, still-unverified gates
+## Boundaries of this observation (not standalone frontend release gates)
+
+**Scope correction — 20 October 2026:** This reconstruction is a standalone
+frontend, as explicitly confirmed by the user. No API, hosted SQL or NBR backend
+integration is requested. The following external-system capabilities are
+not prerequisites for a frontend-only release. Only observed screen/field
+parity, local behavior, regression tests, backup and live frontend verification
+are applicable release criteria. Do not equate the original government system's
+server transactions with the browser-local reproduction.
 
 - No official signed-in iBAS++, customs, BRTA, NSD, CDBL, Treasury, LTU or eReturn Income database contract is configured in this frontend. The original live session does **not** authorize repurposing its browser cookies or extracting tokens into our application.
-- An eLedger-specific authorized backend and migration history must be identified before production SQL writes. Do not reuse HRIS or TaxPay credentials/projects by assumption.
+- There is no production SQL-write work in scope. Do not reuse HRIS or TaxPay credentials/projects by assumption.
 - Real six-bucket write-back, authoritative source identity/AY checks, source-specific amount caps, idempotent claims, concurrency/retries and reconciliation **need transactional hosted acceptance**. None are certified by local storage.
 - NBR Agent's 366-rule registry and tax-year eligibility gates are not connected to this app. W5's 137+32 calculation regressions and six persisted E2E workflows are not certified in this release; never compute statutory liabilities from guesses.
 - Some conditional NBR entry dialogs were not inspectable: selecting an authenticated Add action did not expose their controls in this session. The observed tables and official NBR 2025–26 PDF/FAQ establish the listed fields, **not** every validation branch.

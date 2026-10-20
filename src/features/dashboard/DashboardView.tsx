@@ -171,7 +171,7 @@ export const DashboardView: React.FC = () => {
                 <span><strong>{t('Update AIT','অগ্রিম কর হালনাগাদ করুন')}</strong><small>{t('Start with AIT on Car','গাড়ির অগ্রিম কর দিয়ে শুরু করুন')}</small></span><ArrowRight size={16}/>
               </button>
               <button type="button" onClick={() => setActiveNavTab('ledger-guide')}>
-                <span className="eledger-action-with-icon"><BookOpen size={16}/><strong>{t('Ledger Guide','লেজার নির্দেশিকা')}</strong></span><ArrowRight size={16}/>
+                <span className="eledger-action-with-icon"><BookOpen size={16}/><strong>{t('How eReturn Ledger Works','ই-রিটার্ন লেজার যেভাবে কাজ করে')}</strong></span><ArrowRight size={16}/>
               </button>
             </div>
           </section>

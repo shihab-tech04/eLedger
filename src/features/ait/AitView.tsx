@@ -1,12 +1,11 @@
 import React from 'react';
-import { FileCheck2 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
+import { OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../../components/tables/OfficialReadOnlyTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
-import { CsvImportPanel } from '../../components/workflows/CsvImportPanel.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
@@ -90,26 +89,19 @@ export const AitView: React.FC = () => {
         />
       )}
 
-      {currentRoute.id === 'ait-import' && (
-        <div className="eledger-source-import-note">
-          <FileCheck2 size={18}/>
-          <div><strong>{t('AIT Import (120) — customs tax details','অগ্রিম কর আমদানি (১২০) — শুল্ক সংক্রান্ত তথ্য')}</strong>
-            <p>{t('Import claims may be entered individually or by local CSV. Source Tax Import and AIT Import remain distinct; the same Section 120 customs reference cannot be credited twice.','আমদানির দাবি আলাদাভাবে বা স্থানীয় CSV দিয়ে রেকর্ড করা যায়। উৎস কর ও অগ্রিম কর আমদানি পৃথক; একই ধারা ১২০ রেফারেন্স দুবার দাবি করা যায় না।')}</p>
-          </div>
-        </div>
-      )}
-      {currentRoute.id === 'ait-import' && (
-        <CsvImportPanel key={`${taxpayer.tin}-${assessmentYear}-ait-import`} routeId="ait-import"/>
-      )}
 
       <section className="eledger-ait-records" aria-label={t('Recorded AIT claims','রেকর্ডকৃত অগ্রিম কর দাবি')}>
+        {isOfficialReadOnlyRoute(currentRoute.id) ? (
+          <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+        ) : (
         <InlineEditableTable
           key={currentRoute.id} entries={routeEntries} category="AIT"
           routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
           onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
-          onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.supportsManualEntry}
-          allowEditDelete={currentRoute.supportsManualEntry}
+          onDeleteEntry={handleDeleteEntry} allowAdd={false}
+          allowEditDelete={false}
         />
+        )}
       </section>
     </div>
   );

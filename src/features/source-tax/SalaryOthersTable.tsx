@@ -7,7 +7,7 @@ import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/Ledger
 import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../../components/ui/LedgerFormModal.tsx';
 
-type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | 'OTHER';
+type SalaryDocument = 'CHALLAN' | 'CERTIFICATE';
 type SalaryDraft = {
   authority: string;
   documentType: SalaryDocument;
@@ -15,8 +15,6 @@ type SalaryDraft = {
   date: string;
   documentAmount: string;
   claimedAmount: string;
-  bank: string;
-  branch: string;
 };
 type SalaryPayload = {
   referenceNo: string;
@@ -39,17 +37,15 @@ const money = (value: number) => value.toLocaleString('en-IN', { maximumFraction
 const humanDate = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('-') : iso;
 const blankDraft = (): SalaryDraft => ({
   authority: '', documentType: 'CHALLAN', reference: '', date: '',
-  documentAmount: '', claimedAmount: '', bank: '', branch: '',
+  documentAmount: '', claimedAmount: '',
 });
 const draftFromEntry = (entry: LedgerEntry): SalaryDraft => ({
   authority: entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity,
-  documentType: entry.claimEvidence?.paymentDocumentType ?? 'CHALLAN',
+  documentType: entry.claimEvidence?.paymentDocumentType === 'CERTIFICATE' ? 'CERTIFICATE' : 'CHALLAN',
   reference: entry.referenceNo,
   date: entry.date,
   documentAmount: String(entry.claimEvidence?.documentAmount ?? entry.grossAmount),
   claimedAmount: String(entry.taxDeducted),
-  bank: entry.claimEvidence?.bankName ?? '',
-  branch: entry.claimEvidence?.branchName ?? '',
 });
 
 export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
@@ -62,7 +58,14 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [saving, setSaving] = useState(false);
 
   const openNew = () => { setDraft(blankDraft()); setError(null); setActiveId('new'); };
-  const openEdit = (entry: LedgerEntry) => { setDraft(draftFromEntry(entry)); setError(null); setActiveId(entry.id); };
+  const openEdit = (entry: LedgerEntry) => {
+    if (entry.claimEvidence?.paymentDocumentType === 'OTHER') {
+      setError(t('This older record uses a document type absent from the current NBR form; it has been preserved unchanged.',
+        'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান এনবিআর ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
+      return;
+    }
+    setDraft(draftFromEntry(entry)); setError(null); setActiveId(entry.id);
+  };
   const cancel = () => { setActiveId(null); setError(null); };
   const change = (field: keyof SalaryDraft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
 
@@ -80,12 +83,13 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       setError(t('Enter positive document and claimed amounts. Claimed amount cannot exceed the document amount.','সনদ ও দাবিকৃত অঙ্ক ধনাত্মক হতে হবে। দাবিকৃত অঙ্ক সনদের অঙ্কের বেশি হতে পারে না।'));
       return;
     }
+    const oldEvidence = activeId !== 'new'
+      ? entries.find((entry) => entry.id === activeId)?.claimEvidence : undefined;
     const evidence = normalizeClaimEvidence({
+      ...oldEvidence,
       depositingAuthority: draft.authority.trim(),
       paymentDocumentType: draft.documentType,
       documentAmount,
-      bankName: draft.bank.trim() || undefined,
-      branchName: draft.branch.trim() || undefined,
     }) ?? {};
     const payload: SalaryPayload = {
       referenceNo: draft.reference.trim(),
@@ -134,14 +138,12 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       <LedgerFormGrid>
         <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
         <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
-          <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option><option value="OTHER">{t('Other','অন্যান্য')}</option>
+          <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
         </LedgerSelect>
         <LedgerInput label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} required value={draft.reference} onValueChange={(value) => change('reference', value)}/>
         <LedgerInput label={t('Challan / Certificate Date','চালান / সনদের তারিখ')} required type="date" value={draft.date} onValueChange={(value) => change('date', value)}/>
         <LedgerInput label={t('Challan / Certificate Amount','চালান / সনদের অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.documentAmount} onValueChange={(value) => change('documentAmount', value)}/>
         <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.claimedAmount} onValueChange={(value) => change('claimedAmount', value)}/>
-        <LedgerInput label={t('Bank Name','ব্যাংকের নাম')} value={draft.bank} onValueChange={(value) => change('bank', value)}/>
-        <LedgerInput label={t('Branch Name','শাখার নাম')} value={draft.branch} onValueChange={(value) => change('branch', value)}/>
       </LedgerFormGrid>
       <div className="eledger-form-actions">
         <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>
@@ -174,7 +176,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <th scope="col">{t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর')}</th>
             <th scope="col">{t('Challan/ Certificate Date','চালান/সনদের তারিখ')}</th>
             <th scope="col">{t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')}</th>
-            <th scope="col">{t('Claimed Amount','দাবিকৃত অঙ্ক')}</th><th scope="col">{t('Bank / Branch','ব্যাংক / শাখা')}</th>
+            <th scope="col">{t('Claimed Amount','দাবিকৃত অঙ্ক')}</th>
             <th scope="col">{t('Action','কাজ')}</th>
           </tr></thead>
           <tbody>
@@ -189,7 +191,6 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 <td data-label={t('Challan/ Certificate Date','চালান/সনদের তারিখ')}>{humanDate(entry.date)}</td>
                 <td data-label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} className="eledger-salary-number">{money(entry.claimEvidence?.documentAmount ?? entry.grossAmount)}</td>
                 <td data-label={t('Claimed Amount','দাবিকৃত অঙ্ক')} className="eledger-salary-number claimed">{money(entry.taxDeducted)}</td>
-                <td data-label={t('Bank / Branch','ব্যাংক / শাখা')}>{[entry.claimEvidence?.bankName, entry.claimEvidence?.branchName].filter(Boolean).join(' / ') || '—'}</td>
                 <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
                   <button type="button" className="edit" aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`} title={t('Edit','সম্পাদনা')} onClick={() => openEdit(entry)} disabled={activeId !== null}><Pencil size={16}/></button>
                   <button type="button" className="delete" aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`} title={t('Delete','মুছুন')} onClick={() => remove(entry)} disabled={activeId !== null}><Trash2 size={16}/></button>
