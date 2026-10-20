@@ -1920,6 +1920,19 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Add Entry/);
   });
 
+  it('keeps the original Salary (Others) eight-column table visible when empty on desktop and mobile', () => {
+    const markup = renderToStaticMarkup(React.createElement(SalaryOthersTable, {
+      entries: [], defaultSection: 'Sec 86',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    }));
+    assert.equal((markup.match(/<th\b/g) ?? []).length, 8);
+    assert.match(markup, /<td colSpan="8" class="eledger-salary-empty-cell">No Data Found<\/td>/);
+    assert.match(markup, /Add Entry/);
+    assert.doesNotMatch(markup, /No salary claims yet/);
+  });
+
   it('uses the exact authenticated manual-input inventory; system-fed sections have none', () => {
     assert.deepEqual(OFFICIAL_INPUT_KEYS['salary-others'], [
       'depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount',
@@ -2166,7 +2179,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const salary = renderBn(React.createElement(SalaryOthersTable, { entries: [], defaultSection: 'Sec 86',
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true }));
-    assert.match(salary, /এখনো বেতনের দাবি নেই/);
+    assert.match(salary, /কোনো তথ্য পাওয়া যায়নি/);
     assert.match(salary, /রেকর্ড যোগ করুন/);
   });
 
