@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Building, Search, ShieldCheck } from 'lucide-react';
+import { Building, List, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
@@ -84,7 +84,7 @@ export const SourceTaxView: React.FC = () => {
         <section className="eledger-ibas-workflow">
           <div className="eledger-ibas-search-row">
             <button type="button" onClick={() => localClaimsRef.current?.scrollIntoView({ behavior: 'smooth' })}>
-              <Search size={17}/>{t('Search local records','স্থানীয় রেকর্ড খুঁজুন')}
+              <List size={17}/>{t('View local records','স্থানীয় রেকর্ড দেখুন')}
             </button>
           </div>
           <div className="eledger-ibas-facts">

@@ -1845,6 +1845,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(SourceTaxView)));
     assert.match(markup, /iBAS\+\+ \(Salary\) TDS/);
+    assert.match(markup, /View local records/);
+    assert.doesNotMatch(markup, /Search local records/);
     assert.match(markup, /TDS Available \(local records only\)/);
     assert.match(markup, /Official submission requires a verified CGA\/iBAS\+\+ connection/);
     assert.match(markup, /readOnly/);
