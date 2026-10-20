@@ -6,6 +6,7 @@
 - **Historical eLedger design**: recovery work and October screenshot-route crosswalk in `src/domain/routeRegistry.ts` plus previously recovered September checkpoints. This is not equivalent to pixel-level comparison with the lost original deployment.
 - **Official NBR eReturn**: October 8, 2026 authenticated observation `17-NBR_eReturn_Workstream_B_Authenticated_Observation_v0_5.md` and related field evidence. Its `Update Tax Payment Status` action was visible but not opened in that observation; an independent authenticated reinspection was not completed in this audit. **Full form parity is unverified**.
 - **Legal evidence**: NBR controlled source documents and SRO 210/2026 versus 273/2026 comparison. Their reconciled master-source register is explicitly **partial and non-certified**, so the frontend must not infer rates, assessment-year applicability, or verified payment status from these alone.
+- **Official public workflow instructions**: NBR [eReturn income-tax FAQ](https://nbr.gov.bd/faq/income-tax-faq/eng) and [2025–26 eReturn guide](https://nbr.gov.bd/uploads/publications/Nirdeshika_2025-26.pdf). The guide contains original screenshots and is specific to AY 2025–26; it does not establish all AY 2026–27 UI differences.
 
 ## What eLedger does
 
@@ -19,12 +20,12 @@ The eReturn Tax & Payment observation records six buckets: Source Tax, AIT, Tax 
 |---|---|---|---|
 | Dashboard | Read-only aggregation and route shortcuts | Six-bucket status entry point, local recorded versus verified amounts | Sample totals are seeded browser data, not NBR balances |
 | Ledger Guide | Guidance, no financial save | Route explanations and evidence caveats | Preserve, but avoid repeating guidance on entry screens |
-| Salary (iBAS++) | Read-only local payroll reference | Local lookup, TDS claim, taxpayer/AY | CGA/iBAS++ authoritative interface unavailable; no save |
+| Salary (iBAS++) | Read-only local payroll reference | Local record list, TDS claim, taxpayer/AY | **Parity gap:** NBR FAQ describes Search → enter eligible TDS claim → Save. The current local screen cannot safely provide that official flow until the authorized CGA/iBAS++ source is connected. The scroll-only shortcut is labeled **View local records** instead of implying a lookup. |
 | Salary (Others) | Dedicated add/edit dialog | Authority, certificate/challan kind, reference/date, document amount, claim, bank/branch | Distinct content, now shares standard fields, modal, mobile record presentation |
 | Bank/FI Interest/Profit | Local income-sync or manual claim | Generic reference/entity/section/gross/tax/date | Source-income declarations are local fixtures; evidence provenance incomplete |
 | Dividend | Local income-sync or manual claim | Generic reference/entity/section/gross/tax/date | Official BO/CDBL validation not connected |
 | Service Payment | Manual claim + income-sync | Generic six fields; authority, document kind/amount, purpose | Supporting detail should be optional/disclosed, not a separate form page |
-| Sanchayapatra | Income-sync/manual claim | Generic six; scheme, registration, issue date | Official NSD evidence not connected |
+| Sanchayapatra | Income-sync/manual claim | Generic six; scheme, registration, issue date | Official NSD evidence not connected; the NBR FAQ specifically describes entering the claimant's portion of available TDS for jointly held instruments |
 | Import (source tax) | Manual claim + CSV upload | Generic six; import file preview | CSV format distinct from AIT Import; protect category separation |
 | Source Tax (LTU) | Manual claim | Generic six; description and evidence filename | Filename is not an uploaded attachment; no false verification |
 | Commercial Vehicle (source tax) | Local reference lookup + manual claim | Generic six; transaction reference | Distinct legal category from private car AIT |
@@ -49,12 +50,14 @@ The 18-route registry counts only the ten source-tax, three AIT, two payment, tw
 5. **P2 — noisy test controls:** local lookup fixtures were displayed as a conspicuous button row. Examples are now behind a small disclosure, keeping test access without competing with the primary action.
 6. **P2 — typography:** project already loads Inter Variable and Noto Sans Bengali Variable locally. Existing Bengali language rules select Noto Sans Bengali with reduced weight variation. Avoid introducing a third font, aggressive uppercase, or independent page palettes.
 7. **P0 — data authenticity:** repository and income sync are browser-local; demo/seeded data exists for taxpayer selection, lookups, and balances. No real Supabase, CGA/iBAS++, ASYCUDA, BRTA, CDBL, or Treasury write-through was verified. Do **not** claim 100% live synchronization.
+8. **P0 — mismatched official actions:** NBR's public instructions describe iBAS Search → claimed amount → Save, AIT on Car Unique Key → Search → Save, and Bank/FI, Dividend and Sanchayapatra Sync from Income requiring previously populated eReturn Income data. Reconstructed controls lack authoritative source connections. Do not falsely enable claims or present locally generated values as official balances.
 
 ## Remaining functional acceptance (must not be marked done)
 
 | Gate | Status | Required evidence |
 |---|---|---|
 | Current official eReturn eLedger every input and save behavior | **Unverified** | Authenticated per-route field capture, conditional fields, validation, screenshots |
+| iBAS++ claimed TDS Save (official) | **Missing from current local UI** | Authorized CGA/iBAS++ lookup and claimant-specific available-TDS ceiling; NBR FAQ behavior |
 | eReturn → eLedger → Tax Payment Status → eReturn write-back | **Unverified** | End-to-end authenticated persisted workflows, duplicate and rollback proofs |
 | Taxpayer/AY authorization, session isolation, external reference precedence | **Local tests only** | Production signed-in API, RLS and database regression |
 | Government challan/withholding verification | **Not connected** | Approved external APIs or a reviewed local-only contract |
