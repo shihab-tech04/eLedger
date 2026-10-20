@@ -266,6 +266,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-salary-table th:nth-child(9) { width: 6%; text-align: center; }
 .eledger-salary-table td { color: #1d2940; padding: 11px; min-height: 56px; height: 56px; border-bottom: 1px solid #e7edf3; font-size: 12px; vertical-align: middle; overflow-wrap: anywhere; }
 .eledger-salary-table tbody tr:last-child td { border-bottom: 0; }
+.eledger-salary-table td.eledger-salary-empty-cell { text-align: center; color: var(--el-muted); height: 72px; }
 .eledger-salary-row-index { color: #6f83a0 !important; }
 .eledger-salary-table td.eledger-salary-number { text-align: right; }
 .eledger-salary-table td.claimed { font-weight: 750; }
@@ -767,6 +768,9 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-ledger-table tbody td:last-child, .eledger-salary-table tbody td:last-child { border-top: 1px solid var(--el-border); margin-top: 5px; padding-top: 10px; }
   .eledger-ledger-table tbody td:last-child > div, .eledger-salary-table tbody td:last-child > div { justify-content: flex-start; }
   .eledger-salary-table tbody td.eledger-salary-row-index { font-size: 11px; color: var(--el-muted); }
+  .eledger-salary-table tbody tr.eledger-salary-empty-row { display: block; padding: 6px 14px; }
+  .eledger-salary-table tbody td.eledger-salary-empty-cell { text-align: center; padding: 20px 0; border-top: 0; height: auto; }
+  .eledger-salary-table tbody td.eledger-salary-empty-cell::before { content: none; }
 }
 .eledger-official-manual-table .overflow-x-auto { overflow-x: auto; }
 .eledger-official-records { width: 100%; min-width: 860px; border-collapse: collapse; }
