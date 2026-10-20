@@ -31,6 +31,7 @@ export const SourceTaxView: React.FC = () => {
   const totalTaxForRoute = routeEntries.reduce((sum, entry) => sum + (Number(entry.taxDeducted) || 0), 0);
   const isSalaryOthers = currentRoute.id === 'salary-others';
   const isIbas = currentRoute.id === 'salary-ibas';
+  const isServicePayment = currentRoute.id === 'service-payment';
   const isOfficialManual = currentRoute.id === 'service-payment' ||
     currentRoute.id === 'other-tds' || currentRoute.id === 'source-ltu';
 
@@ -62,9 +63,11 @@ export const SourceTaxView: React.FC = () => {
   };
   const handleDeleteEntry = (id: string) => deleteEntry(id);
 
-  const heading = isIbas ? 'iBAS++ (Salary) TDS' : isSalaryOthers ? 'Salary (Others)' : currentRoute.title;
+  const heading = isIbas ? 'iBAS++ (Salary) TDS' : isSalaryOthers ? 'Salary (Others)' :
+    isServicePayment ? 'Service Payment' : currentRoute.title;
   const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
-    isIbas ? 'Local iBAS++ payroll references — not connected to CGA' : currentRoute.statutorySection;
+    isIbas ? 'Local iBAS++ payroll references — not connected to CGA' :
+    isServicePayment ? 'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [Section-90]' : currentRoute.statutorySection;
   const localizedCaption = language === 'bn'
     ? isSalaryOthers ? 'বেতন · ধারা ৮৬'
       : isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই'
