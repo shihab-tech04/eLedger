@@ -1,0 +1,112 @@
+import type { LedgerRouteId } from './models.ts';
+
+/**
+ * Input inventories observed in the signed-in NBR eLedger on 20 October 2026.
+ * Read-only/system-fed columns are intentionally not turned into manual inputs.
+ * Empty arrays mean that the currently observed page exposes no manual fields.
+ */
+export const OFFICIAL_INPUT_KEYS: Partial<Record<LedgerRouteId, readonly string[]>> = {
+  'salary-ibas': [],
+  'salary-others': ['depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount'],
+  'bank-fi': [],
+  dividend: [],
+  'service-payment': ['depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount'],
+  sanchayapatra: [],
+  'system-import': [],
+  'source-ltu': ['section', 'amount', 'challanNo', 'description', 'file'],
+  'commercial-source': ['transactionNo'],
+  'other-tds': ['paymentPurpose', 'depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount'],
+  'car-ait': ['transactionNo'],
+  'commercial-vehicle': ['transactionNo'],
+  'sec-154': ['challanNo'],
+  'ait-import': [],
+  'sec-173': ['challanNo'],
+  'environmental-surcharge': [],
+  refund: ['assessmentYear', 'referenceNo', 'submissionDate', 'returnFilingZone', 'returnFilingCircle', 'refundAmount', 'adjustmentClaimAmount'],
+  'carry-forward': [],
+  'tax-payment-status': [],
+};
+
+/** Labels and order copied from the live "Others" purpose selector. */
+export const OTHER_TDS_PURPOSES = [
+  'Acquisition of Property [Section-111]',
+  'Actor, Producer etc. [ Section-93]',
+  'Advertising Bill [ Section-92]',
+  'Bangladesh Bank Bill [ Section-107]',
+  'Brick Manufacturing [ Section-130]',
+  'C & F Agent Payment [ Section-122]',
+  'Cellular Phone Revenue [ Section-98]',
+  'Cigarette Manufacture [ Section-129]',
+  'Cigarette Manufacture AIT [Section-152]',
+  'Commission, Discount, Fee [Section-94]',
+  'Contractor Payment [ Section-89]',
+  'Convention Hall Rent [ Section-110]',
+  'Excess Life Insurance Premium [ Section-99]',
+  'Export Cash Subsidy [ Section-112]',
+  'Export Certain Items [ Section-123]',
+  'Foreign Agency Commission [Section-116]',
+  'Freight Forward Commission [ Section-113]',
+  'General Insurance Surveyor [Section-101]',
+  'House Property [ Section-109]',
+  'ICX/IGW payment [ Section-108]',
+  'Inland Ship [Section-139]',
+  'Insurance Commission [ Section-100]',
+  'Interest of Resident [Section-104]',
+  'LC Commission [ Section-96]',
+  'Local LC [ Section-97]',
+  'Lottery [ Section-118]',
+  'Manpower Export [ Section-121]',
+  'Member of Stock Exchange [Section-137]',
+  'MP Remuneration [ Section-87]',
+  'Non-resident Income [ Section-119]',
+  'Profit on Securities [ Section-106]',
+  'Property Lease [ Section-128]',
+  'Public Auction [ Section-133]',
+  'Real Estate Business [ Section-126]',
+  'Rental Power [ Section-114]',
+  'Royalties [ Section-91]',
+  'Service to Foreign Person [Section-124]',
+  'Share Transfer (Not Listed Company) [Section-134]',
+  'Shipping Business [ Section-132]',
+  'Signing Money [ Section-115]',
+  'Sponsor Share Transfer [ Section-135]',
+  'Stamp, Court Fee Commission [Section-127]',
+  'Stock Exchange Share [ Section-136]',
+  'Trade License Renewal [ Section-131]',
+  'Transfer of Property [ Section-125]',
+  'Travel Agent [ Section-95]',
+  'WPPF [ Section-88]',
+] as const;
+
+/** The LTU selector has four additional types beyond the Others list. */
+export const LTU_SECTIONS = [
+  ...OTHER_TDS_PURPOSES.slice(0, 12),
+  'Dividend [ Section-117]',
+  ...OTHER_TDS_PURPOSES.slice(12, 27),
+  'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [ Section-90]',
+  ...OTHER_TDS_PURPOSES.slice(27, 36),
+  'Salary [ Section-86]',
+  ...OTHER_TDS_PURPOSES.slice(36),
+] as const;
+
+/** Exact zone labels observed on the refund page; circle options are server-dependent. */
+export const REFUND_TAX_ZONES = [
+  'Taxes Zone, Barishal', 'Taxes zone-2, Dhaka', 'Taxes Zone-3, Dhaka',
+  'Taxes Zone-4, Dhaka', 'Taxes zone-5, Dhaka', 'Taxes Zone-6, Dhaka',
+  'Taxes Zone-7, Dhaka', 'Taxes Zone 8, Dhaka', 'Taxes Zone-9, Dhaka',
+  'Taxes Zone-10, Dhaka', 'Taxes Zone-11, Dhaka', 'Taxes Zone, Bogura',
+  'Taxes Zone-12, Dhaka', 'Taxes zone-13, Dhaka', 'Taxes Zone-14, Dhaka',
+  'Taxes Zone-15, Dhaka', 'Taxes Zone, Gazipur', 'Taxes Zone, Khulna',
+  'Large Taxpayers Unit (Tax)', 'Taxes Zone, Mymensingh',
+  'Taxes Zone, Narayanganj', 'Taxes Zone, Rajshahi',
+  'Central Taxes Survey Zone', 'Taxes Zone, Rangpur', 'Taxes Zone, Sylhet',
+  'Taxes Zone-1, Chattogram', 'Taxes Zone-2, Chattogram',
+  'Taxes Zone-3, Chattogram', 'Taxes Zone-4, Chattogram',
+  'Taxes Zone, Cumilla', 'Taxes zone-1, Dhaka', '16, Dhaka',
+  '17, Dhaka', '18, Dhaka', '19, Dhaka', '20, Dhaka', '21, Dhaka',
+  '22, Dhaka', '23, Dhaka', '24, Dhaka', '25, Dhaka',
+  'Taxes Zone, Jashore', 'Taxes Zone-06, Chattogram',
+  'Taxes Zone, Narsingdi', 'Taxes Zone, Kushtia',
+  'Taxes Zone-05, Chattogram', 'Taxes Zone, Faridpur',
+  "Taxes Zone, Cox's Bazar", 'Taxes Zone, Noakhali', 'Taxes Zone, Dinajpur',
+] as const;

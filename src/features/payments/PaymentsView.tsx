@@ -11,8 +11,8 @@ import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
+import { OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../../components/tables/OfficialReadOnlyTable.tsx';
 import { SystemLookupPanel } from '../../components/workflows/SystemLookupPanel.tsx';
-import { SurchargeTransferPanel } from '../../components/workflows/SurchargeTransferPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
@@ -88,27 +88,6 @@ export const PaymentsView: React.FC = () => {
     return await deleteEntry(id);
   };
 
-  const recordLocalSurcharge = async (referenceNo: string, amount: number, date: string) => {
-    const response = await addEntry({
-      taxpayerTin: taxpayer.tin,
-      assessmentYear,
-      category: 'PAYMENT',
-      routeId: 'environmental-surcharge',
-      referenceNo,
-      sourceEntity: 'Tax & Payment — taxpayer-entered local stage',
-      sectionCode: currentRoute.statutorySection,
-      grossAmount: amount,
-      taxDeducted: amount,
-      date,
-      status: 'PENDING_VERIFICATION',
-      workflow: 'MANUAL_ENTRY',
-      isManual: true,
-      externalVerified: false,
-      remarks: 'Locally declared surcharge amount. Not an official NBR transfer or payment verification.',
-    });
-    return { success: response.success, error: Object.values(response.validation?.errors || {})[0] };
-  };
-
   return (
     <div className="eledger-financial-page">
       <LedgerPageHeader
@@ -129,20 +108,28 @@ export const PaymentsView: React.FC = () => {
             helperText={t('Local demonstration records only; national treasury verification is not connected.','শুধু স্থানীয় নমুনা রেকর্ড; জাতীয় ট্রেজারি যাচাই সংযুক্ত নেই।')} />
       )}
 
-      {currentRoute.id === 'environmental-surcharge' && (
-        <SurchargeTransferPanel key={`${taxpayer.tin}-${assessmentYear}`} onRecord={recordLocalSurcharge} />
+      {currentRoute.id === 'environmental-surcharge' && routeEntries.length === 0 && (
+        <section className="eledger-panel eledger-entry-empty">
+          {t('No Environmental Surcharge Payable. Please set Environmental Surcharge in Tax Payment.',
+            'পরিবেশ সারচার্জ পরিশোধযোগ্য নেই। ট্যাক্স পেমেন্টে পরিবেশ সারচার্জ নির্ধারণ করুন।')}
+        </section>
       )}
 
       {/* The surcharge card owns the first Add Entry action; show the record
           table after an entry exists so a fresh route has one clear action. */}
       {(currentRoute.id !== 'environmental-surcharge' || routeEntries.length > 0) && (
         <section className="eledger-ait-records" aria-label={t('Recorded tax payments','রেকর্ডকৃত কর পরিশোধ')}>
+          {isOfficialReadOnlyRoute(currentRoute.id) ? (
+            <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+          ) : (
           <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="PAYMENT"
             routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
             onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
             onDeleteEntry={handleDeleteEntry}
-            allowAdd={currentRoute.supportsManualEntry && currentRoute.id !== 'environmental-surcharge'}
-            allowEditDelete={currentRoute.supportsManualEntry} />
+            allowAdd={false}
+            allowEditDelete={false}
+            />
+          )}
         </section>
       )}
     </div>

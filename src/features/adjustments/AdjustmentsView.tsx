@@ -11,7 +11,8 @@ import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
-import { SingleClaimPanel } from '../../components/workflows/SingleClaimPanel.tsx';
+import { OfficialManualClaimsTable } from '../../components/tables/OfficialManualClaimsTable.tsx';
+import { OfficialCarryForwardPanel } from '../../components/workflows/OfficialCarryForwardPanel.tsx';
 import { formatLedgerAmount, filterEntriesByRoute } from '../../domain/calculations.ts';
 import { RouteMobileTabs } from '../../components/navigation/RouteMobileTabs.tsx';
 import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
@@ -99,16 +100,23 @@ export const AdjustmentsView: React.FC = () => {
       <LedgerSummary amountLabel={t('Total adjustment','মোট সমন্বয়')} amount={formatLedgerAmount(totalTaxForRoute)} count={routeEntries.length}
         note={language === 'bn' ? 'সমন্বয় দাবির সহায়ক প্রমাণ সংরক্ষণ করুন।' : 'Keep supporting evidence for adjustment claims.'}/>
 
-      {currentRoute.id === 'carry-forward' && <SingleClaimPanel existingClaim={routeEntries[0]}/>}
+      {currentRoute.id === 'carry-forward' && <OfficialCarryForwardPanel existingClaim={routeEntries[0]}/>}
 
       {/* Carry-forward already has a dedicated Add Entry action. Do not show a
           second empty record panel until there is a record to inspect. */}
       {(currentRoute.id !== 'carry-forward' || routeEntries.length > 0) && (
         <section className="eledger-ait-records" aria-label={t('Recorded tax adjustments','রেকর্ডকৃত কর সমন্বয়')}>
-          <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="ADJUSTMENT"
-            routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
-            onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
-            onDeleteEntry={handleDeleteEntry} allowAdd={currentRoute.id === 'refund'} />
+          {currentRoute.id === 'refund' ? (
+            <OfficialManualClaimsTable key={currentRoute.id} entries={routeEntries}
+              routeId="refund" assessmentYear={assessmentYear} defaultSection={currentRoute.statutorySection}
+              onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+              onDeleteEntry={handleDeleteEntry}/>
+          ) : (
+            <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="ADJUSTMENT"
+              routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
+              onSaveNewEntry={handleSaveNewEntry} onUpdateEntry={handleUpdateEntry}
+              onDeleteEntry={handleDeleteEntry} allowAdd={false} allowEditDelete={false}/>
+          )}
         </section>
       )}
     </div>

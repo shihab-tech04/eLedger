@@ -45,6 +45,9 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
   const requestSequence = useRef(0);
   const currentContext = `${taxpayer.tin}|${assessmentYear}|${routeId}`;
   const sampleReferences = getLocalReferenceExamples(routeId);
+  const isVehicle = ['car-ait', 'commercial-vehicle', 'commercial-source'].includes(routeId);
+  const isChallan = ['sec-154', 'sec-173'].includes(routeId);
+  const isOriginalSingleFieldLookup = isVehicle || isChallan;
 
   useEffect(() => {
     requestSequence.current += 1;
@@ -165,26 +168,34 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
 
       <form onSubmit={handleLookup} className="mt-3 flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <LedgerInput label={t('Reference number','রেফারেন্স নম্বর')}
+          <LedgerInput label={isVehicle ? t('Unique Key (Transaction No.)','অনন্য কী (লেনদেন নম্বর)')
+            : isChallan ? t('Challan No.','চালান নম্বর')
+              : t('Reference number','রেফারেন্স নম্বর')}
             type="text"
-            aria-label={t('Reference number to look up','অনুসন্ধানের রেফারেন্স নম্বর')}
+            aria-label={isVehicle ? t('Unique Key (Transaction No.)','অনন্য কী (লেনদেন নম্বর)')
+              : isChallan ? t('Challan No.','চালান নম্বর') : t('Reference number to look up','অনুসন্ধানের রেফারেন্স নম্বর')}
             value={referenceQuery}
             onValueChange={changeReference}
-            placeholder={lookupPlaceholder}
+            placeholder={isVehicle ? t('Transaction No.','লেনদেন নম্বর') :
+              isChallan ? t('Enter Challan No.','চালান নম্বর লিখুন') : lookupPlaceholder}
           />
         </div>
+        {isOriginalSingleFieldLookup && <button type="button" className="eledger-button eledger-button-secondary self-end"
+          onClick={() => changeReference('')}>{t('Reset','রিসেট')}</button>}
         <button
           type="submit"
           disabled={isSearching || !referenceQuery.trim()}
           className="eledger-button eledger-button-primary self-end"
         >
           <Search className="w-4 h-4" />
-          <span>{isSearching ? t('Searching...','খোঁজা হচ্ছে...') : t('Find local reference','স্থানীয় রেফারেন্স খুঁজুন')}</span>
+          <span>{isSearching ? t('Searching...','খোঁজা হচ্ছে...') :
+            isVehicle ? t('Search','অনুসন্ধান') : isChallan ? t('Save','সংরক্ষণ') :
+              t('Find local reference','স্থানীয় রেফারেন্স খুঁজুন')}</span>
         </button>
       </form>
 
       {/* Route-specific local examples, not references from unrelated tax heads. */}
-      {sampleReferences.length > 0 && (
+      {sampleReferences.length > 0 && !isOriginalSingleFieldLookup && (
         <details className="eledger-lookup-examples mt-2 text-xs text-slate-600">
           <summary>{t('Example references','উদাহরণ রেফারেন্স')}</summary>
           <div className="eledger-lookup-examples-list">

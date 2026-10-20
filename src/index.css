@@ -764,3 +764,21 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-ledger-table tbody td:last-child > div, .eledger-salary-table tbody td:last-child > div { justify-content: flex-start; }
   .eledger-salary-table tbody td.eledger-salary-row-index { font-size: 11px; color: var(--el-muted); }
 }
+.eledger-official-manual-table .overflow-x-auto { overflow-x: auto; }
+.eledger-official-records { width: 100%; min-width: 860px; border-collapse: collapse; }
+.eledger-official-records th { padding: 12px; color: var(--el-control-label); background: var(--el-surface-muted); border-bottom: 1px solid var(--el-border); text-align: left; font-size: 12px; font-weight: 700; }
+.eledger-official-records td { padding: 12px; border-bottom: 1px solid var(--el-border); color: var(--el-text); font-size: 13px; }
+.eledger-official-records td:first-child, .eledger-official-records th:first-child { width: 50px; text-align: center; }
+.eledger-official-records td:last-child, .eledger-official-records th:last-child { text-align: center; }
+.eledger-official-records :is(th,td):nth-last-child(3),
+.eledger-official-records :is(th,td):nth-last-child(2) { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .eledger-official-manual-table .overflow-x-auto { overflow: visible; }
+  .eledger-official-records { display: block; min-width: 0; }
+  .eledger-official-records thead { display: none; }
+  .eledger-official-records tbody { display: grid; gap: 10px; padding: 12px; }
+  .eledger-official-records tbody tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 14px; padding: 8px 14px; border: 1px solid var(--el-border); border-radius: var(--el-control-radius); }
+  .eledger-official-records tbody td { display: block; padding: 7px 0; border: 0; min-width: 0; overflow-wrap: anywhere; text-align: left !important; }
+  .eledger-official-records tbody td::before { display: block; content: attr(data-label); margin-bottom: 2px; color: var(--el-muted); font-size: 11px; }
+  .eledger-official-records tbody td:last-child { grid-column: 1 / -1; border-top: 1px solid var(--el-border); padding-top: 10px; }
+}

@@ -64,6 +64,10 @@ import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { LedgerGuideView } from '../features/ledger-guide/LedgerGuideView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
+import { OfficialManualClaimsTable } from '../components/tables/OfficialManualClaimsTable.tsx';
+import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
+import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
+import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES } from '../domain/officialLedgerFields.ts';
 import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
 import { PaymentsView } from '../features/payments/PaymentsView.tsx';
@@ -1871,7 +1875,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
   });
 
-  it('renders September Salary (Others) columns and original controls without discarding evidence', () => {
+  it('renders exactly the original Salary (Others) table columns and keeps older stored evidence intact', () => {
     const sample = { ...INITIAL_LEDGER_ENTRIES[0], routeId: 'salary-others' as const,
       claimEvidence: { paymentDocumentType: 'CERTIFICATE' as const, documentAmount: 200000,
         depositingAuthority: 'Employer Accounts', bankName: 'Test Bank', branchName: 'Main' } };
@@ -1886,26 +1890,94 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Payment Document Type/);
     assert.match(markup, /Challan\/ Certificate Reference No/);
     assert.match(markup, /Claimed Amount/);
-    assert.match(markup, /Bank \/ Branch/);
-    assert.match(markup, /data-label="Bank \/ Branch"/);
+    assert.doesNotMatch(markup, /Bank \/ Branch/);
+    assert.doesNotMatch(markup, /data-label="Bank \/ Branch"/);
     assert.doesNotMatch(markup, /Swipe the table sideways/);
     assert.match(markup, /Employer Accounts/);
     assert.match(markup, /Certificate/);
-    assert.match(markup, /Test Bank \/ Main/);
+    assert.doesNotMatch(markup, /Test Bank \/ Main/);
     assert.match(markup, /Edit /);
     assert.match(markup, /Delete /);
     assert.match(markup, /Add Entry/);
   });
 
-  it('keeps sample lookup fixtures available without crowding the primary reference form', () => {
+  it('uses the exact authenticated manual-input inventory; system-fed sections have none', () => {
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['salary-others'], [
+      'depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount',
+    ]);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['service-payment'], OFFICIAL_INPUT_KEYS['salary-others']);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['other-tds'], [
+      'paymentPurpose', ...OFFICIAL_INPUT_KEYS['service-payment']!,
+    ]);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS.refund, [
+      'assessmentYear', 'referenceNo', 'submissionDate', 'returnFilingZone',
+      'returnFilingCircle', 'refundAmount', 'adjustmentClaimAmount',
+    ]);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['sec-154'], ['challanNo']);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['sec-173'], ['challanNo']);
+    for (const id of ['bank-fi', 'dividend', 'sanchayapatra', 'system-import', 'ait-import',
+      'environmental-surcharge', 'carry-forward', 'salary-ibas'] as const) {
+      assert.deepEqual(OFFICIAL_INPUT_KEYS[id], [], id);
+    }
+    assert.ok(OTHER_TDS_PURPOSES.includes('Trade License Renewal [ Section-131]'));
+    assert.ok(LTU_SECTIONS.includes('Salary [ Section-86]'));
+    assert.ok(REFUND_TAX_ZONES.includes('Taxes zone-2, Dhaka'));
+  });
+
+  it('renders source-backed manual route tables with precisely the official columns', () => {
+    for (const [routeId, first, last] of [
+      ['service-payment', 'Depositing Authority', 'Claimed Amount'],
+      ['other-tds', 'Purpose of the Payment', 'Claimed Amount'],
+      ['source-ltu', 'Section', 'Challan No'],
+      ['refund', 'Assessment Year', 'Adjustment Claim Amount'],
+    ] as const) {
+      const markup = renderToStaticMarkup(React.createElement(OfficialManualClaimsTable, {
+        entries: [], routeId, assessmentYear: '2026-2027', defaultSection: 'Sec 86',
+        onSaveNewEntry: async () => ({ success: true }),
+        onUpdateEntry: async () => ({ success: true }),
+        onDeleteEntry: async () => true,
+      }));
+      assert.match(markup, new RegExp(first));
+      assert.match(markup, new RegExp(last));
+      assert.doesNotMatch(markup, /<th[^>]*>Status<\/th>/);
+    }
+  });
+
+  it('renders source-fed columns with no invented manual Add or ledger status fields', () => {
+    assert.equal(OFFICIAL_READONLY_COLUMNS['bank-fi'].length, 7);
+    assert.equal(OFFICIAL_READONLY_COLUMNS.dividend.length, 7);
+    assert.equal(OFFICIAL_READONLY_COLUMNS.sanchayapatra.length, 7);
+    assert.equal(OFFICIAL_READONLY_COLUMNS['system-import'].length, 11);
+    assert.deepEqual(OFFICIAL_READONLY_COLUMNS['ait-import'], OFFICIAL_READONLY_COLUMNS['system-import']);
+    assert.equal(OFFICIAL_READONLY_COLUMNS['car-ait'].length, 6);
+    assert.equal(OFFICIAL_READONLY_COLUMNS['sec-154'].length, 10);
+    assert.deepEqual(OFFICIAL_READONLY_COLUMNS['sec-173'], OFFICIAL_READONLY_COLUMNS['sec-154']);
+    const markup = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
+      routeId: 'sec-154', entries: [],
+    }));
+    assert.match(markup, /Payment Mode/);
+    assert.match(markup, /Circle/);
+    assert.doesNotMatch(markup, /Add Entry|Section|Status/);
+  });
+
+  it('exposes only the observed Section 163 Claim action, with no speculative manual fields', () => {
+    const markup = renderToStaticMarkup(React.createElement(OfficialCarryForwardPanel, {}));
+    assert.match(markup, />Claim<\/button>/);
+    assert.match(markup, /Pending/);
+    assert.doesNotMatch(markup, /<input|<select|Add Entry|Assessment Order/);
+  });
+
+  it('shows only the original vehicle transaction field, Search and Reset actions', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(SystemLookupPanel, {
         routeId: 'car-ait', category: 'AIT', defaultSection: 'Sec 153',
         lookupPlaceholder: 'Reference', helperText: 'Local records',
       })));
-    assert.match(markup, /<details class="eledger-lookup-examples/);
-    assert.match(markup, /Example references/);
-    assert.match(markup, /eledger-reference-example/);
+    assert.match(markup, /Unique Key \(Transaction No\.\)/);
+    assert.match(markup, />Search<\/span>/);
+    assert.match(markup, />Reset<\/button>/);
+    assert.doesNotMatch(markup, /eledger-lookup-examples/);
     assert.doesNotMatch(markup, /Sample references:/);
   });
 
@@ -1913,12 +1985,10 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(SourceTaxView)));
     assert.match(markup, /iBAS\+\+ \(Salary\) TDS/);
-    assert.match(markup, /View local records/);
+    assert.match(markup, /No TDS data found/);
     assert.doesNotMatch(markup, /Search local records/);
-    assert.match(markup, /TDS Available \(local records only\)/);
-    assert.match(markup, /Official submission requires a verified CGA\/iBAS\+\+ connection/);
-    assert.match(markup, /readOnly/);
-    assert.match(markup, /Why can’t I save/);
+    assert.doesNotMatch(markup, /TDS Available \(local records only\)/);
+    assert.doesNotMatch(markup, /Add Entry/);
   });
 
   it('renders original-style AIT categories with local-only lookup and safe claim totals', () => {
@@ -1928,7 +1998,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Total claimed/);
     assert.match(markup, /Reference lookup/);
     assert.match(markup, /Local demonstration records only/);
-    assert.match(markup, /Recorded Ledger Entries/);
+    assert.match(markup, /Registration No/);
+    assert.match(markup, /Chasis No/);
+    assert.doesNotMatch(markup, /Add Entry/);
     assert.match(markup, /Recorded claims require independent verification/);
     assert.doesNotMatch(markup, /eledger-route-overview/);
     assert.equal(getCurrentRoutesByGroup('AIT').length, 3);
