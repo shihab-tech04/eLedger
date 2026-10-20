@@ -13,6 +13,7 @@ import { CARRY_FORWARD_CLASSIFICATIONS, getPriorAssessmentYears, readCarryForwar
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { CheckCircle2, AlertCircle, Pencil, Plus } from 'lucide-react';
 import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
+import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
 
 interface SingleClaimPanelProps {
   existingClaim?: LedgerEntry;
@@ -141,98 +142,37 @@ export const SingleClaimPanel: React.FC<SingleClaimPanelProps> = ({ existingClai
       {formOpen && <LedgerFormModal title={existingClaim ? t('Edit claim','দাবি সম্পাদনা') : t('Add Entry','রেকর্ড যোগ করুন')} onClose={() => setFormOpen(false)}>
       {message?.type === 'error' && <p role="alert" className="eledger-claim-modal-error">{message.text}</p>}
       <form onSubmit={handleSaveClaim} className="eledger-form-grid eledger-single-claim-form">
-        <div>
-          <label htmlFor="carry-prior-year" className="block text-xs font-medium text-slate-700 mb-1">
-            {t('Prior Assessment Year of Origin','পূর্ববর্তী করবর্ষ')}
-          </label>
-          <select
-            id="carry-prior-year"
-            value={priorAssessmentYear}
-            onChange={(e) => setPriorAssessmentYear(e.target.value)}
-            className="eledger-control"
-          >
+        <LedgerSelect id="carry-prior-year" label={t('Prior Assessment Year of Origin','পূর্ববর্তী করবর্ষ')}
+          value={priorAssessmentYear} onValueChange={setPriorAssessmentYear}>
             {priorYearOptions.map((year, index) => (
               <option key={year} value={year}>
                 {year}{index === 0 ? t(' (Immediately Preceding Year)',' (অবিলম্বে পূর্ববর্তী বছর)') : ''}
               </option>
             ))}
-          </select>
-        </div>
+        </LedgerSelect>
 
-        <div>
-          <label htmlFor="carry-classification" className="block text-xs font-medium text-slate-700 mb-1">
-            {t('Credit / Adjustment Classification','ক্রেডিট / সমন্বয়ের ধরন')}
-          </label>
-          <select
-            id="carry-classification"
-            value={lossOrCreditType}
-            onChange={(e) => setLossOrCreditType(e.target.value)}
-            className="eledger-control"
-          >
+        <LedgerSelect id="carry-classification" label={t('Credit / Adjustment Classification','ক্রেডিট / সমন্বয়ের ধরন')}
+          value={lossOrCreditType} onValueChange={setLossOrCreditType}>
             {(existingClaim ? CARRY_FORWARD_CLASSIFICATIONS : CARRY_FORWARD_CLASSIFICATIONS.slice(0, 1)).map((classification) => (
               <option key={classification} value={classification}>{classification === 'Unabsorbed Minimum Tax Credit (Sec 163)' ? t(classification,'অব্যবহৃত ন্যূনতম কর ক্রেডিট (ধারা ১৬৩)') : classification}</option>
             ))}
-          </select>
-        </div>
+        </LedgerSelect>
 
-        <div>
-          <label htmlFor="carry-order" className="block text-xs font-medium text-slate-700 mb-1">
-            {t('Assessment Order / Demand Notice Reference No','কর নির্ধারণ আদেশ / দাবি নোটিশের রেফারেন্স নম্বর')}
-          </label>
-          <input
-            id="carry-order"
-            type="text"
-            value={assessmentOrderNo}
-            onChange={(e) => setAssessmentOrderNo(e.target.value)}
-            placeholder="e.g. CIR-015/ORD/2025-781"
-            className="eledger-control"
-            required
-          />
-        </div>
+        <LedgerInput id="carry-order" label={t('Assessment Order / Demand Notice Reference No','কর নির্ধারণ আদেশ / দাবি নোটিশের রেফারেন্স নম্বর')}
+          value={assessmentOrderNo} onValueChange={setAssessmentOrderNo}
+          placeholder="e.g. CIR-015/ORD/2025-781" required />
 
-        <div>
-          <label htmlFor="carry-circle" className="block text-xs font-medium text-slate-700 mb-1">
-            {t('Assessing Officer / Circle Name','কর নির্ধারণকারী কর্মকর্তা / সার্কেলের নাম')}
-          </label>
-          <input
-            id="carry-circle"
-            type="text"
-            value={assessingCircle}
-            onChange={(e) => setAssessingCircle(e.target.value)}
-            placeholder="Circle-015, Taxes Zone-08"
-            className="eledger-control"
-            required
-          />
-        </div>
+        <LedgerInput id="carry-circle" label={t('Assessing Officer / Circle Name','কর নির্ধারণকারী কর্মকর্তা / সার্কেলের নাম')}
+          value={assessingCircle} onValueChange={setAssessingCircle}
+          placeholder="Circle-015, Taxes Zone-08" required />
 
         <div className="eledger-full-row">
-          <label htmlFor="carry-credit" className="block text-xs font-medium text-slate-700 mb-1">
-            {t('Claimable Credit Amount (৳)','দাবিযোগ্য ক্রেডিটের অঙ্ক (৳)')}
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-2 text-xs font-bold text-slate-500">৳</span>
-            <input
-              id="carry-credit"
-              type="number"
-              value={unabsorbedCredit}
-              onChange={(e) => setUnabsorbedCredit(e.target.value)}
-              placeholder="0.00"
-              min="1"
-              step="any"
-              className="eledger-control pl-8 is-number"
-              required
-            />
-          </div>
+          <LedgerInput id="carry-credit" label={t('Claimable Credit Amount (৳)','দাবিযোগ্য ক্রেডিটের অঙ্ক (৳)')}
+            type="number" value={unabsorbedCredit} onValueChange={setUnabsorbedCredit}
+            placeholder="0.00" min="1" step="any" className="is-number" required />
         </div>
 
         <div className="eledger-full-row eledger-form-actions">
-          <div className="text-xs text-slate-600">
-            {existingClaim ? (
-              <span>{t('Currently Recorded:','বর্তমানে রেকর্ডকৃত:')} <strong>{formatCurrencyBDT(existingClaim.taxDeducted)}</strong></span>
-            ) : (
-              <span>{t(`No carry-forward claim currently registered for AY ${assessmentYear}.`,`${assessmentYear} করবর্ষে কোনো পূর্ববর্তী কর সমন্বয় রেকর্ড হয়নি।`)}</span>
-            )}
-          </div>
           <button type="button" className="eledger-button eledger-button-secondary" onClick={() => setFormOpen(false)}>
             {t('Cancel','বাতিল')}
           </button>
