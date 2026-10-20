@@ -352,9 +352,10 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
         );
       case 'PENDING_VERIFICATION':
         return (
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300"
+            aria-label={t('Pending Verification','যাচাই অপেক্ষমাণ')} title={t('Pending Verification','যাচাই অপেক্ষমাণ')}>
             <Clock className="w-3 h-3 mr-1" />
-            {t('Pending Verification','যাচাই অপেক্ষমাণ')}
+            {t('Pending','অপেক্ষমাণ')}
           </span>
         );
       case 'DRAFT':
@@ -510,7 +511,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
             <tfoot className="bg-slate-50 border-t-2 border-slate-300 font-semibold text-slate-800">
               <tr>
                 <td colSpan={3} className="px-3 py-2.5 text-xs uppercase tracking-wider text-slate-600">
-                  {t('Total for this view','এই পাতার মোট')} ({entries.length} {t('records','রেকর্ড')})
+                  {t('Total','মোট')}
                 </td>
                 <td className="px-3 py-2.5 text-right text-xs">
                   {formatCurrencyBDT(
