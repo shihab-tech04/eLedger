@@ -3,6 +3,8 @@ import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../../domain/csvImport.ts';
 import { LedgerTip } from '../ui/LedgerForm.tsx';
+import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
+import { Upload } from 'lucide-react';
 
 /** Local CSV entry is not an official customs/ASYCUDA data feed. */
 export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' }> = ({ routeId }) => {
@@ -11,6 +13,7 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
   const [csv, setCsv] = useState('');
   const [feedback, setFeedback] = useState<{ error?: string; success?: string }>({});
   const [busy, setBusy] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   const importRows = async () => {
     if (busy) return;
@@ -22,6 +25,7 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
       if (!result.success) throw new Error(result.error || 'Batch import rejected.');
       setCsv('');
       setFeedback({ success: t(`${result.count} local reference records imported as pending claims. No government verification was performed.`,`${result.count}টি স্থানীয় রেফারেন্স যাচাই অপেক্ষমাণ দাবি হিসেবে আমদানি হয়েছে। কোনো সরকারি যাচাই হয়নি।`) });
+      setFormOpen(false);
     } catch (error) {
       setFeedback({ error: error instanceof Error ? error.message : 'CSV could not be imported.' });
     } finally {
@@ -45,15 +49,24 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
   };
 
   return (
-    <section className="eledger-panel p-4 space-y-3">
-      <div className="eledger-workflow-heading">
+    <section className="eledger-panel eledger-claim-summary">
+      <div className="eledger-ledger-toolbar">
         <h2>{t('Section 120 · CSV import','ধারা ১২০ · CSV আমদানি')}</h2>
+        <button type="button" className="eledger-button eledger-button-primary" onClick={() => { setFeedback({}); setFormOpen(true); }}>
+          <Upload size={16}/>{t('Import CSV','CSV আমদানি')}
+        </button>
+      </div>
+      <div className="eledger-claim-summary-content">
+        <span>{t('Import multiple references from one CSV file.','একটি CSV ফাইল থেকে একাধিক রেফারেন্স আমদানি করুন।')}</span>
         <LedgerTip label={t('CSV format and limits','CSV ফরম্যাট ও সীমা')}>
           <p>{t('Use this exact column order:','এই ক্রমে কলাম ব্যবহার করুন:')}</p>
           <code className="block my-1 break-all">{SECTION120_CSV_HEADERS.join(',')}</code>
           <p>{t('1–100 rows; all-or-nothing local import for TIN','১–১০০টি সারি; নির্বাচিত TIN-এর জন্য একসঙ্গে স্থানীয় আমদানি')} {taxpayer.tin}, {t('AY','করবর্ষ')} {assessmentYear}. {t('No live customs verification.','সরাসরি কাস্টমস যাচাই নেই।')}</p>
         </LedgerTip>
       </div>
+      {feedback.success && <p role="status" className="eledger-claim-feedback">{feedback.success}</p>}
+      {formOpen && <LedgerFormModal title={t('Import CSV','CSV আমদানি')} onClose={() => { if (!busy) setFormOpen(false); }}>
+      <div className="eledger-csv-form">
       <label className="eledger-form-field">
         <span className="block mb-1">{t('Choose a local CSV file (optional)','স্থানীয় CSV ফাইল বাছুন (ঐচ্ছিক)')}</span>
         <input type="file" accept=".csv,text/csv" onChange={readLocalFile} className="eledger-file-control" />
@@ -71,10 +84,14 @@ export const CsvImportPanel: React.FC<{ routeId: 'system-import' | 'ait-import' 
         />
       </label>
       {feedback.error && <p role="alert" className="p-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 rounded">{feedback.error}</p>}
-      {feedback.success && <p role="status" className="p-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded">{feedback.success}</p>}
+      <div className="eledger-form-actions">
+      <button type="button" className="eledger-button eledger-button-secondary" disabled={busy} onClick={() => setFormOpen(false)}>{t('Cancel','বাতিল')}</button>
       <button type="button" onClick={importRows} disabled={!csv.trim() || busy} className="eledger-button eledger-button-primary">
         {busy ? t('Importing…','আমদানি হচ্ছে…') : t('Import Pending CSV Claims','যাচাই অপেক্ষমাণ CSV দাবি আমদানি করুন')}
       </button>
+      </div>
+      </div>
+      </LedgerFormModal>}
     </section>
   );
 };

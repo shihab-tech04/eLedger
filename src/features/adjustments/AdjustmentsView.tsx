@@ -21,7 +21,6 @@ export const AdjustmentsView: React.FC = () => {
     entries,
     activeRouteId,
     setActiveRouteId,
-    setActiveNavTab,
     addEntry,
     updateEntry,
     deleteEntry,
@@ -88,7 +87,7 @@ export const AdjustmentsView: React.FC = () => {
 
   return (
     <div className="eledger-financial-page">
-      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+      <LedgerPageHeader
         title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.id === 'refund' ? 'Adjustment of Tax Refund' : 'Adjustment of carry forward tax u/s 163'}
         caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 

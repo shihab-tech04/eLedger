@@ -15,7 +15,7 @@ const money = (value: number) => value.toLocaleString('en-IN', { maximumFraction
 
 export const AitView: React.FC = () => {
   const {
-    entries, activeRouteId, setActiveRouteId, setActiveNavTab,
+    entries, activeRouteId, setActiveRouteId,
     addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
   const t = useLedgerCopy();
@@ -70,7 +70,7 @@ export const AitView: React.FC = () => {
 
   return (
     <div className="eledger-financial-page">
-      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+      <LedgerPageHeader
         title={language === 'bn' ? currentRoute.bengaliTitle : title}
         caption={language === 'bn' ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)') : currentRoute.statutorySection}/>
 

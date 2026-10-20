@@ -18,7 +18,7 @@ const money = (value: number) => value.toLocaleString('en-IN', { maximumFraction
 
 export const SourceTaxView: React.FC = () => {
   const {
-    entries, activeRouteId, setActiveRouteId, setActiveNavTab,
+    entries, activeRouteId, setActiveRouteId,
     addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
   const t = useLedgerCopy();
@@ -70,7 +70,7 @@ export const SourceTaxView: React.FC = () => {
 
   return (
     <div className="eledger-financial-page">
-      <LedgerPageHeader onBack={() => setActiveNavTab('dashboard')}
+      <LedgerPageHeader
         title={language === 'bn' ? currentRoute.bengaliTitle : heading} caption={localizedCaption}/>
 
       {/* Legacy route tabs remain accessible on mobile, despite the restored desktop sidebar. */}
