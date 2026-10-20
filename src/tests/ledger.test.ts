@@ -69,7 +69,7 @@ import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarry
 import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
 import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../domain/officialLedgerFields.ts';
 import { REFUND_CIRCLES_BY_ZONE, refundCirclesForZone } from '../domain/refundCircleOptions.ts';
-import { SourceTaxView } from '../features/source-tax/SourceTaxView.tsx';
+import { SourceTaxView, OBSERVED_SOURCE_TAX_HEADINGS } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
 import { PaymentsView } from '../features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
@@ -80,6 +80,23 @@ import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+  it('matches the observed Source Tax headings without rewriting legal registry metadata', () => {
+    assert.deepEqual(OBSERVED_SOURCE_TAX_HEADINGS, {
+      'salary-ibas': 'iBAS++ (Salary) TDS',
+      'salary-others': 'Salary (Others)',
+      'bank-fi': 'Bank TDS',
+      dividend: 'Dividend',
+      'service-payment': 'Service Payment',
+      sanchayapatra: 'Sanchayapatra',
+      'system-import': 'Import (120) TDS Details',
+      'source-ltu': 'Source Tax LTU',
+      'commercial-source': 'Commercial Vehicle',
+      'other-tds': 'Other TDS Entry',
+    });
+    assert.equal(getRouteById('system-import')?.title, 'System Records & Import TDS');
+    assert.equal(getRouteById('sanchayapatra')?.statutorySection, 'Sec 105 (ITA 2023)');
+  });
+
   it('starts a new browser without invented tax credits or Income declarations', async () => {
     const values = new Map<string, string>();
     const storage = {

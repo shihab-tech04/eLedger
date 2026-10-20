@@ -15,6 +15,20 @@ import { LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerPageHeader, LedgerSummary } from '../../components/ui/LedgerPage.tsx';
 import { filterEntriesByRoute } from '../../domain/calculations.ts';
 
+/** Source-observed page copy. Legal metadata stays in the route registry. */
+export const OBSERVED_SOURCE_TAX_HEADINGS: Readonly<Record<string, string>> = {
+  'salary-ibas': 'iBAS++ (Salary) TDS',
+  'salary-others': 'Salary (Others)',
+  'bank-fi': 'Bank TDS',
+  dividend: 'Dividend',
+  'service-payment': 'Service Payment',
+  sanchayapatra: 'Sanchayapatra',
+  'system-import': 'Import (120) TDS Details',
+  'source-ltu': 'Source Tax LTU',
+  'commercial-source': 'Commercial Vehicle',
+  'other-tds': 'Other TDS Entry',
+};
+
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
 export const SourceTaxView: React.FC = () => {
@@ -63,15 +77,16 @@ export const SourceTaxView: React.FC = () => {
   };
   const handleDeleteEntry = (id: string) => deleteEntry(id);
 
-  const heading = isIbas ? 'iBAS++ (Salary) TDS' : isSalaryOthers ? 'Salary (Others)' :
-    isServicePayment ? 'Service Payment' : currentRoute.title;
+  const heading = OBSERVED_SOURCE_TAX_HEADINGS[currentRoute.id] ?? currentRoute.title;
   const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
     isIbas ? 'Local iBAS++ payroll references — not connected to CGA' :
-    isServicePayment ? 'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [Section-90]' : currentRoute.statutorySection;
+    isServicePayment ? 'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [Section-90]' : undefined;
   const localizedCaption = language === 'bn'
     ? isSalaryOthers ? 'বেতন · ধারা ৮৬'
       : isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই'
-      : currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
+      : isServicePayment
+        ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
+        : undefined
     : caption;
 
   return (
