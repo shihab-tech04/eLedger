@@ -67,10 +67,10 @@ import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
 import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType, clearManualFieldIssueAfterEdit } from '../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
-import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
+import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../components/tables/OfficialReadOnlyTable.tsx';
 import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../domain/officialLedgerFields.ts';
 import { REFUND_CIRCLES_BY_ZONE, refundCirclesForZone } from '../domain/refundCircleOptions.ts';
-import { SourceTaxView, OBSERVED_SOURCE_TAX_HEADINGS } from '../features/source-tax/SourceTaxView.tsx';
+import { SourceTaxView, OBSERVED_SOURCE_TAX_HEADINGS, hasReadOnlyIncomeSync } from '../features/source-tax/SourceTaxView.tsx';
 import { AitView } from '../features/ait/AitView.tsx';
 import { PaymentsView } from '../features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
@@ -83,6 +83,18 @@ import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+
+  it('exposes income-sync on existing read-only bank, dividend and Sanchayapatra routes only', () => {
+    for (const route of ['bank-fi', 'dividend', 'sanchayapatra'] as const) {
+      assert.equal(hasReadOnlyIncomeSync(route), true, route);
+      assert.equal(isOfficialReadOnlyRoute(route), true, route);
+      assert.deepEqual(OFFICIAL_INPUT_KEYS[route], [], route);
+    }
+    for (const route of ['salary-ibas', 'salary-others', 'other-tds', 'source-ltu', 'system-import', 'car-ait'] as const) {
+      assert.equal(hasReadOnlyIncomeSync(route), false, route);
+    }
+    assert.equal(CURRENT_ROUTE_REGISTRY.length, 18);
+  });
 
   it('clears the edited Refund field error without hiding unrelated missing or invalid inputs', () => {
     const original = { total: 'required', claim: 'required', circle: 'invalidCircle' } as const;

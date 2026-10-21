@@ -77,6 +77,18 @@ async function testViewport(browser,width){
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
  report.push({width,check:'fresh native storage',pass:true});
+ // Source-evidenced Income Sync is a disclosure, not an invented manual Add form.
+ for (const route of ['Bank/FI Interest/Profit','Sanchayapatra']) {
+  await openRoute(page,route,width);
+  const disclosure=page.locator('details.eledger-workflow-disclosure summary');
+  await disclosure.waitFor({state:'visible'});
+  assert.match(await disclosure.innerText(),/Sync from Income/);
+  assert.equal(await page.getByRole('button',{name:'Add Entry',exact:true}).count(),0);
+  await disclosure.click();
+  await page.getByText(/No pending declared income sources found/).waitFor({state:'visible'});
+  assert.deepEqual(await stored(page),[],'Income disclosure must not write claims');
+  report.push({width,category:route,check:'read-only Income Sync disclosure; no invented declarations',pass:true});
+ }
  for(const c of cases){
   await openRoute(page,c.route,width);
   const add=c.route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
