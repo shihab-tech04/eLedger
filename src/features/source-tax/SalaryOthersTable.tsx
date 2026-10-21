@@ -88,7 +88,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     const evidence = normalizeClaimEvidence({
       ...oldEvidence,
       depositingAuthority: draft.authority.trim(),
-      paymentDocumentType: draft.documentType,
+      paymentDocumentType: draft.documentType as 'CHALLAN' | 'CERTIFICATE',
       documentAmount,
     }) ?? {};
     const payload: SalaryPayload = {
