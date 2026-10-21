@@ -2032,6 +2032,37 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.doesNotMatch(markup, /Add Entry|Section|Status/);
   });
 
+  it('preserves authenticated Bank/FI seven-column output and forbids manual Add for empty or saved records', () => {
+    assert.deepEqual(OFFICIAL_READONLY_COLUMNS['bank-fi'], [
+      'SL.', 'Bank Name', 'Account Type', 'Branch Name', 'Account Number', 'Interest Amount', 'TDS',
+    ]);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['bank-fi'], []);
+
+    const emptyBank = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
+      routeId: 'bank-fi', entries: [],
+    }));
+    assert.equal((emptyBank.match(/<th\\b/g) ?? []).length, 7);
+    assert.match(emptyBank, /<td colSpan="7">No Data Found<\\/td>/);
+    assert.doesNotMatch(emptyBank, /Add Entry|Delete row|Edit entry|Bank \\/ Branch/);
+
+    const bankRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'bank-fi');
+    assert.ok(bankRecord);
+    const recordedBank = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
+      routeId: 'bank-fi', entries: [bankRecord],
+    }));
+    for (const label of ['Bank Name', 'Account Type', 'Branch Name', 'Account Number', 'Interest Amount', 'TDS']) {
+      assert.match(recordedBank, new RegExp('data-label="' + label + '"'));
+    }
+    assert.match(recordedBank, /Sonali Bank PLC/);
+    assert.match(recordedBank, /1,20,000/);
+    assert.match(recordedBank, /12,000/);
+    assert.doesNotMatch(recordedBank, /Add Entry|Edit entry|Delete row|Verified Tax Credit/);
+
+    const bengaliEmpty = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+      React.createElement(OfficialReadOnlyTable, { routeId: 'bank-fi', entries: [] })));
+    assert.match(bengaliEmpty, /কোনো তথ্য পাওয়া যায়নি/);
+  });
+
   it('shows human-readable, bilingual savings status without exposing internal state identifiers', () => {
     const savingsEntry = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'sanchayapatra')!;
     const english = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
