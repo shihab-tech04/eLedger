@@ -83,9 +83,26 @@ try {
   assert.equal(await page.evaluate(()=>localStorage.getItem('nbr_eledger_entries_v1')),'[]');
   out.viewports.push(width);
   for(const [id,label,group] of routes){
+   if(group==='status'){
+    await openNav(page,label,group,width);
+    await page.getByRole('dialog',{name:'Tax Payment Status'}).waitFor();
+    await checkOverflow(page);
+    let shot=await screenshot(page,String(width)+'/'+id+'-en');
+    out.routes.push({width,id,originalNavLabel:label,language:'en',visual:shot,pass:true});
+    await page.getByRole('button',{name:'Close Tax Payment Status'}).click();
+    await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+    if(width<600)await page.getByRole('button',{name:'লেজার মেনু খুলুন'}).click();
+    await page.locator('aside.eledger-sidebar').getByRole('button',{name:'কর পরিশোধের অবস্থা',exact:true}).click();
+    await page.getByRole('dialog',{name:'কর পরিশোধের অবস্থা'}).waitFor();
+    await checkOverflow(page);
+    shot=await screenshot(page,String(width)+'/'+id+'-bn');
+    out.routes.push({width,id,originalNavLabel:label,language:'bn',visual:shot,pass:true});
+    await page.getByRole('button',{name:'কর পরিশোধের বিবরণ বন্ধ করুন'}).click();
+    await page.getByRole('button',{name:'English',exact:true}).click();
+    continue;
+   }
    await openNav(page,label,group,width);
-   if(group==='status')await page.getByRole('dialog',{name:'Tax Payment Status'}).waitFor();
-   else await page.locator('main.eledger-main').waitFor();
+   await page.locator('main.eledger-main').waitFor();
    for(const lang of ['en','bn']){
     if(lang==='bn')await page.getByRole('button',{name:'বাংলা',exact:true}).click();
     const langValue=await page.locator('.eledger-app').getAttribute('lang');
@@ -95,7 +112,6 @@ try {
     out.routes.push({width,id,originalNavLabel:label,language:lang,visual:shot,pass:true});
    }
    await page.getByRole('button',{name:'English',exact:true}).click();
-   if(group==='status')await page.getByRole('button',{name:'Close Tax Payment Status'}).click();
   }
   for(const [route,expectedFields,id] of forms){
    const group=route==='Adjustment of Tax Refund'?'direct':'source';
