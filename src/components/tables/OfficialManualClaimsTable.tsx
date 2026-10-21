@@ -5,6 +5,7 @@ import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTyp
 import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { validateDocumentClaimDraft, documentClaimIssueText, type DocumentClaimField, type DocumentClaimIssues, type DocumentClaimIssue } from '../../domain/documentClaimValidation.ts';
+import { validateLtuAdd, validateRefundAdd, type ManualAddIssue } from '../../domain/manualAddValidation.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
@@ -83,14 +84,19 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const [active, setActive] = useState<string | 'new' | null>(null);
   const [draft, setDraft] = useState<Draft>(() => blank(routeId, assessmentYear));
   const [error, setError] = useState<string | null>(null);
-  const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues & { purpose?: DocumentClaimIssue }>({});
+  const [fieldIssues, setFieldIssues] = useState<Partial<Record<keyof Draft | DocumentClaimField, ManualAddIssue | DocumentClaimIssue>>>({});
   const [saving, setSaving] = useState(false);
   const change = (name: keyof Draft, value: string) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
     const errorKey = name === 'total' ? 'documentAmount' : name === 'claim' ? 'claimedAmount' : name;
     setFieldIssues((prev) => ({ ...prev, [errorKey]: undefined }));
   };
-  const fieldError = (field: DocumentClaimField | 'purpose') => documentClaimIssueText(fieldIssues[field], t);
+  const fieldError = (field: keyof Draft | DocumentClaimField): string | undefined => {
+    const issue = fieldIssues[field];
+    if (issue === 'invalidCircle') return t('Select a Circle in the selected Tax Zone', 'নির্বাচিত কর অঞ্চলের সার্কেল দিন');
+    if (issue === 'exceedsSupportingAmount') return t('Cannot exceed refund amount', 'ফেরতের অঙ্কের বেশি নয়');
+    return documentClaimIssueText(issue, t);
+  };
   const cancel = () => { setActive(null); setFieldIssues({}); setError(null); };
   const openNew = () => { setDraft(blank(routeId, assessmentYear)); setFieldIssues({}); setError(null); setActive('new'); };
   const openEdit = (entry: LedgerEntry) => {
@@ -103,6 +109,11 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   };
 
   const buildPayload = (): Payload | null => {
+    if (routeId === 'source-ltu' || routeId === 'refund') {
+      const issues = routeId === 'source-ltu' ? validateLtuAdd(draft) : validateRefundAdd(draft);
+      setFieldIssues(issues);
+      if (Object.keys(issues).length > 0) return null;
+    }
     if (routeId === 'service-payment' || routeId === 'other-tds') {
       const issues: DocumentClaimIssues & { purpose?: DocumentClaimIssue } = validateDocumentClaimDraft({
         authority: draft.authority,
@@ -234,15 +245,15 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
           value={draft.claim} onValueChange={(v) => change('claim', v)}/>
       </>}
       {routeId === 'source-ltu' && <>
-        <LedgerSelect label={t('Section','ধারা')} required value={draft.section} onValueChange={(v) => change('section', v)}>
+        <LedgerSelect label={t('Section','ধারা')} error={fieldError('section')} required value={draft.section} onValueChange={(v) => change('section', v)}>
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
           {LTU_SECTIONS.map((section) => <option value={section} key={section}>{section}</option>)}
         </LedgerSelect>
-        <LedgerInput label={t('Amount','অঙ্ক')} type="number" min="0.01" step="any" required
-          value={draft.claim} onValueChange={(v) => setDraft((p) => ({ ...p, claim: v, total: v }))}/>
-        <LedgerInput label={t('Challan No','চালান নম্বর')} required value={draft.reference}
+        <LedgerInput label={t('Amount','অঙ্ক')} error={fieldError('claim')} type="number" min="0.01" step="any" required
+          value={draft.claim} onValueChange={(v) => { setDraft((p) => ({ ...p, claim: v, total: v })); setFieldIssues((p) => ({ ...p, claim: undefined })); }}/>
+        <LedgerInput label={t('Challan No','চালান নম্বর')} error={fieldError('reference')} required value={draft.reference}
           onValueChange={(v) => change('reference', v)}/>
-        <LedgerInput label={t('Description','বিবরণ')} required value={draft.description}
+        <LedgerInput label={t('Description','বিবরণ')} error={fieldError('description')} required value={draft.description}
           onValueChange={(v) => change('description', v)}/>
         <label className="eledger-form-field"><span>{t('File','ফাইল')}</span>
           <input className="eledger-control" type="file" aria-label={t('File','ফাইল')}
@@ -250,26 +261,26 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         </label>
       </>}
       {routeId === 'refund' && <>
-        <LedgerInput label={t('Assessment Year','করবর্ষ')} required value={draft.assessmentYear}
+        <LedgerInput label={t('Assessment Year','করবর্ষ')} error={fieldError('assessmentYear')} required value={draft.assessmentYear}
           onValueChange={(v) => change('assessmentYear', v)}/>
-        <LedgerInput label={t('Return Register No. / Reference No.','রিটার্ন রেজিস্টার / রেফারেন্স নম্বর')} required
+        <LedgerInput label={t('Return Register No. / Reference No.','রিটার্ন রেজিস্টার / রেফারেন্স নম্বর')} error={fieldError('reference')} required
           value={draft.reference} onValueChange={(v) => change('reference', v)}/>
-        <LedgerInput label={t('Date of Submission','দাখিলের তারিখ')} type="date" required
+        <LedgerInput label={t('Date of Submission','দাখিলের তারিখ')} error={fieldError('date')} type="date" required
           value={draft.date} onValueChange={(v) => change('date', v)}/>
-        <LedgerSelect label={t('Return Filing Zone','রিটার্ন দাখিল অঞ্চল')} required
-          value={draft.zone} onValueChange={(v) => setDraft((p) => ({ ...p, zone: v, circle: '' }))}>
+        <LedgerSelect label={t('Return Filing Zone','রিটার্ন দাখিল অঞ্চল')} error={fieldError('zone')} required
+          value={draft.zone} onValueChange={(v) => { setDraft((p) => ({ ...p, zone: v, circle: '' })); setFieldIssues((p) => ({ ...p, zone: undefined, circle: undefined })); }}>
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
           {REFUND_TAX_ZONES.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
         </LedgerSelect>
-        <LedgerSelect label={t('Return Filing Circle','রিটার্ন দাখিল সার্কেল')} required value={draft.circle}
+        <LedgerSelect label={t('Return Filing Circle','রিটার্ন দাখিল সার্কেল')} error={fieldError('circle')} required value={draft.circle}
           onValueChange={(v) => change('circle', v)}>
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
           {refundCirclesForZone(draft.zone).map((circle) =>
             <option key={circle} value={circle}>{circle}</option>)}
         </LedgerSelect>
-        <LedgerInput label={t('Refund Amount','ফেরতের অঙ্ক')} type="number" min="0.01" step="any" required
+        <LedgerInput label={t('Refund Amount','ফেরতের অঙ্ক')} error={fieldError('total')} type="number" min="0.01" step="any" required
           value={draft.total} onValueChange={(v) => change('total', v)}/>
-        <LedgerInput label={t('Adjustment Claim Amount','সমন্বয়ের দাবিকৃত অঙ্ক')} type="number" min="0.01" step="any" required
+        <LedgerInput label={t('Adjustment Claim Amount','সমন্বয়ের দাবিকৃত অঙ্ক')} error={fieldError('claim')} type="number" min="0.01" step="any" required
           value={draft.claim} onValueChange={(v) => change('claim', v)}/>
       </>}
     </LedgerFormGrid>
@@ -302,7 +313,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
     {error && active === null && <p role="alert" className="eledger-entry-error">{error}</p>}
     {active !== null && <LedgerFormModal title={active === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
       onClose={() => { if (!saving) cancel(); }}>
-      <form noValidate={routeId === 'service-payment' || routeId === 'other-tds'} aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
+      <form noValidate aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
         onSubmit={(event) => { event.preventDefault(); void save(); }}>
         {error && <p role="alert" className="eledger-entry-error">{error}</p>}
         {fieldSet()}
