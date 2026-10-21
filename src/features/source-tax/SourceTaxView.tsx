@@ -3,7 +3,7 @@ import { List, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
-import type { LedgerEntry, ClaimEvidence } from '../../domain/models.ts';
+import type { LedgerEntry, ClaimEvidence, LedgerRouteId } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SalaryOthersTable } from './SalaryOthersTable.tsx';
 import { OfficialManualClaimsTable } from '../../components/tables/OfficialManualClaimsTable.tsx';
@@ -30,6 +30,14 @@ export const OBSERVED_SOURCE_TAX_HEADINGS: Readonly<Record<string, string>> = {
 };
 
 const money = (value: number) => value.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+/** Routes whose income-fed claims are read-only in the original NBR ledger.
+ * Expose only the existing local Sync from Income disclosure, never manual Add.
+ */
+export const hasReadOnlyIncomeSync = (id: LedgerRouteId): boolean =>
+  id === 'bank-fi' || id === 'dividend' || id === 'sanchayapatra';
+
+
 
 export const SourceTaxView: React.FC = () => {
   const {
@@ -149,7 +157,7 @@ export const SourceTaxView: React.FC = () => {
         </>
       ) : (
         <>
-          {currentRoute.id === 'dividend' && (
+          {hasReadOnlyIncomeSync(currentRoute.id) && (
             <IncomeSyncPanel routeId={currentRoute.id} defaultSection={currentRoute.statutorySection} title={language === 'bn' ? currentRoute.bengaliTitle : currentRoute.title}/>
           )}
           {currentRoute.id === 'commercial-source' && (
