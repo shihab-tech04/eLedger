@@ -4,6 +4,7 @@ import type { ClaimEvidence, LedgerEntry, LedgerRouteId } from '../../domain/mod
 import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
+import { validateDocumentClaimDraft, documentClaimIssueText, type DocumentClaimField, type DocumentClaimIssues, type DocumentClaimIssue } from '../../domain/documentClaimValidation.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
@@ -82,20 +83,42 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const [active, setActive] = useState<string | 'new' | null>(null);
   const [draft, setDraft] = useState<Draft>(() => blank(routeId, assessmentYear));
   const [error, setError] = useState<string | null>(null);
+  const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues & { purpose?: DocumentClaimIssue }>({});
   const [saving, setSaving] = useState(false);
-  const change = (name: keyof Draft, value: string) => setDraft((prev) => ({ ...prev, [name]: value }));
-  const cancel = () => { setActive(null); setError(null); };
-  const openNew = () => { setDraft(blank(routeId, assessmentYear)); setError(null); setActive('new'); };
+  const change = (name: keyof Draft, value: string) => {
+    setDraft((prev) => ({ ...prev, [name]: value }));
+    const errorKey = name === 'total' ? 'documentAmount' : name === 'claim' ? 'claimedAmount' : name;
+    setFieldIssues((prev) => ({ ...prev, [errorKey]: undefined }));
+  };
+  const fieldError = (field: DocumentClaimField | 'purpose') => documentClaimIssueText(fieldIssues[field], t);
+  const cancel = () => { setActive(null); setFieldIssues({}); setError(null); };
+  const openNew = () => { setDraft(blank(routeId, assessmentYear)); setFieldIssues({}); setError(null); setActive('new'); };
   const openEdit = (entry: LedgerEntry) => {
     if (hasUnsupportedLegacyDocumentType(entry, routeId)) {
       setError(t('This older record uses a document type absent from the current form; it was preserved unchanged.',
         'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
       return;
     }
-    setDraft(fromEntry(entry, routeId, assessmentYear)); setError(null); setActive(entry.id);
+    setDraft(fromEntry(entry, routeId, assessmentYear)); setFieldIssues({}); setError(null); setActive(entry.id);
   };
 
   const buildPayload = (): Payload | null => {
+    if (routeId === 'service-payment' || routeId === 'other-tds') {
+      const issues: DocumentClaimIssues & { purpose?: DocumentClaimIssue } = validateDocumentClaimDraft({
+        authority: draft.authority,
+        documentType: draft.documentType,
+        reference: draft.reference,
+        date: draft.date,
+        documentAmount: draft.total,
+        claimedAmount: draft.claim,
+      });
+      if (routeId === 'other-tds' &&
+          !OTHER_TDS_PURPOSES.includes(draft.purpose as typeof OTHER_TDS_PURPOSES[number])) {
+        issues.purpose = 'required';
+      }
+      setFieldIssues(issues);
+      if (Object.keys(issues).length > 0) return null;
+    }
     const total = Number(draft.total);
     const claim = Number(draft.claim);
     if (!Number.isFinite(total) || total <= 0 || !Number.isFinite(claim) || claim <= 0 || claim > total) {
@@ -185,29 +208,29 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const fieldSet = () => (
     <LedgerFormGrid>
       {routeId === 'other-tds' && (
-        <LedgerSelect label={t('Purpose of the Payment','পরিশোধের উদ্দেশ্য')} value={draft.purpose} required
+        <LedgerSelect label={t('Purpose of the Payment','পরিশোধের উদ্দেশ্য')} error={fieldError('purpose')} value={draft.purpose} required
           onValueChange={(v) => change('purpose', v)}>
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
           {OTHER_TDS_PURPOSES.map((option) => <option key={option} value={option}>{option}</option>)}
         </LedgerSelect>
       )}
       {(routeId === 'service-payment' || routeId === 'other-tds') && <>
-        <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} required
+        <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} error={fieldError('authority')} required
           value={draft.authority} onValueChange={(v) => change('authority', v)}/>
-        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} required
+        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} error={fieldError('documentType')} required
           value={draft.documentType} onValueChange={(v) => change('documentType', v)}>
           {(routeId === 'service-payment' || (active !== 'new' && !draft.documentType)) &&
             <option value="">{t('Select One','নির্বাচন করুন')}</option>}
           <option value="CHALLAN">{t('Challan','চালান')}</option>
           <option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
         </LedgerSelect>
-        <LedgerInput label={t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর')} required
+        <LedgerInput label={t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর')} error={fieldError('reference')} required
           value={draft.reference} onValueChange={(v) => change('reference', v)}/>
-        <LedgerInput label={t('Challan/ Certificate Date','চালান/সনদের তারিখ')} type="date" required
+        <LedgerInput label={t('Challan/ Certificate Date','চালান/সনদের তারিখ')} error={fieldError('date')} type="date" required
           value={draft.date} onValueChange={(v) => change('date', v)}/>
-        <LedgerInput label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} type="number" min="0.01" step="any" required
+        <LedgerInput label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} error={fieldError('documentAmount')} type="number" min="0.01" step="any" required
           value={draft.total} onValueChange={(v) => change('total', v)}/>
-        <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} type="number" min="0.01" step="any" required
+        <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} error={fieldError('claimedAmount')} type="number" min="0.01" step="any" required
           value={draft.claim} onValueChange={(v) => change('claim', v)}/>
       </>}
       {routeId === 'source-ltu' && <>
@@ -279,7 +302,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
     {error && active === null && <p role="alert" className="eledger-entry-error">{error}</p>}
     {active !== null && <LedgerFormModal title={active === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
       onClose={() => { if (!saving) cancel(); }}>
-      <form aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
+      <form noValidate={routeId === 'service-payment' || routeId === 'other-tds'} aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
         onSubmit={(event) => { event.preventDefault(); void save(); }}>
         {error && <p role="alert" className="eledger-entry-error">{error}</p>}
         {fieldSet()}

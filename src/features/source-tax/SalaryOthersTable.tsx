@@ -3,6 +3,7 @@ import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
+import { validateDocumentClaimDraft, documentClaimIssueText, type DocumentClaimField, type DocumentClaimIssues } from '../../domain/documentClaimValidation.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
@@ -56,45 +57,38 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [activeId, setActiveId] = useState<string | 'new' | null>(null);
   const [draft, setDraft] = useState<SalaryDraft>(blankDraft);
   const [error, setError] = useState<string | null>(null);
+  const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues>({});
   const [saving, setSaving] = useState(false);
 
-  const openNew = () => { setDraft(blankDraft()); setError(null); setActiveId('new'); };
+  const openNew = () => { setDraft(blankDraft()); setFieldIssues({}); setError(null); setActiveId('new'); };
   const openEdit = (entry: LedgerEntry) => {
     if (entry.claimEvidence?.paymentDocumentType === 'OTHER') {
       setError(t('This older record uses a document type absent from the current NBR form; it has been preserved unchanged.',
         'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান এনবিআর ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
       return;
     }
-    setDraft(draftFromEntry(entry)); setError(null); setActiveId(entry.id);
+    setDraft(draftFromEntry(entry)); setFieldIssues({}); setError(null); setActiveId(entry.id);
   };
-  const cancel = () => { setActiveId(null); setError(null); };
-  const change = (field: keyof SalaryDraft, value: string) => setDraft((current) => ({ ...current, [field]: value }));
+  const cancel = () => { setActiveId(null); setFieldIssues({}); setError(null); };
+  const change = (field: keyof SalaryDraft, value: string) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+    setFieldIssues((current) => ({ ...current, [field]: undefined }));
+  };
+  const fieldError = (field: DocumentClaimField) => documentClaimIssueText(fieldIssues[field], t);
 
   const save = async () => {
     if (saving) return;
     const documentAmount = Number(draft.documentAmount);
     const claimedAmount = Number(draft.claimedAmount);
-    if (!draft.authority.trim() || !draft.reference.trim() || !draft.date) {
-      setError(t('Depositing authority, challan/certificate reference and date are required.','জমাদানকারী কর্তৃপক্ষ, চালান/সনদ নম্বর ও তারিখ প্রয়োজন।'));
-      return;
-    }
-    if (draft.documentType !== 'CHALLAN' && draft.documentType !== 'CERTIFICATE') {
-      setError(t('Choose the document type from the original challan or certificate.',
-        'মূল চালান বা সনদ দেখে দলিলের ধরন নির্বাচন করুন।'));
-      return;
-    }
-    if (!Number.isFinite(documentAmount) || documentAmount <= 0 ||
-        !Number.isFinite(claimedAmount) || claimedAmount <= 0 ||
-        claimedAmount > documentAmount) {
-      setError(t('Enter positive document and claimed amounts. Claimed amount cannot exceed the document amount.','সনদ ও দাবিকৃত অঙ্ক ধনাত্মক হতে হবে। দাবিকৃত অঙ্ক সনদের অঙ্কের বেশি হতে পারে না।'));
-      return;
-    }
+    const issues = validateDocumentClaimDraft(draft);
+    setFieldIssues(issues);
+    if (Object.keys(issues).length > 0) return;
     const oldEvidence = activeId !== 'new'
       ? entries.find((entry) => entry.id === activeId)?.claimEvidence : undefined;
     const evidence = normalizeClaimEvidence({
       ...oldEvidence,
       depositingAuthority: draft.authority.trim(),
-      paymentDocumentType: draft.documentType,
+      paymentDocumentType: draft.documentType as 'CHALLAN' | 'CERTIFICATE',
       documentAmount,
     }) ?? {};
     const payload: SalaryPayload = {
@@ -133,7 +127,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
 
   // Reuse the same modal contract as the other ledger record forms.
   const renderEditor = () => (
-    <form className="eledger-salary-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}
+    <form noValidate className="eledger-salary-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}
       aria-label={t('Salary claim editor','বেতনের দাবি সম্পাদনা')}>
       <div className="eledger-salary-editor-heading">
         <strong>{activeId === 'new' ? t('New salary claim','নতুন বেতনের দাবি') : t('Edit salary claim','বেতনের দাবি সম্পাদনা')}</strong>
@@ -142,15 +136,15 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         </LedgerTip>
       </div>
       <LedgerFormGrid>
-        <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
-        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
+        <LedgerInput label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')} error={fieldError('authority')} autoFocus required value={draft.authority} onValueChange={(value) => change('authority', value)}/>
+        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} error={fieldError('documentType')} value={draft.documentType} onValueChange={(value) => change('documentType', value)}>
           {activeId !== 'new' && !draft.documentType && <option value="">{t('Select One','নির্বাচন করুন')}</option>}
           <option value="CHALLAN">{t('Challan','চালান')}</option><option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
         </LedgerSelect>
-        <LedgerInput label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} required value={draft.reference} onValueChange={(value) => change('reference', value)}/>
-        <LedgerInput label={t('Challan / Certificate Date','চালান / সনদের তারিখ')} required type="date" value={draft.date} onValueChange={(value) => change('date', value)}/>
-        <LedgerInput label={t('Challan / Certificate Amount','চালান / সনদের অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.documentAmount} onValueChange={(value) => change('documentAmount', value)}/>
-        <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.claimedAmount} onValueChange={(value) => change('claimedAmount', value)}/>
+        <LedgerInput label={t('Challan / Certificate Reference No.','চালান / সনদ নম্বর')} error={fieldError('reference')} required value={draft.reference} onValueChange={(value) => change('reference', value)}/>
+        <LedgerInput label={t('Challan / Certificate Date','চালান / সনদের তারিখ')} error={fieldError('date')} required type="date" value={draft.date} onValueChange={(value) => change('date', value)}/>
+        <LedgerInput label={t('Challan / Certificate Amount','চালান / সনদের অঙ্ক')} error={fieldError('documentAmount')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.documentAmount} onValueChange={(value) => change('documentAmount', value)}/>
+        <LedgerInput label={t('Claimed Amount','দাবিকৃত অঙ্ক')} error={fieldError('claimedAmount')} required type="number" min="0.01" step="any" inputMode="decimal" className="is-number" value={draft.claimedAmount} onValueChange={(value) => change('claimedAmount', value)}/>
       </LedgerFormGrid>
       <div className="eledger-form-actions">
         <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>

@@ -794,3 +794,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-official-records tbody tr.eledger-empty-records-row td { padding: 16px 0; border-top: 0; }
   .eledger-official-records tbody tr.eledger-empty-records-row td::before { display: none; }
 }
+
+/* Shared Add/Edit field errors use the existing validation palette, not a new form style. */
+.eledger-form-field .eledger-control[aria-invalid="true"] { border-color: #bd5664; }
+.eledger-form-field .eledger-field-error { color: #9d223e; font-size: 12px; font-weight: 500; line-height: 1.4; }
