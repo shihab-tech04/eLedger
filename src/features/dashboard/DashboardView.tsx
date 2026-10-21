@@ -3,7 +3,7 @@ import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
 import type { LedgerRouteId, RouteRegistryEntry } from '../../domain/models.ts';
-import { ArrowRight, BookOpen, CarFront, FileCheck2, ReceiptText, ShieldCheck, WalletCards } from 'lucide-react';
+import { ArrowRight, BookOpen, CarFront, FileCheck2, ReceiptText, ShieldCheck } from 'lucide-react';
 import { LedgerPageHeader } from '../../components/ui/LedgerPage.tsx';
 
 /** The reference dashboard uses Bangladeshi digit grouping without a currency prefix. */
@@ -149,7 +149,7 @@ export const DashboardView: React.FC = () => {
           <span>{t('Independently authorized verified credit','কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত ক্রেডিট')}</span>
           <strong>৳ {amount(totals.grandTotalCredits)}</strong>
         </div>
-        <p>{t('Recorded Ledger Total is a local record, not automatically an approved tax credit.','লেজারের রেকর্ডকৃত মোট অঙ্ক স্বয়ংক্রিয়ভাবে অনুমোদিত করের ক্রেডিট নয়।')}</p>
+        <p>{t('Recorded Ledger Total is a local record, not automatically an approved tax credit.','রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়। লেজারের মোট অঙ্ক স্বয়ংক্রিয়ভাবে অনুমোদিত নয়।')}</p>
       </section>
 
       <section className="eledger-dashboard-primary-next" aria-label={t('Next action','পরবর্তী কাজ')}>
@@ -211,11 +211,6 @@ export const DashboardView: React.FC = () => {
           </section>
 
         </aside>
-      </div>
-      <div className="eledger-dashboard-verification-note">
-        <WalletCards size={16} aria-hidden="true"/>
-        {t('Recorded ledger amounts are not necessarily verified credits. Independently authorized verified credit:','রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়। কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত ক্রেডিট:')}
-        <strong>৳ {amount(totals.grandTotalCredits)}</strong>.
       </div>
     </div>
   );
