@@ -1,0 +1,36 @@
+name: eLedger native browser persistence acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify-native-persistence.mjs'
+      - '.github/workflows/native-persistence.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked application dependencies
+        run: npm ci
+      - name: Compile actual frontend bundle
+        run: npm run build
+      - name: Install isolated browser runner
+        run: npm install --no-save --package-lock=false playwright@1.56.1
+      - name: Install Chromium with runner dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Replay native localStorage, hard reload and record lifecycle
+        run: node scripts/verify-native-persistence.mjs
