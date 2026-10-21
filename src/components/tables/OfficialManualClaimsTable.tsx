@@ -7,6 +7,7 @@ import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { validateDocumentClaimDraft, documentClaimIssueText, type DocumentClaimField, type DocumentClaimIssues, type DocumentClaimIssue } from '../../domain/documentClaimValidation.ts';
 import { validateLtuAdd, validateRefundAdd, type ManualAddIssue } from '../../domain/manualAddValidation.ts';
 import { localDateInputValue } from '../../domain/localDate.ts';
+import { resolveLtuRecordedDate } from '../../domain/ltuRecordDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
@@ -141,12 +142,14 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         setError(t('Section, challan number and description are required.', 'ধারা, চালান নম্বর এবং বিবরণ দিন।'));
         return null;
       }
-      // The original LTU form has no payment date; the internal record date is
-      // the local entry date and is not displayed as a challan/document date.
+      // The original LTU Add has no date field. Keep the original local record
+      // date when editing; only a newly added local record gets today's date.
       return {
         referenceNo: draft.reference.trim(), sourceEntity: 'Large Taxpayers Unit',
         sectionCode: draft.section, grossAmount: claim, taxDeducted: claim,
-        date: localDateInputValue(),
+        date: resolveLtuRecordedDate(
+          active !== 'new' ? entries.find((entry) => entry.id === active) : undefined,
+        ),
         claimEvidence: normalizeClaimEvidence({
           paymentPurpose: draft.description.trim(),
           attachmentFileName: draft.fileName.trim() || undefined,
