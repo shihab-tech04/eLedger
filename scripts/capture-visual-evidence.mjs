@@ -108,6 +108,17 @@ try {
     const langValue=await page.locator('.eledger-app').getAttribute('lang');
     assert.equal(langValue,lang);
     await checkOverflow(page);
+    if(width===390){
+      const empty=page.locator('table.eledger-official-records tr.eledger-empty-records-row td');
+      if(await empty.count()){
+        const bounds=await empty.first().evaluate(td=>{
+          const row=td.closest('tr');
+          return {cell:td.getBoundingClientRect().width,row:row?.getBoundingClientRect().width||0};
+        });
+        assert.ok(bounds.row>0&&bounds.cell/bounds.row>=0.8,
+          'Mobile '+id+' '+lang+' empty message is squeezed into a table column: '+JSON.stringify(bounds));
+      }
+    }
     const shot=await screenshot(page,String(width)+'/'+id+'-'+lang);
     out.routes.push({width,id,originalNavLabel:label,language:lang,visual:shot,pass:true});
    }
