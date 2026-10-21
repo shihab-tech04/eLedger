@@ -76,11 +76,47 @@ import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../components/ui/LedgerForm.tsx';
 import { validateDocumentClaimDraft, documentClaimIssueText } from '../domain/documentClaimValidation.ts';
+import { validateLtuAdd, validateRefundAdd } from '../domain/manualAddValidation.ts';
 import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+
+  it('keeps the original five LTU Add inputs and reports missing values beside their fields', () => {
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+    assert.deepEqual(validateLtuAdd({ section: '', claim: '', reference: '', description: '' }), {
+      section: 'required', claim: 'required', reference: 'required', description: 'required',
+    });
+    assert.deepEqual(validateLtuAdd({
+      section: 'Salary [ Section-86]', claim: '1250', reference: 'CH-77', description: 'Payment',
+    }), {});
+    assert.equal(validateLtuAdd({ section: 'x', claim: '-2', reference: 'CH-77', description: 'Payment' }).claim, 'invalidAmount');
+    assert.equal(validateLtuAdd({ section: 'x', claim: 'Infinity', reference: 'CH-77', description: 'Payment' }).claim, 'invalidAmount');
+  });
+
+  it('keeps the seven Refund Add inputs and rejects mismatched zone-circle or excessive claim', () => {
+    assert.deepEqual(OFFICIAL_INPUT_KEYS.refund, [
+      'assessmentYear', 'referenceNo', 'submissionDate', 'returnFilingZone',
+      'returnFilingCircle', 'refundAmount', 'adjustmentClaimAmount',
+    ]);
+    assert.deepEqual(validateRefundAdd({
+      assessmentYear: '', reference: '', date: '', zone: '', circle: '', total: '', claim: '',
+    }), {
+      assessmentYear: 'required', reference: 'required', date: 'required', zone: 'required',
+      circle: 'required', total: 'required', claim: 'required',
+    });
+    const valid = {
+      assessmentYear: '2025-2026', reference: 'RR-77', date: '2026-05-10',
+      zone: 'Taxes Zone, Barishal', circle: 'Circle-01(Companies)',
+      total: '5000', claim: '2500',
+    };
+    assert.deepEqual(validateRefundAdd(valid), {});
+    assert.equal(validateRefundAdd({ ...valid, circle: 'Circle-23' }).circle, 'invalidCircle');
+    assert.equal(validateRefundAdd({ ...valid, claim: '6000' }).claim, 'exceedsSupportingAmount');
+    assert.equal(validateRefundAdd({ ...valid, total: 'bad' }).total, 'invalidAmount');
+  });
+
 
   it('identifies the original six Add fields individually without guessing or changing their defaults', () => {
     assert.deepEqual(validateDocumentClaimDraft({
