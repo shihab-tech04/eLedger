@@ -156,8 +156,19 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
   });
 
   it('keeps record Edit/Delete actions in the existing read-only table until an edit is started', () => {
-    const salaryRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'salary-others');
-    assert.ok(salaryRecord);
+    const salaryRecord: LedgerEntry = {
+      ...INITIAL_LEDGER_ENTRIES[0],
+      id: 'fixture-salary-other',
+      referenceNo: 'SYNTHETIC-SALARY-123',
+      routeId: 'salary-others',
+      category: 'SOURCE_TAX',
+      sectionCode: 'Sec 86',
+      workflow: 'MANUAL_ENTRY',
+      isManual: true,
+      status: 'PENDING_VERIFICATION',
+      externalVerified: false,
+      claimEvidence: { depositingAuthority: 'Fixture Employer', paymentDocumentType: 'CHALLAN', documentAmount: 3000 },
+    };
     const salaryHtml = renderToStaticMarkup(React.createElement(SalaryOthersTable, {
       entries: [salaryRecord], defaultSection: 'Sec 86',
       onSaveNewEntry: async () => ({ success: true }),
@@ -169,8 +180,13 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
     assert.match(salaryHtml, /Add Entry/);
     assert.doesNotMatch(salaryHtml, /role="dialog"/);
 
-    const manualRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'service-payment');
-    assert.ok(manualRecord);
+    const manualRecord: LedgerEntry = {
+      ...salaryRecord,
+      id: 'fixture-service-payment',
+      referenceNo: 'SYNTHETIC-SERVICE-123',
+      routeId: 'service-payment',
+      sectionCode: 'Sec 90',
+    };
     const manualHtml = renderToStaticMarkup(React.createElement(OfficialManualClaimsTable, {
       entries: [manualRecord], routeId: 'service-payment', assessmentYear: '2026-2027',
       defaultSection: 'Sec 90', onSaveNewEntry: async () => ({ success: true }),
