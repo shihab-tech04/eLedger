@@ -37,7 +37,7 @@ const forms = [
 ];
 const out={source:'compiled Vite dist, isolated empty browser storage',release:process.env.GITHUB_SHA||'LOCAL',
   observedAt:new Date().toISOString(),scope:'original NBR signed-in visual comparison NOT performed',
-  viewports:[],routes:[],forms:[],javascriptExceptions:[],pass:false};
+  viewports:[],routes:[],forms:[],dashboard:[],javascriptExceptions:[],pass:false};
 async function boot(){
  const p=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173','--strictPort'],{stdio:['ignore','pipe','pipe']});
  let logs='';
@@ -73,6 +73,66 @@ let preview, browser;
 try {
  await mkdir(DEST,{recursive:true});
  preview=await boot();browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ // The first navigation page is audited separately at four viewports, in both languages.
+ for(const width of [375,768,1280,1920]){
+  const ctx=await browser.newContext({viewport:{width,height:width<600?844:900},
+    isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+  const page=await ctx.newPage();page.setDefaultTimeout(12000);
+  page.on('pageerror',e=>out.javascriptExceptions.push({width,error:String(e)}));
+  await page.goto(SITE,{waitUntil:'networkidle'});
+  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+  const status=page.locator('.eledger-dashboard-credit-status');
+  assert.equal(await status.count(),1,'Verified-credit status must be near the summary');
+  assert.match(await status.innerText(),/verified credit/i);
+  assert.equal(await page.locator('svg.eledger-composition-bar').count(),0,
+    'No 0%-composition bar for a fresh empty ledger');
+  assert.ok((await page.locator('details.eledger-category-unrecorded').count())>=3);
+  assert.ok((await page.locator('details.eledger-category-unrecorded:not([open])').count())>=3);
+  const ctas=page.getByRole('button',{name:'Start with Salary (Others)',exact:true});
+  await ctas.waitFor({state:'visible'});
+  await checkOverflow(page);
+  const enShot=await screenshot(page,'dashboard/'+width+'-en');
+  const summaryBounding=await page.locator('.eledger-dashboard-primary-next').boundingBox();
+  const statusBounding=await status.boundingBox();
+  assert.ok(summaryBounding && statusBounding);
+  assert.ok(statusBounding.y<summaryBounding.y,
+    'Verified-credit amount must precede primary next action');
+  out.dashboard.push({width,language:'en',screenshot:enShot,statusY:Math.round(statusBounding.y),
+    nextActionY:Math.round(summaryBounding.y),pass:true});
+  await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+  await page.locator('.eledger-app[lang="bn"]').waitFor();
+  await page.getByRole('button',{name:'অন্যান্য বেতন দিয়ে শুরু করুন',exact:true}).waitFor();
+  await checkOverflow(page);
+  const bnShot=await screenshot(page,'dashboard/'+width+'-bn');
+  out.dashboard.push({width,language:'bn',screenshot:bnShot,pass:true});
+  await page.getByRole('button',{name:'English',exact:true}).click();
+
+  // The primary CTA must land on an editable Salary (Others) head, not read-only iBAS++.
+  await page.getByRole('button',{name:'Start with Salary (Others)',exact:true}).click();
+  const activeRoute=page.locator('aside.eledger-sidebar button[aria-current="page"]').filter({hasText:'Salary (Others)'});
+  assert.equal(await activeRoute.count(),1,
+    'Salary (Others) must be selected even when mobile navigation is closed');
+  // Return to the dashboard and ensure the group-aggregate card opens all payment buckets.
+  if(width<=960)await page.getByRole('button',{name:'Open ledger menu'}).click();
+  const sidebar=page.locator('aside.eledger-sidebar');
+  if(width<=960)assert.ok(await sidebar.evaluate(el=>el.classList.contains('is-open')),
+    'Mobile navigation did not open before return to Dashboard');
+  const dashboardNav=sidebar.locator('nav.eledger-sidebar-links > button').first();
+  await dashboardNav.click();
+  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+  await page.locator('button.eledger-summary-card.other').click();
+  await page.getByRole('dialog',{name:'Tax Payment Status'}).waitFor();
+  await page.getByRole('button',{name:'Close Tax Payment Status'}).click();
+  if(width===1280){
+    // An explicit uncategorized zero is never mistaken for verified credit.
+    const source=page.locator('section.eledger-category-source details');
+    await source.locator('summary').click();
+    assert.ok(await source.locator('button').count()>0);
+    await source.locator('summary').click();
+  }
+  assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
+  await ctx.close();
+ }
  for(const width of [1280,390]){
   const context=await browser.newContext({viewport:{width,height:width===390?844:900},
     isMobile:width===390,hasTouch:width===390,locale:'en-US'});
@@ -147,10 +207,11 @@ try {
   assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
   await context.close();
  }
+ assert.equal(out.dashboard.length,8);
  assert.equal(out.routes.length,72);
  assert.equal(out.forms.length,10);
  out.pass=true;
- console.log('VISUAL_EVIDENCE PASS '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
+ console.log('VISUAL_EVIDENCE PASS '+out.dashboard.length+' dashboard captures, '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
 }catch(e){console.error('VISUAL_EVIDENCE FAIL',e.stack||String(e));process.exitCode=1;}
 finally{
  await writeFile(path.join(DEST,'manifest.json'),JSON.stringify(out,null,2));

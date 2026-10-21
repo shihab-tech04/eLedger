@@ -799,3 +799,86 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 /* Shared Add/Edit field errors use the existing validation palette, not a new form style. */
 .eledger-form-field .eledger-control[aria-invalid="true"] { border-color: #bd5664; }
 .eledger-form-field .eledger-field-error { color: #9d223e; font-size: 12px; font-weight: 500; line-height: 1.4; }
+
+
+/* Dashboard UX-01: preserve the Golden UI shell; improve Dashboard-only status clarity,
+   summary navigation, readable text, disclosure and touch targets. */
+.eledger-dashboard .eledger-dashboard-credit-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px 24px;
+  background: #f8fbfe; border: 1px solid #cfdfed; border-radius: var(--el-radius);
+  padding: 14px 18px; margin-top: 12px; flex-wrap: wrap;
+}
+.eledger-dashboard .eledger-dashboard-credit-status > div {
+  display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center;
+}
+.eledger-dashboard .eledger-dashboard-credit-status span { font-size: 13px; font-weight: 700; color: #273c57; }
+.eledger-dashboard .eledger-dashboard-credit-status strong {
+  font-size: 21px; line-height: 1.35; color: #143c65; font-variant-numeric: tabular-nums;
+}
+.eledger-dashboard .eledger-dashboard-credit-status p {
+  color: #465569; font-size: 12px; line-height: 1.55; max-width: 510px;
+}
+.eledger-dashboard .eledger-dashboard-primary-next {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px 18px;
+  border: 1px solid #d8e3ec; border-radius: var(--el-radius); background: #fff;
+  padding: 16px 18px; margin-top: 12px;
+}
+.eledger-dashboard .eledger-dashboard-primary-next > div { min-width: 0; }
+.eledger-dashboard .eledger-dashboard-primary-next strong {
+  display: block; font-size: 15px; line-height: 1.4; color: #20314a;
+}
+.eledger-dashboard .eledger-dashboard-primary-next p {
+  font-size: 13px; line-height: 1.5; color: #475569; margin-top: 4px;
+}
+.eledger-dashboard .eledger-dashboard-primary-next button {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  gap: 9px; min-height: 44px; padding: 10px 14px; white-space: normal; text-align: center;
+}
+.eledger-dashboard .eledger-composition-empty {
+  color: #48576d; font-size: 13px; line-height: 1.55; margin-top: 12px;
+}
+.eledger-dashboard .eledger-category-no-records {
+  color: #48576d; font-size: 13px; line-height: 1.5;
+  padding: 12px 16px;
+}
+.eledger-dashboard .eledger-category-unrecorded {
+  border-top: 1px solid #e2e9f0;
+}
+.eledger-dashboard .eledger-category-unrecorded > summary {
+  cursor: pointer; font-size: 13px; font-weight: 650; color: #175785;
+  padding: 13px 16px; line-height: 1.45; min-height: 44px;
+}
+.eledger-dashboard .eledger-category-unrecorded[open] > summary {
+  border-bottom: 1px solid #e2e9f0;
+}
+.eledger-dashboard .eledger-category-list button {
+  min-height: 44px;
+}
+.eledger-dashboard .eledger-category-heading p,
+.eledger-dashboard .eledger-composition-heading p,
+.eledger-dashboard .eledger-dashboard-action-list small,
+.eledger-dashboard .eledger-category-heading-total small,
+.eledger-dashboard .eledger-summary-count,
+.eledger-dashboard .eledger-summary-caption,
+.eledger-dashboard .eledger-composition-legend,
+.eledger-dashboard .eledger-dashboard-verification-note {
+  color: #465569; font-size: 12px; line-height: 1.5;
+}
+.eledger-dashboard :where(button,summary):focus-visible {
+  outline: 3px solid #14699c; outline-offset: 3px;
+}
+@media (max-width: 670px) {
+  .eledger-dashboard .eledger-dashboard-credit-status,
+  .eledger-dashboard .eledger-dashboard-primary-next {
+    align-items: stretch; flex-direction: column; padding: 13px 14px;
+  }
+  .eledger-dashboard .eledger-dashboard-credit-status > div {
+    align-items: flex-start; justify-content: space-between;
+  }
+  .eledger-dashboard .eledger-dashboard-primary-next button {
+    width: 100%; min-height: 44px;
+  }
+  .eledger-dashboard .eledger-category-unrecorded > summary {
+    padding: 13px 14px;
+  }
+}
