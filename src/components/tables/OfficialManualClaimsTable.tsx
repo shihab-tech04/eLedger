@@ -78,6 +78,28 @@ const fromEntry = (entry: LedgerEntry, routeId: ManualRoute, ay: string): Draft 
   circle: entry.claimEvidence?.returnFilingCircle ?? '',
 });
 
+type ManualFieldIssues = Partial<Record<keyof Draft | DocumentClaimField, ManualAddIssue | DocumentClaimIssue>>;
+
+/** Clear only the edited field's error; preserve unrelated required/invalid errors.
+ * An amount ceiling error may be reconsidered when its supporting total changes.
+ * This is UI state handling only: validation still runs again on Save.
+ */
+export function clearManualFieldIssueAfterEdit(
+  routeId: ManualRoute, issues: ManualFieldIssues, name: keyof Draft,
+): ManualFieldIssues {
+  const next = { ...issues };
+  const isDocumentRoute = routeId === 'service-payment' || routeId === 'other-tds';
+  const key = isDocumentRoute && name === 'total' ? 'documentAmount'
+    : isDocumentRoute && name === 'claim' ? 'claimedAmount' : name;
+  delete next[key];
+
+  if (name === 'total') {
+    if (isDocumentRoute && next.claimedAmount === 'exceedsDocument') delete next.claimedAmount;
+    if (routeId === 'refund' && next.claim === 'exceedsSupportingAmount') delete next.claim;
+  }
+  return next;
+}
+
 export const OfficialManualClaimsTable: React.FC<Props> = ({
   entries, routeId, defaultSection, assessmentYear, onSaveNewEntry, onUpdateEntry, onDeleteEntry,
 }) => {
@@ -85,12 +107,11 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const [active, setActive] = useState<string | 'new' | null>(null);
   const [draft, setDraft] = useState<Draft>(() => blank(routeId, assessmentYear));
   const [error, setError] = useState<string | null>(null);
-  const [fieldIssues, setFieldIssues] = useState<Partial<Record<keyof Draft | DocumentClaimField, ManualAddIssue | DocumentClaimIssue>>>({});
+  const [fieldIssues, setFieldIssues] = useState<ManualFieldIssues>({});
   const [saving, setSaving] = useState(false);
   const change = (name: keyof Draft, value: string) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
-    const errorKey = name === 'total' ? 'documentAmount' : name === 'claim' ? 'claimedAmount' : name;
-    setFieldIssues((prev) => ({ ...prev, [errorKey]: undefined, ...(name === 'total' ? { claim: undefined } : {}) }));
+    setFieldIssues((prev) => clearManualFieldIssueAfterEdit(routeId, prev, name));
   };
   const fieldError = (field: keyof Draft | DocumentClaimField): string | undefined => {
     const issue = fieldIssues[field];
