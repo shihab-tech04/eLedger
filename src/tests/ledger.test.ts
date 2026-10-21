@@ -50,6 +50,7 @@ import { InlineEditableTable, MobileRowEditor, getTableFieldLabels } from '../co
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from '../components/tables/ClaimEvidenceFields.tsx';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../domain/claimEvidence.ts';
 import { localDateInputValue } from '../domain/localDate.ts';
+import { resolveLtuRecordedDate } from '../domain/ltuRecordDate.ts';
 import { parseSection120Csv, SECTION120_CSV_HEADERS } from '../domain/csvImport.ts';
 import { SurchargeTransferPanel } from '../components/workflows/SurchargeTransferPanel.tsx';
 import { SystemLookupPanel } from '../components/workflows/SystemLookupPanel.tsx';
@@ -82,6 +83,105 @@ import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+
+  it('preserves an existing LTU record date through Edit Save with no date field', () => {
+    const priorDate = '2025-09-17';
+    const existing = { date: priorDate };
+    assert.equal(resolveLtuRecordedDate(existing, '2026-10-21'), priorDate);
+    assert.equal(resolveLtuRecordedDate(undefined, '2026-10-21'), '2026-10-21');
+    assert.equal(resolveLtuRecordedDate({ date: '2024-12-31' }, '2026-10-21'), '2024-12-31');
+  });
+
+  it('replays Edit/Save/Cancel/Delete on isolated browser-local entries across five manual categories', async () => {
+    const storage = new Map<string, string>();
+    const repo = new LocalStorageLedgerRepository({
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value); },
+    });
+    const tin = '123456789012';
+    const assessmentYear = '2026-2027' as const;
+    const cases = [
+      { routeId: 'salary-others' as const, category: 'SOURCE_TAX' as const, sectionCode: 'Sec 86',
+        evidence: { depositingAuthority: 'Employer', paymentDocumentType: 'CHALLAN' as const, documentAmount: 3000 } },
+      { routeId: 'service-payment' as const, category: 'SOURCE_TAX' as const, sectionCode: 'Sec 90',
+        evidence: { depositingAuthority: 'Client', paymentDocumentType: 'CERTIFICATE' as const, documentAmount: 3000 } },
+      { routeId: 'other-tds' as const, category: 'SOURCE_TAX' as const, sectionCode: 'Contractor Payment [ Section-89]',
+        evidence: { depositingAuthority: 'Authority', paymentDocumentType: 'CHALLAN' as const, documentAmount: 3000,
+          paymentPurpose: 'Contractor Payment [ Section-89]' } },
+      { routeId: 'source-ltu' as const, category: 'SOURCE_TAX' as const, sectionCode: 'Salary [ Section-86]',
+        evidence: { paymentPurpose: 'LTU document', attachmentFileName: 'support.pdf' } },
+      { routeId: 'refund' as const, category: 'ADJUSTMENT' as const, sectionCode: 'Sec 214',
+        evidence: { refundAssessmentYear: '2025-2026', returnFilingZone: 'Taxes Zone, Barishal',
+          returnFilingCircle: 'Circle-01(Companies)' } },
+    ];
+    const created = [];
+    for (const [index, scenario] of cases.entries()) {
+      const saved = await repo.addEntry({
+        taxpayerTin: tin, assessmentYear, routeId: scenario.routeId, category: scenario.category,
+        referenceNo: `UI-EDIT-${index}`, sourceEntity: 'Source Entity', sectionCode: scenario.sectionCode,
+        grossAmount: 3000, taxDeducted: 500, date: '2026-05-10',
+        status: 'PENDING_VERIFICATION', workflow: 'MANUAL_ENTRY', isManual: true, externalVerified: false,
+        claimEvidence: scenario.evidence,
+      });
+      created.push(saved);
+    }
+    assert.equal((await repo.getEntries(tin, assessmentYear)).length, 5);
+
+    for (const saved of created) {
+      const initial = await repo.getEntryById(saved.id);
+      assert.ok(initial);
+      const attemptedDraft = { ...initial, taxDeducted: 2222, referenceNo: 'NOT-SAVED' };
+      assert.notEqual(attemptedDraft.taxDeducted, initial.taxDeducted);
+      // Cancel closes the UI draft without calling the repository.
+      assert.deepEqual(await repo.getEntryById(saved.id), initial);
+      const updated = await repo.updateEntry(saved.id, { taxDeducted: 750 });
+      assert.equal(updated.taxDeducted, 750);
+      assert.equal(updated.date, initial.date);
+      assert.deepEqual(updated.claimEvidence, initial.claimEvidence);
+      for (const key of ['id', 'createdAt', 'routeId', 'category', 'workflow', 'assessmentYear', 'taxpayerTin'] as const) {
+        assert.equal(updated[key], initial[key]);
+      }
+      await assert.rejects(repo.updateEntry(saved.id, { taxDeducted: 4000 }), /Tax deducted cannot exceed/i);
+      assert.equal((await repo.getEntryById(saved.id))?.taxDeducted, 750);
+    }
+
+    const kept = created[1];
+    const removed = created[0];
+    assert.equal(await repo.deleteEntry(removed.id), true);
+    assert.equal(await repo.getEntryById(removed.id), undefined);
+    assert.ok(await repo.getEntryById(kept.id));
+    assert.equal(await repo.deleteEntry(removed.id), false);
+    assert.equal((await repo.getEntries(tin, assessmentYear)).length, 4);
+    assert.equal((await repo.getEntries('987654321098', assessmentYear)).length, 0);
+  });
+
+  it('keeps record Edit/Delete actions in the existing read-only table until an edit is started', () => {
+    const salaryRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'salary-others');
+    assert.ok(salaryRecord);
+    const salaryHtml = renderToStaticMarkup(React.createElement(SalaryOthersTable, {
+      entries: [salaryRecord], defaultSection: 'Sec 86',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    }));
+    assert.match(salaryHtml, /aria-label="Edit /);
+    assert.match(salaryHtml, /aria-label="Delete /);
+    assert.match(salaryHtml, /Add Entry/);
+    assert.doesNotMatch(salaryHtml, /role="dialog"/);
+
+    const manualRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'service-payment');
+    assert.ok(manualRecord);
+    const manualHtml = renderToStaticMarkup(React.createElement(OfficialManualClaimsTable, {
+      entries: [manualRecord], routeId: 'service-payment', assessmentYear: '2026-2027',
+      defaultSection: 'Sec 90', onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
+    }));
+    assert.match(manualHtml, /aria-label="Edit /);
+    assert.match(manualHtml, /aria-label="Delete /);
+    assert.match(manualHtml, /Add Entry/);
+    assert.doesNotMatch(manualHtml, /role="dialog"/);
+  });
+
 
   it('keeps the original five LTU Add inputs and reports missing values beside their fields', () => {
     assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
