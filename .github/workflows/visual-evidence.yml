@@ -1,0 +1,46 @@
+name: eLedger bilingual visual evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/capture-visual-evidence.mjs'
+      - '.github/workflows/visual-evidence.yml'
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install application from lockfile
+        run: npm ci
+      - name: Check TypeScript and build production app
+        run: |
+          npm run lint
+          npm run build
+      - name: Install isolated Chromium test runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capture all original 18 route categories in EN/BN at desktop/mobile
+        run: node scripts/capture-visual-evidence.mjs
+      - name: Preserve screenshot/field inventory and exact Git SHA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eLedger-visual-source-crosswalk-${{ github.run_id }}
+          path: artifacts/eledger-visual-evidence/
+          retention-days: 30
+          if-no-files-found: error
