@@ -28,12 +28,14 @@ jobs:
               if name.lower().endswith(('.png','.jpg','.jpeg','.webp','.gif')):
                   src=pathlib.Path(name)
                   if not src.is_file(): continue
-                  dest=root/'tracked-images'/src
+                  # actions/upload-artifact excludes hidden .aistudio directory by default;
+                  # preserve exact PNG bytes under a non-hidden stage filename.
+                  dest=root/'tracked-images'/('candidate_%02d' % (len(records)+1) + src.suffix)
                   dest.parent.mkdir(parents=True,exist_ok=True)
                   shutil.copyfile(src,dest)
                   data=src.read_bytes()
                   records.append({
-                      'path':name,'bytes':len(data),
+                      'path':name,'staged_file':'tracked-images/'+dest.name,'bytes':len(data),
                       'sha256':hashlib.sha256(data).hexdigest(),
                       'git_blob_sha1':subprocess.check_output(['git','hash-object',name]).decode().strip(),
                       'verified_original_nbr_screenshot':False,
