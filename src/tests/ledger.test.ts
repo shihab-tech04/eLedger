@@ -2041,9 +2041,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     const emptyBank = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
       routeId: 'bank-fi', entries: [],
     }));
-    assert.equal((emptyBank.match(/<th\\b/g) ?? []).length, 7);
-    assert.match(emptyBank, /<td colSpan="7">No Data Found<\\/td>/);
-    assert.doesNotMatch(emptyBank, /Add Entry|Delete row|Edit entry|Bank \\/ Branch/);
+    assert.equal((emptyBank.match(/<th\b/g) ?? []).length, 7);
+    assert.match(emptyBank, /<td colSpan="7">No Data Found<\/td>/);
+    assert.doesNotMatch(emptyBank, /Add Entry|Delete row|Edit entry|Bank \/ Branch/);
 
     const bankRecord = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'bank-fi');
     assert.ok(bankRecord);
