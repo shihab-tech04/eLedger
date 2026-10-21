@@ -89,7 +89,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const change = (name: keyof Draft, value: string) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
     const errorKey = name === 'total' ? 'documentAmount' : name === 'claim' ? 'claimedAmount' : name;
-    setFieldIssues((prev) => ({ ...prev, [errorKey]: undefined }));
+    setFieldIssues((prev) => ({ ...prev, [errorKey]: undefined, ...(name === 'total' ? { claim: undefined } : {}) }));
   };
   const fieldError = (field: keyof Draft | DocumentClaimField): string | undefined => {
     const issue = fieldIssues[field];
