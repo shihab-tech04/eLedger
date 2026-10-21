@@ -13,7 +13,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: eledger-pages
+  # Keep PR verification independent from the protected production deployment queue.
+  # New main/release runs may supersede older main runs, but PRs cannot cancel them.
+  group: eledger-pages-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
   cancel-in-progress: true
 
 jobs:
