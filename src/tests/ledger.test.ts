@@ -67,7 +67,7 @@ import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
 import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType, clearManualFieldIssueAfterEdit } from '../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
-import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
+import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../components/tables/OfficialReadOnlyTable.tsx';
 import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../domain/officialLedgerFields.ts';
 import { REFUND_CIRCLES_BY_ZONE, refundCirclesForZone } from '../domain/refundCircleOptions.ts';
 import { SourceTaxView, OBSERVED_SOURCE_TAX_HEADINGS, hasReadOnlyIncomeSync } from '../features/source-tax/SourceTaxView.tsx';
