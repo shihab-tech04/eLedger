@@ -65,7 +65,7 @@ import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { LedgerGuideView } from '../features/ledger-guide/LedgerGuideView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
-import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType } from '../components/tables/OfficialManualClaimsTable.tsx';
+import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType, clearManualFieldIssueAfterEdit } from '../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
 import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable } from '../components/tables/OfficialReadOnlyTable.tsx';
 import { OFFICIAL_INPUT_KEYS, LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../domain/officialLedgerFields.ts';
@@ -83,6 +83,34 @@ import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+
+  it('clears the edited Refund field error without hiding unrelated missing or invalid inputs', () => {
+    const original = { total: 'required', claim: 'required', circle: 'invalidCircle' } as const;
+    const afterRefundTotal = clearManualFieldIssueAfterEdit('refund', original, 'total');
+    assert.deepEqual(afterRefundTotal, { claim: 'required', circle: 'invalidCircle' });
+    assert.deepEqual(original, { total: 'required', claim: 'required', circle: 'invalidCircle' });
+    assert.deepEqual(clearManualFieldIssueAfterEdit('refund', afterRefundTotal, 'claim'), {
+      circle: 'invalidCircle',
+    });
+    assert.deepEqual(clearManualFieldIssueAfterEdit('refund', {
+      total: 'required', claim: 'exceedsSupportingAmount', reference: 'required',
+    }, 'total'), { reference: 'required' });
+
+    for (const route of ['service-payment', 'other-tds'] as const) {
+      assert.deepEqual(clearManualFieldIssueAfterEdit(route, {
+        documentAmount: 'required', claimedAmount: 'required',
+      }, 'total'), { claimedAmount: 'required' });
+      assert.deepEqual(clearManualFieldIssueAfterEdit(route, {
+        documentAmount: 'required', claimedAmount: 'exceedsDocument',
+      }, 'total'), {});
+      assert.deepEqual(clearManualFieldIssueAfterEdit(route, {
+        documentAmount: 'required', claimedAmount: 'required',
+      }, 'claim'), { documentAmount: 'required' });
+    }
+    assert.deepEqual(clearManualFieldIssueAfterEdit('source-ltu', {
+      section: 'required', claim: 'invalidAmount',
+    }, 'claim'), { section: 'required' });
+  });
 
   it('preserves an existing LTU record date through Edit Save with no date field', () => {
     const priorDate = '2025-09-17';
