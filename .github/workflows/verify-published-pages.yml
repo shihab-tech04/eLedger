@@ -1,0 +1,44 @@
+name: eLedger published Pages byte parity
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-published-pages.yml'
+      - 'scripts/verify-published-build.mjs'
+  workflow_run:
+    workflows: ['Verify and deploy eLedger']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  published-byte-parity:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies from lockfile
+        run: npm ci
+      - name: Build expected exact release files
+        run: npm run build
+      - name: Verify live Pages index, JavaScript, CSS and every bundled font by SHA-256
+        run: node scripts/verify-published-build.mjs
+      - name: Preserve exact URL/hash comparison evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eLedger-live-byte-parity-${{ github.run_id }}
+          path: artifacts/published-build-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
