@@ -791,7 +791,8 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-official-records tbody td::before { display: block; content: attr(data-label); margin-bottom: 2px; color: var(--el-muted); font-size: 11px; }
   .eledger-official-records tbody td:last-child { grid-column: 1 / -1; border-top: 1px solid var(--el-border); padding-top: 10px; }
   .eledger-official-records tbody tr.eledger-empty-records-row { display: block; }
-  .eledger-official-records tbody tr.eledger-empty-records-row td { padding: 16px 0; border-top: 0; }
+  /* An empty row has one colspan cell, so the generic first-column 50px width must not apply. */
+  .eledger-official-records tbody tr.eledger-empty-records-row td { width: 100%; padding: 16px 0; border-top: 0; overflow-wrap: normal; text-align: center !important; }
   .eledger-official-records tbody tr.eledger-empty-records-row td::before { display: none; }
 }
 
