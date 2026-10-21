@@ -1,0 +1,132 @@
+// Evidence capture only: no NBR access, taxpayer records, mutations or model-data claims.
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
+import path from 'node:path';
+import { chromium } from 'playwright';
+
+const SITE = 'http://127.0.0.1:4173/';
+const DEST = 'artifacts/eledger-visual-evidence';
+const routes = [
+  ['01-salary-ibas','Salary (iBAS++)','source'],
+  ['02-salary-others','Salary (Others)','source'],
+  ['03-bank-fi','Bank/FI Interest/Profit','source'],
+  ['04-dividend','Dividend','source'],
+  ['05-service','Service Payment','source'],
+  ['06-sanchayapatra','Sanchayapatra','source'],
+  ['07-import','Import','source'],
+  ['08-source-ltu','Source Tax (LTU)','source'],
+  ['09-commercial','Commercial Vehicle','source'],
+  ['10-other-tds','Others','source'],
+  ['11-car-ait','AIT on Car','ait'],
+  ['12-ait154','AIT (154)','ait'],
+  ['13-ait-import','AIT Import (120)','ait'],
+  ['14-paid-return','Tax Paid with Return (173)','direct'],
+  ['15-surcharge','Environmental Surcharge','direct'],
+  ['16-refund','Adjustment of Tax Refund','direct'],
+  ['17-carry-forward','Adjustment of carry forward tax u/s 163','direct'],
+  ['18-status','Tax Payment Status','status']
+];
+const forms = [
+ ['Salary (Others)',6,'02-salary-others'],
+ ['Service Payment',6,'05-service'],
+ ['Others',7,'10-other-tds'],
+ ['Source Tax (LTU)',5,'08-source-ltu'],
+ ['Adjustment of Tax Refund',7,'16-refund']
+];
+const out={source:'compiled Vite dist, isolated empty browser storage',release:process.env.GITHUB_SHA||'LOCAL',
+  observedAt:new Date().toISOString(),scope:'original NBR signed-in visual comparison NOT performed',
+  viewports:[],routes:[],forms:[],javascriptExceptions:[],pass:false};
+async function boot(){
+ const p=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173','--strictPort'],{stdio:['ignore','pipe','pipe']});
+ let logs='';
+ p.stdout.on('data',d=>logs+=d);p.stderr.on('data',d=>logs+=d);
+ for(let i=0;i<75;i++){
+   if(p.exitCode!==null)throw Error('Preview stopped '+logs);
+   try{const v=await fetch(SITE);if(v.ok && (await v.text()).includes('NBR eReturn Ledger'))return p;}catch{}
+   await sleep(200);
+ }
+ p.kill();throw Error('Preview inaccessible '+logs);
+}
+async function openNav(page,label,group,width){
+ if(width<600)await page.getByRole('button',{name:'Open ledger menu',exact:true}).click();
+ const nav=page.locator('aside.eledger-sidebar');
+ if(group==='source'||group==='ait'){
+  const g=nav.getByRole('button',{name:group==='source'?'Claim Source Tax':'Claim AIT',exact:true});
+  if(await g.getAttribute('aria-expanded')==='false')await g.click();
+ }
+ await nav.getByRole('button',{name:label,exact:true}).click();
+}
+async function screenshot(page,rel){
+ const target=path.join(DEST,rel+'.png');
+ await page.evaluate(()=>window.scrollTo(0,0));
+ await page.screenshot({path:target,fullPage:true,animations:'disabled'});
+ return target;
+}
+async function checkOverflow(page){
+ const dims=await page.evaluate(()=>({doc:document.documentElement.scrollWidth,
+   viewport:document.documentElement.clientWidth}));
+ assert.ok(dims.doc<=dims.viewport+1,'Document overflow '+JSON.stringify(dims));
+}
+let preview, browser;
+try {
+ await mkdir(DEST,{recursive:true});
+ preview=await boot();browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ for(const width of [1280,390]){
+  const context=await browser.newContext({viewport:{width,height:width===390?844:900},
+    isMobile:width===390,hasTouch:width===390,locale:'en-US'});
+  const page=await context.newPage();page.setDefaultTimeout(12000);
+  page.on('pageerror',x=>out.javascriptExceptions.push({width,error:String(x)}));
+  const response=await page.goto(SITE,{waitUntil:'networkidle'});
+  assert.equal(response.status(),200);
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nbr_eledger_entries_v1')),'[]');
+  out.viewports.push(width);
+  for(const [id,label,group] of routes){
+   await openNav(page,label,group,width);
+   if(group==='status')await page.getByRole('dialog',{name:'Tax Payment Status'}).waitFor();
+   else await page.locator('main.eledger-main').waitFor();
+   for(const lang of ['en','bn']){
+    if(lang==='bn')await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+    const langValue=await page.locator('.eledger-app').getAttribute('lang');
+    assert.equal(langValue,lang);
+    await checkOverflow(page);
+    const shot=await screenshot(page,String(width)+'/'+id+'-'+lang);
+    out.routes.push({width,id,originalNavLabel:label,language:lang,visual:shot,pass:true});
+   }
+   await page.getByRole('button',{name:'English',exact:true}).click();
+   if(group==='status')await page.getByRole('button',{name:'Close Tax Payment Status'}).click();
+  }
+  for(const [route,expectedFields,id] of forms){
+   const group=route==='Adjustment of Tax Refund'?'direct':'source';
+   await openNav(page,route,group,width);
+   const add=route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
+   await page.getByRole('button',{name:add,exact:true}).click();
+   const dialog=page.getByRole('dialog');
+   await dialog.waitFor();
+   const inputs=dialog.locator('input,select,textarea');
+   const fieldCount=await inputs.count();
+   const fields=await inputs.evaluateAll(nodes=>nodes.map(x=>({
+    tag:x.tagName.toLowerCase(),type:x.getAttribute('type'),name:x.getAttribute('aria-label'),
+    parentLabel:x.closest('label')?.textContent?.trim().slice(0,120)
+   })));
+   assert.equal(fieldCount,expectedFields,
+     route+': source field inventory expected '+expectedFields+' controls, got '+fieldCount);
+   await checkOverflow(page);
+   const shot=await screenshot(page,String(width)+'/form-'+id+'-en');
+   out.forms.push({width,route,expectedFields,fieldCount,fields,visual:shot,pass:true});
+   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+  }
+  assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
+  await context.close();
+ }
+ assert.equal(out.routes.length,72);
+ assert.equal(out.forms.length,10);
+ out.pass=true;
+ console.log('VISUAL_EVIDENCE PASS '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
+}catch(e){console.error('VISUAL_EVIDENCE FAIL',e.stack||String(e));process.exitCode=1;}
+finally{
+ await writeFile(path.join(DEST,'manifest.json'),JSON.stringify(out,null,2));
+ if(browser)await browser.close();
+ if(preview)preview.kill('SIGTERM');
+}
