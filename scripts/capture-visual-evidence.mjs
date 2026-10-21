@@ -113,9 +113,9 @@ try {
   assert.equal(await activeRoute.count(),1,
     'Salary (Others) must be selected even when mobile navigation is closed');
   // Return to the dashboard and ensure the group-aggregate card opens all payment buckets.
-  if(width<600)await page.getByRole('button',{name:'Open ledger menu'}).click();
+  if(width<=960)await page.getByRole('button',{name:'Open ledger menu'}).click();
   const sidebar=page.locator('aside.eledger-sidebar');
-  if(width<600)assert.ok(await sidebar.evaluate(el=>el.classList.contains('is-open')),
+  if(width<=960)assert.ok(await sidebar.evaluate(el=>el.classList.contains('is-open')),
     'Mobile navigation did not open before return to Dashboard');
   const dashboardNav=sidebar.locator('nav.eledger-sidebar-links > button').first();
   await dashboardNav.click();
