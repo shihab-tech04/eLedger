@@ -55,7 +55,6 @@ export const DashboardView: React.FC = () => {
   // A recorded amount is not an authority-verified credit.
   const ledgerTotal = sourceTotal + aitTotal + otherTotal;
   const recordedCategories = allRoutes.filter((route) => (routeAmounts.get(route.id) ?? 0) !== 0).length;
-  const emptyRoutes = allRoutes.filter((route) => (routeAmounts.get(route.id) ?? 0) === 0);
   const hasRecordedAmounts = recordedCategories > 0;
   const sourcePct = percent(sourceTotal, ledgerTotal);
   const aitPct = percent(aitTotal, ledgerTotal);
