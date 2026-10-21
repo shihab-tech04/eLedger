@@ -75,11 +75,54 @@ import { PaymentsView } from '../features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from '../features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from '../components/modals/TaxPaymentStatusModal.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../components/ui/LedgerForm.tsx';
+import { validateDocumentClaimDraft, documentClaimIssueText } from '../domain/documentClaimValidation.ts';
 import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+
+  it('identifies the original six Add fields individually without guessing or changing their defaults', () => {
+    assert.deepEqual(validateDocumentClaimDraft({
+      authority: '', documentType: '', reference: '', date: '', documentAmount: '', claimedAmount: '',
+    }), {
+      authority: 'required', documentType: 'required', reference: 'required',
+      date: 'required', documentAmount: 'required', claimedAmount: 'required',
+    });
+    const valid = {
+      authority: 'Employer', documentType: 'CHALLAN', reference: 'REF-123',
+      date: '2026-05-15', documentAmount: '2000', claimedAmount: '1000',
+    };
+    assert.deepEqual(validateDocumentClaimDraft(valid), {});
+    assert.deepEqual(validateDocumentClaimDraft({ ...valid, documentType: 'CERTIFICATE' }), {});
+    assert.equal(validateDocumentClaimDraft({ ...valid, claimedAmount: '3000' }).claimedAmount, 'exceedsDocument');
+    assert.equal(validateDocumentClaimDraft({ ...valid, documentAmount: '-1' }).documentAmount, 'invalidAmount');
+    assert.equal(validateDocumentClaimDraft({ ...valid, claimedAmount: 'not-a-number' }).claimedAmount, 'invalidAmount');
+    assert.equal(validateDocumentClaimDraft({ ...valid, reference: '   ' }).reference, 'required');
+    assert.equal(documentClaimIssueText('required', (en) => en), 'Required');
+    assert.equal(documentClaimIssueText('exceedsDocument', (_en, bn) => bn), 'দলিলের অঙ্কের বেশি নয়');
+  });
+
+  it('renders shared input and select errors beside fields with assistive technology attributes', () => {
+    const textField = renderToStaticMarkup(React.createElement(LedgerInput, {
+      label: 'Depositing Authority', value: '', error: 'Required', onValueChange: () => {},
+    }));
+    assert.match(textField, /aria-invalid="true"/);
+    assert.match(textField, /aria-describedby="[^"]+"/);
+    assert.match(textField, /class="eledger-field-error"/);
+    assert.match(textField, /role="alert">Required/);
+    const choice = renderToStaticMarkup(React.createElement(LedgerSelect, {
+      label: 'Payment Document Type', value: '', error: 'Required', onValueChange: () => {},
+      children: React.createElement('option', { value: '' }, 'Select One'),
+    }));
+    assert.match(choice, /aria-invalid="true"/);
+    assert.match(choice, /role="alert">Required/);
+    const clean = renderToStaticMarkup(React.createElement(LedgerInput, {
+      label: 'Depositing Authority', value: 'Employer', onValueChange: () => {},
+    }));
+    assert.doesNotMatch(clean, /eledger-field-error|aria-invalid="true"/);
+  });
+
   it('matches the observed Source Tax headings without rewriting legal registry metadata', () => {
     assert.deepEqual(OBSERVED_SOURCE_TAX_HEADINGS, {
       'salary-ibas': 'iBAS++ (Salary) TDS',
