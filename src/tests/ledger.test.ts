@@ -2120,13 +2120,34 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Source Tax categories/);
     assert.match(markup, /AIT categories/);
     assert.match(markup, /Other tax &amp; adjustments/);
-    assert.match(markup, /eledger-composition-bar/);
+    // Empty ledgers must not render misleading 0% charts or promote payroll-only entry.
+    assert.doesNotMatch(markup, /class="eledger-composition-bar"/);
+    assert.match(markup, /Recorded Ledger Total/);
+    assert.match(markup, /eledger-dashboard-credit-status/);
+    assert.match(markup, /eledger-dashboard-primary-next/);
+    assert.match(markup, /Start with Salary \(Others\)/);
+    assert.match(markup, /Show unrecorded categories/);
+    assert.doesNotMatch(markup, /17 categories have no amount/);
     assert.match(markup, /Salary \(iBAS\+\+\)/);
     assert.match(markup, /Quick actions/);
     assert.match(markup, /Tax Payment Status/);
     assert.match(markup, /Independently authorized verified credit/);
     assert.doesNotMatch(markup, /eledger-welcome|eledger-progress-ring|Recent ledger activity/);
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
+  });
+
+  it('keeps the Dashboard verification metric adjacent to summary cards and zero-denominator state accurate', () => {
+    const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
+      React.createElement(DashboardView)));
+    const cards = markup.indexOf('eledger-summary-cards');
+    const status = markup.indexOf('eledger-dashboard-credit-status');
+    const guide = markup.indexOf('eledger-ledger-composition');
+    assert.ok(cards > 0 && status > cards && guide > status);
+    assert.match(markup, /Recorded Ledger Total/);
+    assert.match(markup, /Recorded Ledger Total is a local record/);
+    assert.match(markup, /No recorded amounts yet/);
+    assert.doesNotMatch(markup, /0\.0% of Ledger total/);
+    assert.match(markup, /eledger-category-unrecorded/);
   });
 
   it('renders exactly the original Salary (Others) table columns and keeps older stored evidence intact', () => {
