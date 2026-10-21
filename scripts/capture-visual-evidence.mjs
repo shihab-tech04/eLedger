@@ -109,7 +109,9 @@ try {
 
   // The primary CTA must land on an editable Salary (Others) head, not read-only iBAS++.
   await page.getByRole('button',{name:'Start with Salary (Others)',exact:true}).click();
-  await page.locator('aside.eledger-sidebar button[aria-current="page"]').filter({hasText:'Salary (Others)'}).waitFor();
+  const activeRoute=page.locator('aside.eledger-sidebar button[aria-current="page"]').filter({hasText:'Salary (Others)'});
+  assert.equal(await activeRoute.count(),1,
+    'Salary (Others) must be selected even when mobile navigation is closed');
   // Return to the dashboard and ensure the group-aggregate card opens all payment buckets.
   if(width<600)await page.getByRole('button',{name:'Open ledger menu'}).click();
   await page.locator('aside.eledger-sidebar').getByRole('button',{name:'Dashboard',exact:true}).click();
