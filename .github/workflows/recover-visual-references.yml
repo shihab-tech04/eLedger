@@ -1,0 +1,52 @@
+name: eLedger tracked visual-reference recovery
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-visual-references.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  recover-existing-images:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preserve all tracked image bytes, Git blobs and provenance without changing sources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import subprocess, os, json, pathlib, hashlib, shutil, datetime
+          root=pathlib.Path('artifacts/existing-image-recovery')
+          root.mkdir(parents=True, exist_ok=True)
+          paths=subprocess.check_output(['git','ls-files','-z']).decode('utf8').split('\0')
+          records=[]
+          for name in paths:
+              if name.lower().endswith(('.png','.jpg','.jpeg','.webp','.gif')):
+                  src=pathlib.Path(name)
+                  if not src.is_file(): continue
+                  dest=root/'tracked-images'/src
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(src,dest)
+                  data=src.read_bytes()
+                  records.append({
+                      'path':name,'bytes':len(data),
+                      'sha256':hashlib.sha256(data).hexdigest(),
+                      'git_blob_sha1':subprocess.check_output(['git','hash-object',name]).decode().strip(),
+                      'verified_original_nbr_screenshot':False,
+                      'note':'UNCLASSIFIED repository asset; may be recreated design reference, not authenticated NBR original'
+                  })
+          manifest={'commit':os.environ.get('GITHUB_SHA'),'captured_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                  'classification':'UNCLASSIFIED until independent image inspection','images':records}
+          (root/'manifest.json').write_text(json.dumps(manifest,indent=2))
+          print('ARCHIVE_EXISTING_IMAGES: '+str(len(records))+' tracked images copied; no source modifications')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eLedger-existing-visual-refs-${{ github.run_id }}
+          path: artifacts/existing-image-recovery/
+          if-no-files-found: error
+          retention-days: 30
