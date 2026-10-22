@@ -2362,6 +2362,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Locally recorded TDS/);
     assert.match(markup, /Review Salary \(Others\)/);
     assert.match(markup, /How eLedger works/);
+    assert.match(markup, /Salary \(iBAS\+\+\)/);
+    assert.match(markup, /Salary \(Others\)/);
+    assert.doesNotMatch(markup, /Salary &amp; iBAS\+\+ Claims/);
     assert.doesNotMatch(markup, /No TDS data found|local demonstration entries/);
     assert.doesNotMatch(markup, /Search local records/);
     assert.doesNotMatch(markup, /TDS Available \(local records only\)/);
