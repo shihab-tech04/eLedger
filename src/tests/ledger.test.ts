@@ -2355,11 +2355,28 @@ describe('eLedger — Historical UI restoration guardrails', () => {
   it('keeps iBAS++ local payroll records read-only without fabricating a live official lookup', () => {
     const markup = renderToStaticMarkup(React.createElement(LedgerProvider, null,
       React.createElement(SourceTaxView)));
-    assert.match(markup, /iBAS\+\+ \(Salary\) TDS/);
-    assert.match(markup, /No TDS data found/);
+    assert.match(markup, /Salary \(iBAS\+\+\)/);
+    assert.match(markup, /No local iBAS\+\+ payroll records available/);
+    assert.match(markup, /This does not mean that no tax was deducted/);
+    assert.match(markup, /not connected to the official CGA\/iBAS\+\+ payroll system/);
+    assert.match(markup, /Locally recorded TDS/);
+    assert.match(markup, /Review Salary \(Others\)/);
+    assert.match(markup, /How eLedger works/);
+    assert.doesNotMatch(markup, /No TDS data found|local demonstration entries/);
     assert.doesNotMatch(markup, /Search local records/);
     assert.doesNotMatch(markup, /TDS Available \(local records only\)/);
     assert.doesNotMatch(markup, /Add Entry/);
+  });
+
+  it('renders honest, accessible Bengali iBAS empty state without enabling a local payroll write', () => {
+    const markup = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+      React.createElement(LedgerProvider, null, React.createElement(SourceTaxView))));
+    assert.match(markup, /স্থানীয় iBAS\+\+ বেতনের তথ্য পাওয়া যায়নি/);
+    assert.match(markup, /এর অর্থ এই নয় যে কোনো উৎস কর কাটা হয়নি/);
+    assert.match(markup, /অন্যান্য বেতন দেখুন/);
+    assert.match(markup, /ই-লেজার যেভাবে কাজ করে/);
+    assert.match(markup, /aria-labelledby="eledger-ibas-empty-title"/);
+    assert.doesNotMatch(markup, /type="submit"|Add Entry|রেকর্ড যোগ করুন/);
   });
 
   it('renders original-style AIT categories with local-only lookup and safe claim totals', () => {
