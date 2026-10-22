@@ -80,7 +80,45 @@ import { validateDocumentClaimDraft, documentClaimIssueText } from '../domain/do
 import { validateLtuAdd, validateRefundAdd } from '../domain/manualAddValidation.ts';
 import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
+import { NeirRecordDetailsDrawer } from '../components/neir/NeirRecordDetailsDrawer.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
+
+describe('NEIR design-transfer acceptance (source: uploaded NEIR-main.zip)', () => {
+  it('provides one accessible read-only details drawer with original field names', () => {
+    const markup = renderToStaticMarkup(React.createElement(NeirRecordDetailsDrawer, {
+      title: 'Record Details',
+      subtitle: 'REF-SYNTHETIC-001',
+      fields: [{ label: 'Bank Name', value: 'Test Bank' }, { label: 'TDS', value: '800' }],
+      onClose: () => {},
+    }));
+    assert.match(markup, /role="dialog"/);
+    assert.match(markup, /aria-modal="true"/);
+    assert.match(markup, /eledger-neir-drawer-panel/);
+    assert.match(markup, /REF-SYNTHETIC-001/);
+    assert.match(markup, /Test Bank/);
+    assert.match(markup, /Details shown here are local ledger records/);
+    assert.doesNotMatch(markup, /Edit Entry|Save claim|Government verified credit/);
+  });
+
+  it('keeps read-only source rows keyboard-addressable while preserving official column order', () => {
+    const item = {
+      ...INITIAL_LEDGER_ENTRIES[0], id: 'neir-reference-row', routeId: 'bank-fi' as const,
+      referenceNo: 'REF-SYNTHETIC-001', sourceEntity: 'Test Bank',
+      taxDeducted: 800, grossAmount: 5000, status: 'PENDING_VERIFICATION' as const,
+    };
+    const markup = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, {
+      routeId: 'bank-fi', entries: [item],
+    }));
+    assert.match(markup, /eledger-neir-table-workspace/);
+    assert.match(markup, /eledger-neir-record-row/);
+    assert.match(markup, /tabIndex="0"|tabindex="0"/i);
+    assert.match(markup, /Bank Name/);
+    assert.match(markup, /Interest Amount/);
+    assert.match(markup, /TDS/);
+    assert.doesNotMatch(markup, /Edit Entry|Add Entry|Delete row/);
+    assert.equal(OFFICIAL_READONLY_COLUMNS['bank-fi'].length, 7);
+  });
+});
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
 
