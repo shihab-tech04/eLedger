@@ -20,12 +20,18 @@ export function RouteMobileTabs({ routes, activeId, label, onSelect }: {
   }, [activeId]);
 
   return (
-    <nav ref={navRef} className="eledger-source-mobile-routes" aria-label={label}>
+    <div className="eledger-mobile-route-selector">
+      <div className="eledger-mobile-route-selector-heading">
+        <span>{label}</span>
+        <span className="eledger-route-scroll-hint" aria-hidden="true">{language === 'bn' ? 'আরও খাত দেখতে সরান →' : 'Swipe for more →'}</span>
+      </div>
+      <nav ref={navRef} className="eledger-source-mobile-routes" aria-label={label}>
       {routes.map((route) => (
         <button key={route.id} type="button" className={route.id === activeId ? 'is-active' : ''}
           aria-current={route.id === activeId ? 'page' : undefined}
-          onClick={() => onSelect(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
+          onClick={() => onSelect(route.id)}>{language === 'bn' ? route.bengaliTitle : route.id === 'salary-ibas' ? 'Salary (iBAS++)' : route.id === 'salary-others' ? 'Salary (Others)' : route.title}</button>
       ))}
-    </nav>
+      </nav>
+    </div>
   );
 }

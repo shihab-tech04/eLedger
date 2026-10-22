@@ -37,7 +37,7 @@ const forms = [
 ];
 const out={source:'compiled Vite dist, isolated empty browser storage',release:process.env.GITHUB_SHA||'LOCAL',
   observedAt:new Date().toISOString(),scope:'original NBR signed-in visual comparison NOT performed',
-  viewports:[],routes:[],forms:[],dashboard:[],javascriptExceptions:[],pass:false};
+  viewports:[],routes:[],forms:[],dashboard:[],ibas:[],javascriptExceptions:[],pass:false};
 async function boot(){
  const p=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173','--strictPort'],{stdio:['ignore','pipe','pipe']});
  let logs='';
@@ -133,6 +133,53 @@ try {
   assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
   await ctx.close();
  }
+ // Independently exercise Page 02 iBAS++ at small phone, tablet and desktop widths.
+ for(const width of [375,768,1280,1920]){
+  const ctx=await browser.newContext({viewport:{width,height:width<=375?812:900},
+    isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+  const page=await ctx.newPage();page.setDefaultTimeout(12000);
+  page.on('pageerror',e=>out.javascriptExceptions.push({width,error:String(e)}));
+  await page.goto(SITE,{waitUntil:'networkidle'});
+  if(width<=960)await page.getByRole('button',{name:'Open ledger menu'}).click();
+  const nav=page.locator('aside.eledger-sidebar');
+  await nav.getByRole('button',{name:'Salary (iBAS++)',exact:true}).click();
+  await page.getByRole('heading',{name:'Salary (iBAS++)',exact:true}).waitFor();
+  await page.locator('#eledger-ibas-empty-title').waitFor();
+  assert.match(await page.locator('.eledger-ibas-empty').innerText(),/does not mean that no tax was deducted/);
+  assert.equal(await page.getByRole('button',{name:'Add Entry',exact:true}).count(),0);
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('nbr_eledger_entries_v1'))),[],
+    'Read-only payroll empty state must not invent records');
+  if(width<=960){
+    const selector=page.locator('.eledger-mobile-route-selector');
+    await selector.waitFor({state:'visible'});
+    assert.match(await selector.innerText(),/Swipe for more/);
+    const navTabs=selector.locator('nav.eledger-source-mobile-routes');
+    const dimensions=await navTabs.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth}));
+    assert.ok(dimensions.scroll>dimensions.width,'iBAS source navigation needs visible overflow');
+    const targets=await navTabs.locator('button').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().height));
+    assert.ok(targets.length>=8 && targets.every(height=>height>=43.5),
+      'Category touch targets must be at least 44px high: '+targets);
+  }
+  await checkOverflow(page);
+  const en=await screenshot(page,'ibas/'+width+'-en');
+  out.ibas.push({width,language:'en',screenshot:en,pass:true});
+  await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+  await page.locator('.eledger-app[lang="bn"]').waitFor();
+  await page.getByRole('heading',{name:'স্থানীয় iBAS++ বেতনের তথ্য পাওয়া যায়নি'}).waitFor();
+  await checkOverflow(page);
+  const bn=await screenshot(page,'ibas/'+width+'-bn');
+  out.ibas.push({width,language:'bn',screenshot:bn,pass:true});
+  await page.getByRole('button',{name:'English',exact:true}).click();
+
+  await page.getByRole('button',{name:'Review Salary (Others)',exact:true}).click();
+  await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
+  if(width<=960)await page.getByRole('button',{name:'Open ledger menu'}).click();
+  await nav.getByRole('button',{name:'Salary (iBAS++)',exact:true}).click();
+  await page.getByRole('button',{name:'How eLedger works',exact:true}).click();
+  await page.getByRole('heading',{name:'How eReturn Ledger Works',exact:true}).waitFor();
+  assert.equal(out.javascriptExceptions.filter(x=>x.width===width).length,0);
+  await ctx.close();
+ }
  for(const width of [1280,390]){
   const context=await browser.newContext({viewport:{width,height:width===390?844:900},
     isMobile:width===390,hasTouch:width===390,locale:'en-US'});
@@ -208,10 +255,11 @@ try {
   await context.close();
  }
  assert.equal(out.dashboard.length,8);
+ assert.equal(out.ibas.length,8);
  assert.equal(out.routes.length,72);
  assert.equal(out.forms.length,10);
  out.pass=true;
- console.log('VISUAL_EVIDENCE PASS '+out.dashboard.length+' dashboard captures, '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
+ console.log('VISUAL_EVIDENCE PASS '+out.dashboard.length+' dashboard captures, '+out.ibas.length+' iBAS EN/BN captures, '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
 }catch(e){console.error('VISUAL_EVIDENCE FAIL',e.stack||String(e));process.exitCode=1;}
 finally{
  await writeFile(path.join(DEST,'manifest.json'),JSON.stringify(out,null,2));
