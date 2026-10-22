@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 import type { LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 
@@ -67,6 +68,8 @@ export function isOfficialReadOnlyRoute(id: LedgerRouteId): id is ReadOnlyRoute 
 
 export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: LedgerEntry[] }> = ({ routeId, entries }) => {
   const t = useLedgerCopy();
+  const [selected, setSelected] = useState<LedgerEntry | null>(null);
+  useEffect(() => { setSelected(null); }, [routeId]);
   const labelStatus = (status: LedgerEntry['status']) => {
     switch (status) {
       case 'VERIFIED': return t('Verified', 'যাচাইকৃত');
@@ -77,18 +80,39 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
     }
   };
   const columns = OFFICIAL_READONLY_COLUMNS[routeId];
-  return <section className="eledger-panel eledger-official-manual-table" aria-label={t('Tax details','করের বিবরণ')}>
+  return <section className="eledger-panel eledger-official-manual-table eledger-neir-table-workspace" aria-label={t('Tax details','করের বিবরণ')}>
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
         <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{column}</th>)}</tr></thead>
         <tbody>
           {entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
-            entries.map((entry, index) => <tr key={entry.id}>
+            entries.map((entry, index) => <tr key={entry.id} tabIndex={0}
+              className="eledger-neir-record-row"
+              aria-label={t('View record details','রেকর্ডের বিস্তারিত দেখুন') + ': ' + entry.referenceNo}
+              onClick={() => setSelected(entry)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelected(entry);
+                }
+              }}>
               <td data-label="SL.">{index + 1}</td>
               {recordValues(entry, routeId, labelStatus).map((value, i) => <td data-label={columns[i + 1]} key={i}>{value}</td>)}
             </tr>)}
         </tbody>
       </table>
     </div>
+    {selected && <NeirRecordDetailsDrawer
+      title={t('Record Details','রেকর্ডের বিস্তারিত')}
+      subtitle={selected.referenceNo}
+      onClose={() => setSelected(null)}
+      fields={[
+        { label: t('Reference','রেফারেন্স'), value: selected.referenceNo },
+        ...recordValues(selected, routeId, labelStatus).map((value, index) => ({
+          label: columns[index + 1] || t('Record field','রেকর্ডের তথ্য'),
+          value: String(value),
+        })).filter(field => field.label !== 'Action' && field.label !== ''),
+      ]}/>
+    }
   </section>;
 };
