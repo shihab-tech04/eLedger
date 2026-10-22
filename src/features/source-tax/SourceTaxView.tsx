@@ -17,7 +17,7 @@ import { filterEntriesByRoute } from '../../domain/calculations.ts';
 
 /** Source-observed page copy. Legal metadata stays in the route registry. */
 export const OBSERVED_SOURCE_TAX_HEADINGS: Readonly<Record<string, string>> = {
-  'salary-ibas': 'Salary (iBAS++)',
+  'salary-ibas': 'iBAS++ (Salary) TDS',
   'salary-others': 'Salary (Others)',
   'bank-fi': 'Bank TDS',
   dividend: 'Dividend',
@@ -85,7 +85,9 @@ export const SourceTaxView: React.FC = () => {
   };
   const handleDeleteEntry = (id: string) => deleteEntry(id);
 
-  const heading = OBSERVED_SOURCE_TAX_HEADINGS[currentRoute.id] ?? currentRoute.title;
+  // Preserve the source-observed original heading in the evidence registry, while
+  // using the consistent navigation label in this custom frontend.
+  const heading = isIbas ? 'Salary (iBAS++)' : OBSERVED_SOURCE_TAX_HEADINGS[currentRoute.id] ?? currentRoute.title;
   const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
     isIbas ? (routeEntries.length > 0 ? 'Locally recorded payroll information' : undefined) :
     isServicePayment ? 'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [Section-90]' : undefined;
