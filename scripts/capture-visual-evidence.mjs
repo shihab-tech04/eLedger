@@ -254,6 +254,46 @@ try {
   assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
   await context.close();
  }
+ // NEIR component parity on a synthetic, isolated read-only bank record.
+ // This fixture never reaches production storage or claims official tax verification.
+ for(const width of [390,1280]){
+  const ctx=await browser.newContext({viewport:{width,height:width===390?844:900},
+    isMobile:width===390,hasTouch:width===390,locale:'en-US'});
+  const fixture={id:'neir-ui-test-01',taxpayerTin:'123456789012',assessmentYear:'2026-2027',
+    category:'SOURCE_TAX',routeId:'bank-fi',referenceNo:'NEIR-UI-FIXTURE-001',
+    sourceEntity:'Fixture Bank',sectionCode:'Sec 102',grossAmount:1000,taxDeducted:100,
+    date:'2026-05-10',status:'PENDING_VERIFICATION',workflow:'SYNC_FROM_INCOME',
+    isManual:false,externalVerified:false,createdAt:'2026-06-01T00:00:00.000Z',
+    updatedAt:'2026-06-01T00:00:00.000Z'};
+  await ctx.addInitScript(record=>{
+    if(localStorage.getItem('nbr_eledger_entries_v1')==null)
+      localStorage.setItem('nbr_eledger_entries_v1',JSON.stringify([record]));
+  },fixture);
+  const page=await ctx.newPage();page.setDefaultTimeout(12000);
+  page.on('pageerror',e=>out.javascriptExceptions.push({width,error:String(e)}));
+  await page.goto(SITE,{waitUntil:'networkidle'});
+  await openNav(page,'Bank/FI Interest/Profit','source',width);
+  const row=page.locator('tr.eledger-neir-record-row').filter({hasText:'Fixture Bank'});
+  await row.waitFor({state:'visible'});
+  await row.focus();await page.keyboard.press('Enter');
+  const drawer=page.getByRole('dialog',{name:'Record Details'});
+  await drawer.waitFor({state:'visible'});
+  assert.match(await drawer.innerText(),/Fixture Bank/);
+  assert.match(await drawer.innerText(),/NEIR-UI-FIXTURE-001/);
+  assert.equal(await drawer.getAttribute('aria-modal'),'true');
+  await checkOverflow(page);
+  const shot=await screenshot(page,'neir/'+width+'-record-details');
+  await page.keyboard.press('Escape');
+  await drawer.waitFor({state:'detached'});
+  assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
+  const stored=await page.evaluate(()=>JSON.parse(localStorage.getItem('nbr_eledger_entries_v1')));
+  assert.equal(stored.length,1);
+  assert.equal(stored[0].externalVerified,false);
+  out.neir=out.neir??[];
+  out.neir.push({width,screenshot:shot,keyboardOpen:true,escapeClose:true,recordUnchanged:true});
+  await ctx.close();
+ }
+ assert.equal(out.neir.length,2);
  assert.equal(out.dashboard.length,8);
  assert.equal(out.ibas.length,8);
  assert.equal(out.routes.length,72);
