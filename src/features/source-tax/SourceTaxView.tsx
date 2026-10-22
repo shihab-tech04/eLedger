@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { List, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BookOpen, FileSearch, List, ShieldCheck } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerCopy, useLedgerLanguage } from '../../context/LanguageContext.tsx';
 import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../domain/routeRegistry.ts';
@@ -17,7 +17,7 @@ import { filterEntriesByRoute } from '../../domain/calculations.ts';
 
 /** Source-observed page copy. Legal metadata stays in the route registry. */
 export const OBSERVED_SOURCE_TAX_HEADINGS: Readonly<Record<string, string>> = {
-  'salary-ibas': 'iBAS++ (Salary) TDS',
+  'salary-ibas': 'Salary (iBAS++)',
   'salary-others': 'Salary (Others)',
   'bank-fi': 'Bank TDS',
   dividend: 'Dividend',
@@ -41,7 +41,7 @@ export const hasReadOnlyIncomeSync = (id: LedgerRouteId): boolean =>
 
 export const SourceTaxView: React.FC = () => {
   const {
-    entries, activeRouteId, setActiveRouteId,
+    entries, activeRouteId, setActiveRouteId, setActiveNavTab,
     addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
   const t = useLedgerCopy();
@@ -87,11 +87,11 @@ export const SourceTaxView: React.FC = () => {
 
   const heading = OBSERVED_SOURCE_TAX_HEADINGS[currentRoute.id] ?? currentRoute.title;
   const caption = isSalaryOthers ? 'Salary [ Section-86 ]' :
-    isIbas ? 'Local iBAS++ payroll references — not connected to CGA' :
+    isIbas ? (routeEntries.length > 0 ? 'Locally recorded payroll information' : undefined) :
     isServicePayment ? 'Meeting Fees, Honorarium, Professional Service, Consultancy etc. [Section-90]' : undefined;
   const localizedCaption = language === 'bn'
     ? isSalaryOthers ? 'বেতন · ধারা ৮৬'
-      : isIbas ? 'স্থানীয় iBAS++ বেতন রেকর্ড — সরকারি সংযোগ নেই'
+      : isIbas ? (routeEntries.length > 0 ? 'স্থানীয়ভাবে রেকর্ডকৃত বেতনের তথ্য' : undefined)
       : isServicePayment
         ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
         : undefined
@@ -106,8 +106,9 @@ export const SourceTaxView: React.FC = () => {
       <RouteMobileTabs routes={sourceTaxRoutes} activeId={currentRoute.id}
         label={t('Source Tax categories','উৎস করের খাতসমূহ')} onSelect={setActiveRouteId}/>
 
-      <LedgerSummary amountLabel={t('Total claimed','মোট দাবি')} amount={money(totalTaxForRoute)} count={routeEntries.length}
-        note={t('These are recorded claims, not independently verified tax credits.','রেকর্ডকৃত দাবি এখনো স্বতন্ত্রভাবে যাচাইকৃত কর ক্রেডিট নয়।')}/>
+      <LedgerSummary amountLabel={isIbas ? t('Locally recorded TDS','স্থানীয়ভাবে রেকর্ডকৃত উৎস কর') : t('Total claimed','মোট দাবি')}
+        amount={money(totalTaxForRoute)} count={routeEntries.length}
+        note={isIbas ? undefined : t('These are recorded claims, not independently verified tax credits.','রেকর্ডকৃত দাবি এখনো স্বতন্ত্রভাবে যাচাইকৃত কর ক্রেডিট নয়।')}/>
 
       {isIbas && routeEntries.length > 0 && (
         <section className="eledger-ibas-workflow">
@@ -166,12 +167,27 @@ export const SourceTaxView: React.FC = () => {
               helperText={t('Enter the commercial vehicle transaction key to check the available reference record.','সংশ্লিষ্ট স্থানীয় রেকর্ড খুঁজতে বাণিজ্যিক গাড়ির লেনদেন কী দিন।')}/>
           )}
           <div ref={localClaimsRef} className="eledger-source-record-list">
-            {isIbas && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
-              {t('Saved iBAS++-style records are local demonstration entries; they do not establish authoritative tax credits.','সংরক্ষিত iBAS++-ধাঁচের রেকর্ড স্থানীয় নমুনা মাত্র; এগুলো সরকারি যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
+            {isIbas && routeEntries.length > 0 && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
+              {t('These locally recorded salary deductions are not authority-verified tax credits.','স্থানীয়ভাবে রেকর্ডকৃত এই বেতন-উৎস কর কর্তৃপক্ষের যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
             {isOfficialReadOnlyRoute(currentRoute.id) ? (
               <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
             ) : isIbas && routeEntries.length === 0 ? (
-              <section className="eledger-panel eledger-entry-empty">{t('No TDS data found','কোনো উৎস করের তথ্য পাওয়া যায়নি')}</section>
+              <section className="eledger-panel eledger-ibas-empty" aria-labelledby="eledger-ibas-empty-title">
+                <span className="eledger-ibas-empty-icon" aria-hidden="true"><FileSearch size={24}/></span>
+                <div className="eledger-ibas-empty-copy">
+                  <h2 id="eledger-ibas-empty-title">{t('No local iBAS++ payroll records available','স্থানীয় iBAS++ বেতনের তথ্য পাওয়া যায়নি')}</h2>
+                  <p>{t('This does not mean that no tax was deducted. This standalone ledger is not connected to the official CGA/iBAS++ payroll system.','এর অর্থ এই নয় যে কোনো উৎস কর কাটা হয়নি। এই স্বতন্ত্র লেজার সরকারি CGA/iBAS++ বেতন ব্যবস্থার সঙ্গে সংযুক্ত নয়।')}</p>
+                  <p>{t('Government payroll deductions must be checked through the authorized eReturn iBAS++ workflow. For salary outside iBAS++, review Salary (Others) where applicable.','সরকারি বেতনের উৎস কর অনুমোদিত ই-রিটার্ন iBAS++ প্রক্রিয়ায় যাচাই করতে হবে। iBAS++-এর বাইরের বেতনের ক্ষেত্রে প্রযোজ্য হলে অন্যান্য বেতন খাত দেখুন।')}</p>
+                  <div className="eledger-ibas-empty-actions">
+                    <button type="button" className="eledger-button eledger-button-primary" onClick={() => {
+                      setActiveRouteId('salary-others'); setActiveNavTab('source-tax');
+                    }}>{t('Review Salary (Others)','অন্যান্য বেতন দেখুন')}<ArrowRight size={16} aria-hidden="true"/></button>
+                    <button type="button" className="eledger-button eledger-button-secondary"
+                      onClick={() => setActiveNavTab('ledger-guide')}>
+                      <BookOpen size={16} aria-hidden="true"/>{t('How eLedger works','ই-লেজার যেভাবে কাজ করে')}</button>
+                  </div>
+                </div>
+              </section>
             ) : (
             <InlineEditableTable
               key={currentRoute.id} entries={routeEntries} category="SOURCE_TAX"
