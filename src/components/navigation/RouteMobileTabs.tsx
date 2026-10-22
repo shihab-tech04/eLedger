@@ -29,7 +29,7 @@ export function RouteMobileTabs({ routes, activeId, label, onSelect }: {
       {routes.map((route) => (
         <button key={route.id} type="button" className={route.id === activeId ? 'is-active' : ''}
           aria-current={route.id === activeId ? 'page' : undefined}
-          onClick={() => onSelect(route.id)}>{language === 'bn' ? route.bengaliTitle : route.title}</button>
+          onClick={() => onSelect(route.id)}>{language === 'bn' ? route.bengaliTitle : route.id === 'salary-ibas' ? 'Salary (iBAS++)' : route.id === 'salary-others' ? 'Salary (Others)' : route.title}</button>
       ))}
       </nav>
     </div>
