@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, Eye, Plus, Search, Trash2, X, Pencil } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
@@ -12,6 +12,7 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
+import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 
 type ManualRoute = Extract<LedgerRouteId, 'service-payment' | 'other-tds' | 'source-ltu' | 'refund'>;
 type Draft = {
@@ -57,7 +58,7 @@ export const hasUnsupportedLegacyDocumentType = (entry: LedgerEntry, routeId: Ma
 const cols: Record<ManualRoute, string[]> = {
   'service-payment': ['SL.', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
   'other-tds': ['SL.', 'Purpose of the Payment', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
-  'source-ltu': ['SL.', 'Section', 'Claim Amount', 'Challan No', 'Action'],
+  'source-ltu': ['SL.', 'Section', 'Claim Amount', 'Payment Document Type', 'Challan No', 'Action'],
   refund: ['SL.', 'Assessment Year', 'Return Register No. / Reference No.', 'Date of Submission', 'Return Filing Zone', 'Return Filing Circle', 'Refund Amount', 'Adjustment Claim Amount', 'Action'],
 };
 
@@ -109,6 +110,8 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const [error, setError] = useState<string | null>(null);
   const [fieldIssues, setFieldIssues] = useState<ManualFieldIssues>({});
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
   const change = (name: keyof Draft, value: string) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
     setFieldIssues((prev) => clearManualFieldIssueAfterEdit(routeId, prev, name));
@@ -159,6 +162,10 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
       return null;
     }
     if (routeId === 'source-ltu') {
+      if (!['CHALLAN','CERTIFICATE'].includes(draft.documentType)) {
+        setError(t('Select Payment Document Type','পরিশোধ দলিলের ধরন নির্বাচন করুন'));
+        return null;
+      }
       if (!draft.section || !draft.reference.trim() || !draft.description.trim()) {
         setError(t('Section, challan number and description are required.', 'ধারা, চালান নম্বর এবং বিবরণ দিন।'));
         return null;
@@ -173,6 +180,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         ),
         claimEvidence: normalizeClaimEvidence({
           paymentPurpose: draft.description.trim(),
+          paymentDocumentType: draft.documentType as 'CHALLAN' | 'CERTIFICATE',
           attachmentFileName: draft.fileName.trim() || undefined,
         }),
       };
@@ -273,10 +281,16 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
           <option value="">{t('Select One','নির্বাচন করুন')}</option>
           {LTU_SECTIONS.map((section) => <option value={section} key={section}>{section}</option>)}
         </LedgerSelect>
-        <LedgerInput label={t('Amount','অঙ্ক')} error={fieldError('claim')} type="number" min="0.01" step="any" required
-          value={draft.claim} onValueChange={(v) => { setDraft((p) => ({ ...p, claim: v, total: v })); setFieldIssues((p) => ({ ...p, claim: undefined })); }}/>
+        <LedgerSelect label={t('Payment Document Type','পরিশোধ দলিলের ধরন')} required value={draft.documentType}
+          onValueChange={(v) => change('documentType', v)}>
+          <option value="">{t('Select One','নির্বাচন করুন')}</option>
+          <option value="CHALLAN">{t('Challan','চালান')}</option>
+          <option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
+        </LedgerSelect>
         <LedgerInput label={t('Challan No','চালান নম্বর')} error={fieldError('reference')} required value={draft.reference}
           onValueChange={(v) => change('reference', v)}/>
+        <LedgerInput label={t('Amount','অঙ্ক')} error={fieldError('claim')} type="number" min="0.01" step="any" required
+          value={draft.claim} onValueChange={(v) => { setDraft((p) => ({ ...p, claim: v, total: v })); setFieldIssues((p) => ({ ...p, claim: undefined })); }}/>
         <LedgerInput label={t('Description','বিবরণ')} error={fieldError('description')} required value={draft.description}
           onValueChange={(v) => change('description', v)}/>
         <label className="eledger-form-field"><span>{t('File','ফাইল')}</span>
@@ -312,7 +326,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
 
   const rowValues = (entry: LedgerEntry): React.ReactNode[] => {
     const ev = entry.claimEvidence;
-    if (routeId === 'source-ltu') return [entry.sectionCode, money(entry.taxDeducted), entry.referenceNo];
+    if (routeId === 'source-ltu') return [entry.sectionCode, money(entry.taxDeducted), entry.claimEvidence?.paymentDocumentType === 'CERTIFICATE' ? t('Certificate','সনদ') : t('Challan','চালান'), entry.referenceNo];
     if (routeId === 'refund') return [
       ev?.refundAssessmentYear ?? '—', entry.referenceNo, dateLabel(entry.date),
       ev?.returnFilingZone ?? '—', ev?.returnFilingCircle ?? '—',
@@ -327,12 +341,40 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
     return routeId === 'other-tds' ? [ev?.paymentPurpose ?? '—', ...common] : common;
   };
 
+  const filteredEntries = entries.filter((entry) =>
+    [entry.referenceNo, entry.sourceEntity, ...rowValues(entry)].join(' ').toLocaleLowerCase()
+      .includes(searchQuery.trim().toLocaleLowerCase())
+  );
+  const detailEntry = detailId ? entries.find((entry) => entry.id === detailId) : undefined;
+  const bnColumns: Record<string,string> = {
+    'SL.':'ক্রম', 'Section':'ধারা', 'Claim Amount':'দাবিকৃত অঙ্ক',
+    'Payment Document Type':'পরিশোধ দলিলের ধরন', 'Challan No':'চালান নম্বর',
+    'Depositing Authority':'জমাদানকারী কর্তৃপক্ষ', 'Challan/ Certificate Reference No.':'চালান/সনদ নম্বর',
+    'Challan/ Certificate Date':'চালান/সনদের তারিখ', 'Challan/ Certificate Amount':'চালান/সনদের অঙ্ক',
+    'Claimed Amount':'দাবিকৃত অঙ্ক', 'Action':'কাজ', 'Purpose of the Payment':'পরিশোধের উদ্দেশ্য',
+    'Assessment Year':'করবর্ষ', 'Return Register No. / Reference No.':'রিটার্ন রেজিস্টার / রেফারেন্স নম্বর',
+    'Date of Submission':'দাখিলের তারিখ','Return Filing Zone':'রিটার্ন দাখিল অঞ্চল',
+    'Return Filing Circle':'রিটার্ন দাখিল সার্কেল','Refund Amount':'ফেরতের অঙ্ক',
+    'Adjustment Claim Amount':'সমন্বয়ের দাবিকৃত অঙ্ক'
+  };
+  const colLabel = (column: string) => t(column, bnColumns[column] ?? column);
+
   return <section className="eledger-panel eledger-official-manual-table" aria-label={t('Recorded ledger entries','রেকর্ডকৃত লেজার এন্ট্রি')}>
     <div className="eledger-ledger-toolbar">
       <h2>{t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
-      <button type="button" className="eledger-button eledger-button-primary" disabled={active !== null} onClick={openNew}>
-        <Plus size={16}/>{routeId === 'source-ltu' ? t('Add Source Tax','উৎস কর যোগ করুন') : t('Add Entry','রেকর্ড যোগ করুন')}
-      </button>
+      <div className="eledger-table-controls">
+        <label className="eledger-table-search"><Search size={17} aria-hidden="true"/>
+          <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
+            aria-label={t('Search records','রেকর্ড খুঁজুন')} placeholder={t('Search records','রেকর্ড খুঁজুন')}/>
+        </label>
+        <div className="eledger-button-group">
+          <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
+            onClick={() => setSearchQuery('')}>{t('Reset','রিসেট')}</button>
+          <button type="button" className="eledger-button eledger-button-primary" disabled={active !== null} onClick={openNew}>
+            <Plus size={16}/>{routeId === 'source-ltu' ? t('Add Source Tax','উৎস কর যোগ করুন') : t('Add Entry','রেকর্ড যোগ করুন')}
+          </button>
+        </div>
+      </div>
     </div>
     {error && active === null && <p role="alert" className="eledger-entry-error">{error}</p>}
     {active !== null && <LedgerFormModal title={active === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
@@ -347,18 +389,30 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         </div>
       </form>
     </LedgerFormModal>}
+    {detailEntry && <NeirRecordDetailsDrawer title={t('Record Details','রেকর্ডের বিস্তারিত')}
+      subtitle={detailEntry.referenceNo} onClose={() => setDetailId(null)} showCaveat={false}
+      fields={cols[routeId].slice(1, -1).map((label, index) => ({
+        label: colLabel(label), value: String(rowValues(detailEntry)[index] ?? '—')
+      }))}
+      footerActions={<div className="eledger-button-group">
+        <button type="button" className="eledger-button eledger-button-secondary" onClick={() => { setDetailId(null); openEdit(detailEntry); }}>
+          <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
+        <button type="button" className="eledger-button eledger-button-danger" onClick={() => { setDetailId(null); void remove(detailEntry); }}>
+          <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
+      </div>}
+    />}
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
-        <thead><tr>{cols[routeId].map((col) => <th scope="col" key={col}>{col}</th>)}</tr></thead>
-        <tbody>{entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
-          entries.map((entry, index) => <tr key={entry.id}>
-            <td data-label="SL.">{index + 1}</td>
-            {rowValues(entry).map((value, i) => <td key={i} data-label={cols[routeId][i + 1]}>{value}</td>)}
-            <td data-label="Action">
-              <div className="eledger-salary-row-actions">
-                <button type="button" className="edit" disabled={active !== null} onClick={() => openEdit(entry)} aria-label={`Edit ${entry.referenceNo}`}><Pencil size={16}/></button>
-                <button type="button" className="delete" disabled={active !== null} onClick={() => void remove(entry)} aria-label={`Delete ${entry.referenceNo}`}><Trash2 size={16}/></button>
-              </div>
+        <thead><tr>{cols[routeId].map((col) => <th scope="col" key={col}>{colLabel(col)}</th>)}</tr></thead>
+        <tbody>{filteredEntries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
+          filteredEntries.map((entry, index) => <tr key={entry.id}>
+            <td data-label={colLabel('SL.')}>{index + 1}</td>
+            {rowValues(entry).map((value, i) => <td key={i} data-label={colLabel(cols[routeId][i + 1])}>{value}</td>)}
+            <td data-label={colLabel('Action')}>
+              <button type="button" className="eledger-button eledger-button-secondary" disabled={active !== null}
+                onClick={() => setDetailId(entry.id)} aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}>
+                <Eye size={16}/>{t('View','দেখুন')}
+              </button>
             </td>
           </tr>)}
         </tbody>

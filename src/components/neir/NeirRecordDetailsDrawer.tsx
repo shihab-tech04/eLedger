@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 
@@ -6,11 +6,13 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
  * Read-only details only. Does not make a tax claim, change a record or certify a credit.
  */
 export type NeirRecordField = { label: string; value: string | number };
-export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose }: {
+export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose, footerActions, showCaveat = true }: {
   title: string;
   subtitle?: string;
   fields: readonly NeirRecordField[];
   onClose: () => void;
+  footerActions?: ReactNode;
+  showCaveat?: boolean;
 }) {
   const t = useLedgerCopy();
   const titleId = useId();
@@ -63,15 +65,15 @@ export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose }: {
             </div>)}
           </dl>
         </section>
-        <p className="eledger-neir-drawer-caveat">
+        {showCaveat && <p className="eledger-neir-drawer-caveat">
           {t('Details shown here are local ledger records, not independently authorized tax credits.',
             'এখানে দেখানো তথ্য স্থানীয় লেজারের রেকর্ড, কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত কর ক্রেডিট নয়।')}
-        </p>
+        </p>}
       </div>
       <footer className="eledger-neir-drawer-footer">
-        <button type="button" className="eledger-button eledger-button-secondary" onClick={onClose}>
+        {footerActions ?? <button type="button" className="eledger-button eledger-button-secondary" onClick={onClose}>
           {t('Close','বন্ধ করুন')}
-        </button>
+        </button>}
       </footer>
     </aside>
   </div>;
