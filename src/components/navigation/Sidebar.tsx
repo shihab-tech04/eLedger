@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Car, ChevronDown, ChevronRight, FileCheck2,
   LayoutDashboard, Menu, PhoneCall, ReceiptText,
-  ShieldCheck, X,
+  ShieldCheck, X, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerLanguage } from '../../context/LanguageContext.tsx';
@@ -50,6 +50,7 @@ export const Sidebar: React.FC = () => {
   const { language } = useLedgerLanguage();
   const bn = language === 'bn';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState({ source: true, ait: false });
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export const Sidebar: React.FC = () => {
     const tab = GROUP_TABS[group];
     const selected = activeNavTab === tab && activeIdForGroup(group) === route.id;
     return <button key={route.id} type="button"
+      title={routeText(route)} aria-label={routeText(route)}
       className={'eledger-side-link eledger-route-link ' + (withDot ? 'source-route ' : '') + (selected ? 'is-active' : '')}
       aria-current={selected ? 'page' : undefined} onClick={() => navigate(tab, route.id)}>
       {withDot && <span className="eledger-source-dot" aria-hidden="true"/>}
@@ -117,19 +119,28 @@ export const Sidebar: React.FC = () => {
       </div>
       {mobileOpen && <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'}
         className="eledger-sidebar-scrim" onClick={() => setMobileOpen(false)}/>}
-      <aside className={'eledger-sidebar ' + (mobileOpen ? 'is-open' : '')} aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
+      <aside className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (collapsed ? 'is-collapsed' : '')} aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
+        <div className="eledger-sidebar-desktop-toggle">
+          <button type="button" onClick={() => setCollapsed((value) => !value)}
+            title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+            aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+            aria-expanded={!collapsed}>
+            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
+            {!collapsed && <span>{bn ? 'নেভিগেশন' : 'Navigation'}</span>}
+          </button>
+        </div>
         <div className="eledger-sidebar-mobile-heading">
           <span>eReturn Ledger</span>
           <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
-          <button type="button" className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
+          <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </button>
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
-              aria-expanded={expanded.source} onClick={() => setExpanded((current) => ({ ...current, source: !current.source }))}>
+              aria-expanded={expanded.source} onClick={() => { if (collapsed) setCollapsed(false); else setExpanded((current) => ({ ...current, source: !current.source })); }}>
               <ReceiptText size={16}/><span>{bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}</span>
               {expanded.source ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
             </button>
@@ -140,7 +151,7 @@ export const Sidebar: React.FC = () => {
 
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
-              aria-expanded={expanded.ait} onClick={() => setExpanded((current) => ({ ...current, ait: !current.ait }))}>
+              aria-expanded={expanded.ait} onClick={() => { if (collapsed) setCollapsed(false); else setExpanded((current) => ({ ...current, ait: !current.ait })); }}>
               <Car size={16}/><span>{bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}</span>
               {expanded.ait ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
             </button>
@@ -154,7 +165,7 @@ export const Sidebar: React.FC = () => {
               const tab = GROUP_TABS[group];
               const selected = activeNavTab === tab && activeIdForGroup(group) === route.id;
               return <button key={route.id} type="button"
-                className={'eledger-side-link ' + (selected ? 'is-active' : '')}
+                className={'eledger-side-link ' + (selected ? 'is-active' : '')} title={routeText(route)} aria-label={routeText(route)}
                 aria-current={selected ? 'page' : undefined} onClick={() => navigate(tab, route.id)}>
                 <ShieldCheck size={16}/><span>{routeText(route)}</span>
               </button>;
