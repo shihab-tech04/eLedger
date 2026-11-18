@@ -32,7 +32,7 @@ const forms = [
  ['Salary (Others)',6,'02-salary-others'],
  ['Service Payment',6,'05-service'],
  ['Others',7,'10-other-tds'],
- ['Source Tax (LTU)',5,'08-source-ltu'],
+ ['Source Tax (LTU)',6,'08-source-ltu'],
  ['Adjustment of Tax Refund',7,'16-refund']
 ];
 const out={source:'compiled Vite dist, isolated empty browser storage',release:process.env.GITHUB_SHA||'LOCAL',
