@@ -121,6 +121,20 @@ describe('NEIR design-transfer acceptance (source: uploaded NEIR-main.zip)', () 
 });
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+  it('keeps the screenshot-required LTU document type as valid local evidence', () => {
+    assert.ok(getClaimEvidenceFields('source-ltu').some((field) => field.key === 'paymentDocumentType'));
+    const draft = {
+      taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const,
+      category: 'SOURCE_TAX' as const, routeId: 'source-ltu' as const,
+      referenceNo: 'SYNTHETIC-LTU-CERT-01', sourceEntity: 'Synthetic Section',
+      sectionCode: 'Salary [ Section-86]', grossAmount: 250, taxDeducted: 250,
+      date: '2026-05-14', status: 'PENDING_VERIFICATION' as const,
+      workflow: 'MANUAL_ENTRY' as const, isManual: true, externalVerified: false,
+      claimEvidence: { paymentDocumentType: 'CHALLAN' as const, paymentPurpose: 'Synthetic LTU' },
+    };
+    assert.deepEqual(validateLedgerEntry(draft, []).errors, {});
+  });
+
 
   it('exposes income-sync on existing read-only bank, dividend and Sanchayapatra routes only', () => {
     for (const route of ['bank-fi', 'dividend', 'sanchayapatra'] as const) {
