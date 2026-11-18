@@ -2211,8 +2211,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Employer Accounts/);
     assert.match(markup, /Certificate/);
     assert.doesNotMatch(markup, /Test Bank \/ Main/);
-    assert.match(markup, /Edit /);
-    assert.match(markup, /Delete /);
+    assert.match(markup, /View details/);
+    assert.doesNotMatch(markup, /aria-label="Edit /);
+    assert.doesNotMatch(markup, /aria-label="Delete /);
     assert.match(markup, /Add Entry/);
   });
 
@@ -2237,7 +2238,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.deepEqual(OFFICIAL_INPUT_KEYS['other-tds'], [
       'paymentPurpose', ...OFFICIAL_INPUT_KEYS['service-payment']!,
     ]);
-    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file']);
     assert.deepEqual(OFFICIAL_INPUT_KEYS.refund, [
       'assessmentYear', 'referenceNo', 'submissionDate', 'returnFilingZone',
       'returnFilingCircle', 'refundAmount', 'adjustmentClaimAmount',
