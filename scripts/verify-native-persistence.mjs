@@ -65,7 +65,18 @@ async function fill(form,c){
 }
 async function save(form,c){
  await form.getByRole('button',{name:c.route==='Salary (Others)'?'Save claim':'Save',exact:true}).click();
- await form.waitFor({state:'detached'});
+ try {
+  await form.waitFor({state:'detached'});
+ } catch (error) {
+  const state = await form.evaluate((node) => ({
+   alerts: [...node.querySelectorAll('[role="alert"]')].map((item) => item.textContent?.trim()),
+   fields: [...node.querySelectorAll('input,select,textarea')].map((item) => ({
+    label: item.getAttribute('aria-label'), value: item.value, invalid: item.getAttribute('aria-invalid'),
+   })),
+   content: node.textContent?.slice(0, 700),
+  })).catch(() => ({ detached: true }));
+  throw new Error('Native Save left drawer open: ' + JSON.stringify({ route: c.route, state }), { cause: error });
+ }
 }
 async function stored(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)??'null'),STORE);}
 async function testViewport(browser,width){
