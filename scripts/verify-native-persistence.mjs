@@ -65,7 +65,18 @@ async function fill(form,c){
 }
 async function save(form,c){
  await form.getByRole('button',{name:c.route==='Salary (Others)'?'Save claim':'Save',exact:true}).click();
- await form.waitFor({state:'detached'});
+ try {
+  await form.waitFor({state:'detached'});
+ } catch (error) {
+  const state = await form.evaluate((node) => ({
+   alerts: [...node.querySelectorAll('[role="alert"]')].map((item) => item.textContent?.trim()),
+   fields: [...node.querySelectorAll('input,select,textarea')].map((item) => ({
+    label: item.getAttribute('aria-label'), value: item.value, invalid: item.getAttribute('aria-invalid'),
+   })),
+   content: node.textContent?.slice(0, 700),
+  })).catch(() => ({ detached: true }));
+  throw new Error('Native Save left drawer open: ' + JSON.stringify({ route: c.route, state }), { cause: error });
+ }
 }
 async function stored(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)??'null'),STORE);}
 async function testViewport(browser,width){
@@ -107,7 +118,8 @@ async function testViewport(browser,width){
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.referenceNo,c.ref);
   report.push({width,category:c.route,check:'real browser reload preserves Add',pass:true});
 
-  await page.getByRole('button',{name:'Edit '+c.ref}).click();
+  await page.getByRole('button',{name:'View details '+c.ref}).click();
+   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
   await page.getByRole('dialog').getByRole('spinbutton',{name:c.claim,exact:true}).fill('110');
   await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
   await page.reload({waitUntil:'networkidle'});
@@ -115,7 +127,8 @@ async function testViewport(browser,width){
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.taxDeducted,250);
   report.push({width,category:c.route,check:'Cancel preserves amount after reload',pass:true});
 
-  await page.getByRole('button',{name:'Edit '+c.ref}).click();
+  await page.getByRole('button',{name:'View details '+c.ref}).click();
+   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
   const edit=page.getByRole('dialog');
   await edit.getByRole('spinbutton',{name:c.claim,exact:true}).fill('300');await save(edit,c);
   await page.reload({waitUntil:'networkidle'});
@@ -126,14 +139,16 @@ async function testViewport(browser,width){
   report.push({width,category:c.route,check:'Edit/Save preserves identity/date after reload',pass:true});
 
   page.once('dialog',d=>d.dismiss());
-  await page.getByRole('button',{name:'Delete '+c.ref}).click();
+  await page.getByRole('button',{name:'View details '+c.ref}).click();
+   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Delete',exact:true}).click();
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   assert.ok((await stored(page)).some(row=>row.id===saved.id));
   report.push({width,category:c.route,check:'dismissed Delete preserves row after reload',pass:true});
 
   page.once('dialog',d=>d.accept());
-  await page.getByRole('button',{name:'Delete '+c.ref}).click();
+  await page.getByRole('button',{name:'View details '+c.ref}).click();
+   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Delete',exact:true}).click();
   await page.locator('table tbody tr').filter({hasText:c.ref}).waitFor({state:'detached'});
   await page.reload({waitUntil:'networkidle'});
   assert.ok(!(await stored(page)).some(row=>row.id===saved.id));

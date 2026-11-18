@@ -10,8 +10,9 @@ type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> & {
 /** Accessible field and standard input styling shared by workflow forms. */
 export function LedgerInput({ label, error, onValueChange, className = '', ...props }: InputProps) {
   const errorId = useId();
-  return <label className="eledger-form-field"><span>{label}</span>
-    <input {...props} aria-label={props['aria-label'] ?? label}
+  return <label className={`eledger-form-field eledger-floating-field ${props.value !== undefined && props.value !== null && String(props.value) !== "" ? "has-value" : ""} ${props.type === "date" ? "is-date" : ""}`}>
+    <span className="eledger-floating-label">{label}{props.required && <em aria-hidden="true"> *</em>}</span>
+    <input placeholder={props.placeholder ?? " "}  {...props} aria-label={props['aria-label'] ?? label}
       aria-invalid={error ? true : props['aria-invalid']}
       aria-describedby={error ? [props['aria-describedby'], errorId].filter(Boolean).join(' ') : props['aria-describedby']}
       className={`eledger-control ${className}`}
@@ -27,7 +28,8 @@ export function LedgerSelect({ label, children, error, onValueChange, className 
   children: ReactNode;
 }) {
   const errorId = useId();
-  return <label className="eledger-form-field"><span>{label}</span>
+  return <label className={`eledger-form-field eledger-floating-field ${props.value !== undefined && props.value !== null && String(props.value) !== "" ? "has-value" : ""}`}>
+    <span className="eledger-floating-label">{label}{props.required && <em aria-hidden="true"> *</em>}</span>
     <select {...props} aria-label={props['aria-label'] ?? label}
       aria-invalid={error ? true : props['aria-invalid']}
       aria-describedby={error ? [props['aria-describedby'], errorId].filter(Boolean).join(' ') : props['aria-describedby']}

@@ -82,6 +82,7 @@ const fieldsByRoute: Partial<Record<LedgerRouteId, EvidenceFieldDefinition[]>> =
     documentAmount,
   ],
   'source-ltu': [
+    documentType,
     { key: 'paymentPurpose', label: 'Description', kind: 'text' },
     { key: 'attachmentFileName', label: 'Evidence File Name (reference only)', kind: 'text', helperText: 'The file itself is not uploaded or stored in this local-only application.' },
   ],

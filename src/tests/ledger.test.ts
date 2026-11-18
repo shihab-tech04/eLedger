@@ -121,6 +121,20 @@ describe('NEIR design-transfer acceptance (source: uploaded NEIR-main.zip)', () 
 });
 
 describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', () => {
+  it('keeps the screenshot-required LTU document type as valid local evidence', () => {
+    assert.ok(getClaimEvidenceFields('source-ltu').some((field) => field.key === 'paymentDocumentType'));
+    const draft = {
+      taxpayerTin: '123456789012', assessmentYear: '2026-2027' as const,
+      category: 'SOURCE_TAX' as const, routeId: 'source-ltu' as const,
+      referenceNo: 'SYNTHETIC-LTU-CERT-01', sourceEntity: 'Synthetic Section',
+      sectionCode: 'Salary [ Section-86]', grossAmount: 250, taxDeducted: 250,
+      date: '2026-05-14', status: 'PENDING_VERIFICATION' as const,
+      workflow: 'MANUAL_ENTRY' as const, isManual: true, externalVerified: false,
+      claimEvidence: { paymentDocumentType: 'CHALLAN' as const, paymentPurpose: 'Synthetic LTU' },
+    };
+    assert.deepEqual(validateLedgerEntry(draft, []).errors, {});
+  });
+
 
   it('exposes income-sync on existing read-only bank, dividend and Sanchayapatra routes only', () => {
     for (const route of ['bank-fi', 'dividend', 'sanchayapatra'] as const) {
@@ -233,7 +247,7 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
     assert.equal((await repo.getEntries('987654321098', assessmentYear)).length, 0);
   });
 
-  it('keeps record Edit/Delete actions in the existing read-only table until an edit is started', () => {
+  it('keeps Add and an accessible View action in manual tables, with Edit/Delete in record drawers', () => {
     const salaryRecord: LedgerEntry = {
       ...INITIAL_LEDGER_ENTRIES[0],
       id: 'fixture-salary-other',
@@ -253,8 +267,9 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true,
     }));
-    assert.match(salaryHtml, /aria-label="Edit /);
-    assert.match(salaryHtml, /aria-label="Delete /);
+    assert.match(salaryHtml, /aria-label="View details /);
+    assert.doesNotMatch(salaryHtml, /aria-label="Edit /);
+    assert.doesNotMatch(salaryHtml, /aria-label="Delete /);
     assert.match(salaryHtml, /Add Entry/);
     assert.doesNotMatch(salaryHtml, /role="dialog"/);
 
@@ -270,15 +285,16 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       defaultSection: 'Sec 90', onSaveNewEntry: async () => ({ success: true }),
       onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
     }));
-    assert.match(manualHtml, /aria-label="Edit /);
-    assert.match(manualHtml, /aria-label="Delete /);
+    assert.match(manualHtml, /aria-label="View details /);
+    assert.doesNotMatch(manualHtml, /aria-label="Edit /);
+    assert.doesNotMatch(manualHtml, /aria-label="Delete /);
     assert.match(manualHtml, /Add Entry/);
     assert.doesNotMatch(manualHtml, /role="dialog"/);
   });
 
 
-  it('keeps the original five LTU Add inputs and reports missing values beside their fields', () => {
-    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+  it('preserves all six original PDF LTU Add inputs and reports missing values beside their fields', () => {
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file']);
     assert.deepEqual(validateLtuAdd({ section: '', claim: '', reference: '', description: '' }), {
       section: 'required', claim: 'required', reference: 'required', description: 'required',
     });
@@ -2209,8 +2225,9 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Employer Accounts/);
     assert.match(markup, /Certificate/);
     assert.doesNotMatch(markup, /Test Bank \/ Main/);
-    assert.match(markup, /Edit /);
-    assert.match(markup, /Delete /);
+    assert.match(markup, /View details/);
+    assert.doesNotMatch(markup, /aria-label="Edit /);
+    assert.doesNotMatch(markup, /aria-label="Delete /);
     assert.match(markup, /Add Entry/);
   });
 
@@ -2235,7 +2252,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.deepEqual(OFFICIAL_INPUT_KEYS['other-tds'], [
       'paymentPurpose', ...OFFICIAL_INPUT_KEYS['service-payment']!,
     ]);
-    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file']);
     assert.deepEqual(OFFICIAL_INPUT_KEYS.refund, [
       'assessmentYear', 'referenceNo', 'submissionDate', 'returnFilingZone',
       'returnFilingCircle', 'refundAmount', 'adjustmentClaimAmount',

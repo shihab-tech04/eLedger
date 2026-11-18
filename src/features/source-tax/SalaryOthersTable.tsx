@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { Check, Eye, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
@@ -8,6 +8,7 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
 import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
 import { LedgerFormModal } from '../../components/ui/LedgerFormModal.tsx';
+import { NeirRecordDetailsDrawer } from '../../components/neir/NeirRecordDetailsDrawer.tsx';
 
 type SalaryDocument = 'CHALLAN' | 'CERTIFICATE' | '';
 type SalaryDraft = {
@@ -59,6 +60,8 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues>({});
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const openNew = () => { setDraft(blankDraft()); setFieldIssues({}); setError(null); setActiveId('new'); };
   const openEdit = (entry: LedgerEntry) => {
@@ -153,11 +156,29 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     </form>
   );
 
+  const filteredEntries = entries.filter((entry) =>
+    [entry.referenceNo, entry.sourceEntity, entry.claimEvidence?.depositingAuthority ?? '',
+      entry.claimEvidence?.paymentDocumentType ?? '', entry.taxDeducted]
+      .join(' ').toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase())
+  );
+  const detailEntry = detailId ? entries.find((entry) => entry.id === detailId) : undefined;
+
   return (
     <section className="eledger-salary-table eledger-panel" aria-label={t('Salary Others claims','অন্যান্য বেতনের দাবি')}>
       <div className="eledger-ledger-toolbar">
         <h2>{t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
-        <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null} onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
+        <div className="eledger-table-controls">
+          <label className="eledger-table-search"><Search size={17} aria-hidden="true"/>
+            <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
+              aria-label={t('Search records','রেকর্ড খুঁজুন')} placeholder={t('Search records','রেকর্ড খুঁজুন')}/>
+          </label>
+          <div className="eledger-button-group">
+            <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
+              onClick={() => setSearchQuery('')}>{t('Reset','রিসেট')}</button>
+            <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null}
+              onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
+          </div>
+        </div>
       </div>
       {error && activeId === null && <div role="alert" className="eledger-salary-error">{error}</div>}
       {activeId !== null && <LedgerFormModal
@@ -166,6 +187,23 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         {error && <div role="alert" className="eledger-salary-error">{error}</div>}
         {renderEditor()}
       </LedgerFormModal>}
+      {detailEntry && <NeirRecordDetailsDrawer title={t('Record Details','রেকর্ডের বিস্তারিত')}
+        subtitle={detailEntry.referenceNo} showCaveat={false} onClose={() => setDetailId(null)}
+        fields={[
+          { label:t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ'), value:detailEntry.claimEvidence?.depositingAuthority ?? detailEntry.sourceEntity },
+          { label:t('Payment Document Type','পরিশোধ দলিলের ধরন'), value:detailEntry.claimEvidence?.paymentDocumentType ?? '—' },
+          { label:t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর'), value:detailEntry.referenceNo },
+          { label:t('Challan/ Certificate Date','চালান/সনদের তারিখ'), value:humanDate(detailEntry.date) },
+          { label:t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক'), value:money(detailEntry.claimEvidence?.documentAmount ?? detailEntry.grossAmount) },
+          { label:t('Claimed Amount','দাবিকৃত অঙ্ক'), value:money(detailEntry.taxDeducted) },
+        ]}
+        footerActions={<div className="eledger-button-group">
+          <button type="button" className="eledger-button eledger-button-secondary" onClick={() => { setDetailId(null); openEdit(detailEntry); }}>
+            <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
+          <button type="button" className="eledger-button eledger-button-danger" onClick={() => { setDetailId(null); void remove(detailEntry); }}>
+            <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
+        </div>}
+      />}
       <div className="eledger-salary-scroll">
         <table>
           <thead><tr>
@@ -178,10 +216,10 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <th scope="col">{t('Action','কাজ')}</th>
           </tr></thead>
           <tbody>
-            {entries.length === 0 && <tr className="eledger-salary-empty-row">
+            {filteredEntries.length === 0 && <tr className="eledger-salary-empty-row">
               <td colSpan={8} className="eledger-salary-empty-cell">{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td>
             </tr>}
-            {entries.map((entry, index) => (
+            {filteredEntries.map((entry, index) => (
               <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
                 <td data-label={t('SL.','ক্রম')} className="eledger-salary-row-index">{index + 1}</td>
                 <td data-label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
@@ -193,8 +231,10 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 <td data-label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} className="eledger-salary-number">{money(entry.claimEvidence?.documentAmount ?? entry.grossAmount)}</td>
                 <td data-label={t('Claimed Amount','দাবিকৃত অঙ্ক')} className="eledger-salary-number claimed">{money(entry.taxDeducted)}</td>
                 <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
-                  <button type="button" className="edit" aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`} title={t('Edit','সম্পাদনা')} onClick={() => openEdit(entry)} disabled={activeId !== null}><Pencil size={16}/></button>
-                  <button type="button" className="delete" aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`} title={t('Delete','মুছুন')} onClick={() => remove(entry)} disabled={activeId !== null}><Trash2 size={16}/></button>
+                  <button type="button" className="eledger-button eledger-button-secondary"
+                    aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}
+                    onClick={() => setDetailId(entry.id)} disabled={activeId !== null}>
+                    <Eye size={16}/>{t('View','দেখুন')}</button>
                 </div></td>
               </tr>
             ))}
