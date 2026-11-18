@@ -7,7 +7,7 @@ export function observedDocumentTypeForEdit(evidence?: ClaimEvidence): 'CHALLAN'
 }
 
 /**
- * Input inventories observed in the signed-in NBR eLedger on 20 October 2026.
+ * Input inventories reconciled with the supplied original NBR screenshot PDF (21 pages), including the LTU document-type field.
  * Read-only/system-fed columns are intentionally not turned into manual inputs.
  * Empty arrays mean that the currently observed page exposes no manual fields.
  */
@@ -19,7 +19,7 @@ export const OFFICIAL_INPUT_KEYS: Partial<Record<LedgerRouteId, readonly string[
   'service-payment': ['depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount'],
   sanchayapatra: [],
   'system-import': [],
-  'source-ltu': ['section', 'amount', 'challanNo', 'description', 'file'],
+  'source-ltu': ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file'],
   'commercial-source': ['transactionNo'],
   'other-tds': ['paymentPurpose', 'depositingAuthority', 'paymentDocumentType', 'referenceNo', 'date', 'documentAmount', 'claimedAmount'],
   'car-ait': ['transactionNo'],

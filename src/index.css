@@ -1158,3 +1158,25 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   }
   .eledger-app .eledger-form-modal .eledger-form-grid { grid-template-columns: minmax(0,1fr); padding: 14px; }
 }
+
+/* Unified record-table toolbar and grouped actions. */
+.eledger-table-controls { display:flex; align-items:center; justify-content:flex-end; gap:12px; min-width:0; flex:1; }
+.eledger-table-search { display:flex; align-items:center; gap:9px; width:min(360px,100%); min-width:160px; min-height:42px; padding:0 12px; border:1px solid var(--el-control-border); border-radius:8px; background:#fff; color:var(--el-muted); }
+.eledger-table-search:focus-within { border-color:var(--el-blue); box-shadow:0 0 0 2px rgba(1,173,193,.12); }
+.eledger-table-search input { width:100%; min-width:0; background:transparent; border:0; outline:0; font:inherit; font-size:13px; color:var(--el-text); }
+.eledger-table-search input:focus-visible { outline:none; }
+.eledger-button-group { display:inline-flex; align-items:center; gap:0; min-width:0; flex-shrink:0; }
+.eledger-button-group .eledger-button { border-radius:0; min-height:42px; }
+.eledger-button-group .eledger-button:first-child { border-radius:8px 0 0 8px; }
+.eledger-button-group .eledger-button:last-child { border-radius:0 8px 8px 0; }
+.eledger-button-group .eledger-button:only-child { border-radius:8px; }
+.eledger-button-danger { background:#fff; border:1px solid #ebccd2; color:#a32743; }
+.eledger-button-danger:hover { background:#fff0f2; color:#841733; }
+.eledger-app .eledger-neir-drawer-footer .eledger-button-group { margin-left:auto; }
+@media (max-width:767px) {
+  .eledger-ledger-toolbar { flex-direction:column; align-items:stretch; gap:10px; }
+  .eledger-table-controls { flex-direction:column; align-items:stretch; gap:9px; }
+  .eledger-table-search { width:100%; }
+  .eledger-table-controls .eledger-button-group { display:flex; width:100%; }
+  .eledger-table-controls .eledger-button-group .eledger-button { flex:1; padding-inline:8px; }
+}

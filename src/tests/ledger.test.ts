@@ -233,7 +233,7 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
     assert.equal((await repo.getEntries('987654321098', assessmentYear)).length, 0);
   });
 
-  it('keeps record Edit/Delete actions in the existing read-only table until an edit is started', () => {
+  it('keeps Add and an accessible View action in manual tables, with Edit/Delete in record drawers', () => {
     const salaryRecord: LedgerEntry = {
       ...INITIAL_LEDGER_ENTRIES[0],
       id: 'fixture-salary-other',
@@ -253,8 +253,9 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true,
     }));
-    assert.match(salaryHtml, /aria-label="Edit /);
-    assert.match(salaryHtml, /aria-label="Delete /);
+    assert.match(salaryHtml, /aria-label="View details /);
+    assert.doesNotMatch(salaryHtml, /aria-label="Edit /);
+    assert.doesNotMatch(salaryHtml, /aria-label="Delete /);
     assert.match(salaryHtml, /Add Entry/);
     assert.doesNotMatch(salaryHtml, /role="dialog"/);
 
@@ -270,15 +271,16 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       defaultSection: 'Sec 90', onSaveNewEntry: async () => ({ success: true }),
       onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
     }));
-    assert.match(manualHtml, /aria-label="Edit /);
-    assert.match(manualHtml, /aria-label="Delete /);
+    assert.match(manualHtml, /aria-label="View details /);
+    assert.doesNotMatch(manualHtml, /aria-label="Edit /);
+    assert.doesNotMatch(manualHtml, /aria-label="Delete /);
     assert.match(manualHtml, /Add Entry/);
     assert.doesNotMatch(manualHtml, /role="dialog"/);
   });
 
 
-  it('keeps the original five LTU Add inputs and reports missing values beside their fields', () => {
-    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'amount', 'challanNo', 'description', 'file']);
+  it('preserves all six original PDF LTU Add inputs and reports missing values beside their fields', () => {
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file']);
     assert.deepEqual(validateLtuAdd({ section: '', claim: '', reference: '', description: '' }), {
       section: 'required', claim: 'required', reference: 'required', description: 'required',
     });
