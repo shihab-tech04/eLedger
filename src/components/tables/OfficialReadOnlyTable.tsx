@@ -9,15 +9,60 @@ type ReadOnlyRoute = Extract<LedgerRouteId,
 
 export const OFFICIAL_READONLY_COLUMNS: Record<ReadOnlyRoute, readonly string[]> = {
   'bank-fi': ['SL.', 'Bank Name', 'Account Type', 'Branch Name', 'Account Number', 'Interest Amount', 'TDS'],
-  dividend: ['SL.', 'Depositing Authority / Person / Company', 'Certificate Reference No', 'Certificate Reference Date', 'Challan / Certificate Amount', 'Claimed Amount', 'Action'],
+  dividend: ['SL.', 'Depositing Authority/Person/Company', 'Certificate Reference No', 'Certificate Reference Date', 'Challan/Certificate Amount', 'Claimed Amount', 'Action'],
   sanchayapatra: ['SL.', 'Name of Scheme', 'Registration No.', 'Issue Date', 'Value', 'TDS Claim', 'Status'],
   'system-import': ['SL.', 'Bin', 'Office Code', 'Bill of Entry', 'Bill of Entry Date', 'Receipt No', 'Receipt Date', 'Invoice Value', 'Assessable Value', 'Total Tax & Duties', 'TDS Claimed'],
   'ait-import': ['SL.', 'Bin', 'Office Code', 'Bill of Entry', 'Bill of Entry Date', 'Receipt No', 'Receipt Date', 'Invoice Value', 'Assessable Value', 'Total Tax & Duties', 'TDS Claimed'],
-  'commercial-source': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', ''],
-  'commercial-vehicle': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', ''],
-  'car-ait': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', ''],
-  'sec-154': ['SL.', 'Challan No', 'Date', 'Amount', 'Payment Mode', 'Bank', 'Branch', 'Zone', 'Circle', 'Action'],
-  'sec-173': ['SL.', 'Challan No', 'Date', 'Amount', 'Payment Mode', 'Bank', 'Branch', 'Zone', 'Circle', 'Action'],
+  'commercial-source': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', 'Action'],
+  'commercial-vehicle': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', 'Action'],
+  'car-ait': ['SL.', 'Registration No', 'Unique Key', 'Chasis No', 'TDS Claim', 'Action'],
+  'sec-154': ['SL.', 'Challan No.', 'Date', 'Amount', 'Payment Mode', 'Bank', 'Branch', 'Zone', 'Circle', 'Action'],
+  'sec-173': ['SL.', 'Challan No.', 'Date', 'Amount', 'Payment Mode', 'Bank', 'Branch', 'Zone', 'Circle', 'Action'],
+};
+
+/** Preserve original English headers and provide Bengali labels for table,
+ * mobile data-labels, and record details without altering financial values. */
+const OFFICIAL_BENGALI_COLUMN_LABELS: Record<string, string> = {
+  'SL.': 'ক্রম',
+  'Bank Name': 'ব্যাংকের নাম',
+  'Account Type': 'হিসাবের ধরন',
+  'Branch Name': 'শাখার নাম',
+  'Account Number': 'হিসাব নম্বর',
+  'Interest Amount': 'সুদের অঙ্ক',
+  TDS: 'উৎস কর',
+  'Depositing Authority/Person/Company': 'জমাদানকারী কর্তৃপক্ষ/ব্যক্তি/প্রতিষ্ঠান',
+  'Certificate Reference No': 'সনদের রেফারেন্স নম্বর',
+  'Certificate Reference Date': 'সনদের রেফারেন্স তারিখ',
+  'Challan/Certificate Amount': 'চালান/সনদের অঙ্ক',
+  'Claimed Amount': 'দাবিকৃত অঙ্ক',
+  Action: 'কাজ',
+  'Name of Scheme': 'স্কিমের নাম',
+  'Registration No.': 'নিবন্ধন নম্বর',
+  'Issue Date': 'ইস্যুর তারিখ',
+  Value: 'মূল্য',
+  'TDS Claim': 'উৎস করের দাবি',
+  Status: 'অবস্থা',
+  Bin: 'বিআইএন',
+  'Office Code': 'অফিস কোড',
+  'Bill of Entry': 'বিল অব এন্ট্রি',
+  'Bill of Entry Date': 'বিল অব এন্ট্রির তারিখ',
+  'Receipt No': 'রসিদ নম্বর',
+  'Receipt Date': 'রসিদের তারিখ',
+  'Invoice Value': 'ইনভয়েস মূল্য',
+  'Assessable Value': 'কর নির্ধারণযোগ্য মূল্য',
+  'Total Tax & Duties': 'মোট কর ও শুল্ক',
+  'TDS Claimed': 'দাবিকৃত উৎস কর',
+  'Registration No': 'নিবন্ধন নম্বর',
+  'Unique Key': 'ইউনিক কী',
+  'Chasis No': 'চেসিস নম্বর',
+  'Challan No.': 'চালান নম্বর',
+  Date: 'তারিখ',
+  Amount: 'অঙ্ক',
+  'Payment Mode': 'পরিশোধের পদ্ধতি',
+  Bank: 'ব্যাংক',
+  Branch: 'শাখা',
+  Zone: 'কর অঞ্চল',
+  Circle: 'কর সার্কেল',
 };
 
 const money = (n: number) => n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -80,10 +125,11 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
     }
   };
   const columns = OFFICIAL_READONLY_COLUMNS[routeId];
+  const columnLabel = (label: string) => t(label, OFFICIAL_BENGALI_COLUMN_LABELS[label] ?? label);
   return <section className="eledger-panel eledger-official-manual-table eledger-neir-table-workspace" aria-label={t('Tax details','করের বিবরণ')}>
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
-        <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{column}</th>)}</tr></thead>
+        <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{columnLabel(column)}</th>)}</tr></thead>
         <tbody>
           {entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
             entries.map((entry, index) => <tr key={entry.id} tabIndex={0}
@@ -96,8 +142,8 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
                   setSelected(entry);
                 }
               }}>
-              <td data-label="SL.">{index + 1}</td>
-              {recordValues(entry, routeId, labelStatus).map((value, i) => <td data-label={columns[i + 1]} key={i}>{value}</td>)}
+              <td data-label={columnLabel('SL.')}>{index + 1}</td>
+              {recordValues(entry, routeId, labelStatus).map((value, i) => <td data-label={columnLabel(columns[i + 1])} key={i}>{value}</td>)}
             </tr>)}
         </tbody>
       </table>
@@ -109,9 +155,9 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
       fields={[
         { label: t('Reference','রেফারেন্স'), value: selected.referenceNo },
         ...recordValues(selected, routeId, labelStatus).map((value, index) => ({
-          label: columns[index + 1] || t('Record field','রেকর্ডের তথ্য'),
+          label: columns[index + 1] ? columnLabel(columns[index + 1]) : t('Record field','রেকর্ডের তথ্য'),
           value: String(value),
-        })).filter(field => field.label !== 'Action' && field.label !== ''),
+        })).filter((field, index) => columns[index + 1] !== 'Action' && columns[index + 1] !== ''),
       ]}/>
     }
   </section>;

@@ -2558,3 +2558,27 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(dialog, /aria-expanded="false"/);
   });
 });
+
+
+/** Source-backed read-only labels, both languages and mobile data cells. */
+test('read-only original source columns and Bengali header parity', () => {
+  for (const id of ['commercial-source', 'car-ait', 'commercial-vehicle'] as const) {
+    assert.equal(OFFICIAL_READONLY_COLUMNS[id].at(-1), 'Action');
+  }
+  assert.deepEqual(OFFICIAL_READONLY_COLUMNS['sec-154'].slice(0, 2), ['SL.', 'Challan No.']);
+  assert.deepEqual(OFFICIAL_READONLY_COLUMNS.dividend.slice(0, 2), ['SL.', 'Depositing Authority/Person/Company']);
+  const record = INITIAL_LEDGER_ENTRIES.find((entry) => entry.routeId === 'bank-fi');
+  assert.ok(record);
+  const english = renderToStaticMarkup(React.createElement(OfficialReadOnlyTable, { routeId: 'bank-fi', entries: [record] }));
+  const bengali = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+    React.createElement(OfficialReadOnlyTable, { routeId: 'bank-fi', entries: [record] })));
+  assert.match(english, /<th scope="col">Bank Name<\/th>/);
+  assert.match(english, /data-label="Bank Name"/);
+  assert.match(bengali, /<th scope="col">ব্যাংকের নাম<\/th>/);
+  assert.match(bengali, /data-label="ব্যাংকের নাম"/);
+  assert.doesNotMatch(bengali, /<th scope="col">Bank Name<\/th>/);
+  const vehicle = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+    React.createElement(OfficialReadOnlyTable, { routeId: 'car-ait', entries: [] })));
+  assert.match(vehicle, /<th scope="col">কাজ<\/th>/);
+  assert.match(vehicle, /<th scope="col">চেসিস নম্বর<\/th>/);
+});
