@@ -2582,3 +2582,66 @@ test('read-only original source columns and Bengali header parity', () => {
   assert.match(vehicle, /<th scope="col">কাজ<\/th>/);
   assert.match(vehicle, /<th scope="col">চেসিস নম্বর<\/th>/);
 });
+
+
+describe('Original screenshot p18 surcharge and p10 LTU parity (19 November 2026)', () => {
+  it('renders every original surcharge table header and both totals in empty EN/BN states', () => {
+    const blank = renderToStaticMarkup(React.createElement(SurchargeTransferPanel, {
+      entries: [], onRecord: async () => ({ success: true }), onDelete: async () => true,
+    }));
+    for (const heading of [
+      'Motor Vehicle Registration No', 'Transaction ID', 'Bank Name', 'Branch Name',
+      'Payment Date', 'Paid Amount', 'Action', 'Total Paid Amount', 'Surcharge Declared By Assessee',
+    ]) assert.match(blank, new RegExp(heading));
+    assert.match(blank, /No Environmental Surcharge Payable/);
+    assert.match(blank, /No tax rate is calculated/);
+    assert.match(blank, /Add Entry/);
+    assert.doesNotMatch(blank, /government-verified tax credits/);
+    const bn = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
+      React.createElement(SurchargeTransferPanel, {
+        entries: [], onRecord: async () => ({ success: true }),
+      })));
+    assert.match(bn, /মোটরযানের নিবন্ধন নম্বর/);
+    assert.match(bn, /পরিশোধের তারিখ/);
+    assert.match(bn, /মোট পরিশোধিত অঙ্ক/);
+  });
+  it('renders populated local surcharge source fields with no invented verification', () => {
+    const record: LedgerEntry = {
+      id: 'surcharge-p18-test', taxpayerTin: '123456789012', assessmentYear: '2026-2027',
+      category: 'PAYMENT', routeId: 'environmental-surcharge',
+      referenceNo: 'LOCAL-SURCHARGE-REFERENCE', sourceEntity: 'Bank for local evidence',
+      sectionCode: 'Applicable surcharge provision', grossAmount: 250, taxDeducted: 250,
+      date: '2026-07-20', status: 'PENDING_VERIFICATION', isManual: true, externalVerified: false,
+      workflow: 'MANUAL_ENTRY', createdAt: '2026-07-20T00:00:00Z', updatedAt: '2026-07-20T00:00:00Z',
+      claimEvidence: { registrationNo: 'LOCAL-VEHICLE-01', bankName: 'Synthetic Bank', branchName: 'Test Branch' },
+    };
+    assert.equal(validateLedgerEntry(record, []).isValid, true);
+    const markup = renderToStaticMarkup(React.createElement(SurchargeTransferPanel, {
+      entries: [record], onRecord: async () => ({ success: true }),
+      onUpdate: async () => ({ success: true }), onDelete: async () => true,
+    }));
+    assert.match(markup, /LOCAL-VEHICLE-01/);
+    assert.match(markup, /LOCAL-SURCHARGE-REFERENCE/);
+    assert.match(markup, /Synthetic Bank/);
+    assert.match(markup, /Test Branch/);
+    assert.match(markup, /20-07-2026/);
+    assert.match(markup, /250/);
+    assert.match(markup, /Edit/);
+    assert.match(markup, /Delete/);
+    assert.match(markup, /unverified entries/);
+    assert.doesNotMatch(markup, /Verified Tax Credit/);
+    const totals = calculateCategoryTotals([record]);
+    assert.equal(totals.environmentalSurchargeTotal, 250);
+    assert.equal(totals.grandTotalCredits, 0);
+  });
+  it('keeps the exact LTU table label distinct from the original Challan No input', () => {
+    const markup = renderToStaticMarkup(React.createElement(OfficialManualClaimsTable, {
+      entries: [], routeId: 'source-ltu', assessmentYear: '2026-2027', defaultSection: 'Sec 129',
+      onSaveNewEntry: async () => ({ success: true }),
+      onUpdateEntry: async () => ({ success: true }),
+      onDeleteEntry: async () => true,
+    }));
+    assert.match(markup, /<th scope="col">Challan\/Certificate No<\/th>/);
+    assert.deepEqual(OFFICIAL_INPUT_KEYS['source-ltu'], ['section', 'paymentDocumentType', 'challanNo', 'amount', 'description', 'file']);
+  });
+});
