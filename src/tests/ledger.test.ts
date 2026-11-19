@@ -2292,7 +2292,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     for (const [routeId, first, last] of [
       ['service-payment', 'Depositing Authority', 'Claimed Amount'],
       ['other-tds', 'Purpose of the Payment', 'Claimed Amount'],
-      ['source-ltu', 'Section', 'Challan No'],
+      ['source-ltu', 'Section', 'Challan/Certificate No'],
       ['refund', 'Assessment Year', 'Adjustment Claim Amount'],
     ] as const) {
       const markup = renderToStaticMarkup(React.createElement(OfficialManualClaimsTable, {
