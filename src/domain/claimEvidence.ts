@@ -81,6 +81,11 @@ const fieldsByRoute: Partial<Record<LedgerRouteId, EvidenceFieldDefinition[]>> =
     documentType,
     documentAmount,
   ],
+  'environmental-surcharge': [
+    { key: 'registrationNo', label: 'Motor Vehicle Registration No', kind: 'text' },
+    { key: 'bankName', label: 'Bank Name', kind: 'text' },
+    { key: 'branchName', label: 'Branch Name', kind: 'text' },
+  ],
   'source-ltu': [
     documentType,
     { key: 'paymentPurpose', label: 'Description', kind: 'text' },

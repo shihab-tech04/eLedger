@@ -154,6 +154,54 @@ async function testViewport(browser,width){
   assert.ok(!(await stored(page)).some(row=>row.id===saved.id));
   report.push({width,category:c.route,check:'confirmed Delete persists after reload',pass:true});
  }
+ // Source page 18: real browser create/edit/delete and reload, with no official-credit mutation.
+ await openRoute(page,'Environmental Surcharge',width);
+ const surchargeHeaders=await page.locator('table.eledger-official-records thead th').allTextContents();
+ assert.deepEqual(surchargeHeaders.map(s=>s.trim()),[
+  'Motor Vehicle Registration No','Transaction ID','Bank Name','Branch Name','Payment Date','Paid Amount','Action',
+ ]);
+ await page.getByRole('button',{name:'Add Entry',exact:true}).click();
+ const surchargeForm=page.getByRole('dialog',{name:'Add Entry'});
+ await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
+ await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
+ await surchargeForm.getByRole('textbox',{name:'Bank Name'}).fill('Synthetic Source Bank');
+ await surchargeForm.getByRole('textbox',{name:'Branch Name'}).fill('E2E Local Branch');
+ await surchargeForm.locator('input[type=date]').fill('2026-05-14');
+ await surchargeForm.getByRole('spinbutton',{name:'Paid Amount'}).fill('250');
+ await surchargeForm.getByRole('button',{name:'Save',exact:true}).click();
+ await surchargeForm.waitFor({state:'detached'});
+ let surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
+ assert.ok(surcharge,'Surcharge Add did not persist');
+ assert.equal(surcharge.claimEvidence.registrationNo,'E2E-MOTOR-01');
+ assert.equal(surcharge.claimEvidence.bankName,'Synthetic Source Bank');
+ assert.equal(surcharge.taxDeducted,250);
+ assert.equal(surcharge.status,'PENDING_VERIFICATION');
+ assert.equal(surcharge.externalVerified,false);
+ report.push({width,category:'Environmental Surcharge',check:'original six-field Add persists pending local record',pass:true});
+ await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
+ let surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ await surchargeRow.waitFor({state:'visible'});
+ assert.match(await surchargeRow.innerText(),/Synthetic Source Bank/);
+ await surchargeRow.getByRole('button',{name:'Edit'}).click();
+ const editSurcharge=page.getByRole('dialog',{name:'Edit Entry'});
+ await editSurcharge.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
+ await editSurcharge.getByRole('button',{name:'Save',exact:true}).click();
+ await editSurcharge.waitFor({state:'detached'});
+ await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
+ surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
+ assert.equal(surcharge.taxDeducted,275);
+ assert.equal(surcharge.claimEvidence.bankName,'Synthetic Source Bank');
+ report.push({width,category:'Environmental Surcharge',check:'edit, source columns and reload persistence',pass:true});
+ surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ page.once('dialog',d=>d.dismiss());
+ await surchargeRow.getByRole('button',{name:'Delete'}).click();
+ assert.ok((await stored(page)).some(row=>row.id===surcharge.id));
+ page.once('dialog',d=>d.accept());
+ await surchargeRow.getByRole('button',{name:'Delete'}).click();
+ await surchargeRow.waitFor({state:'detached'});
+ assert.ok(!(await stored(page)).some(row=>row.id===surcharge.id));
+ report.push({width,category:'Environmental Surcharge',check:'delete confirmation and isolated local persistence',pass:true});
+
  await openRoute(page,'Salary (Others)',width);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
  const form=page.getByRole('dialog');

@@ -58,7 +58,7 @@ export const hasUnsupportedLegacyDocumentType = (entry: LedgerEntry, routeId: Ma
 const cols: Record<ManualRoute, string[]> = {
   'service-payment': ['SL.', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
   'other-tds': ['SL.', 'Purpose of the Payment', 'Depositing Authority', 'Payment Document Type', 'Challan/ Certificate Reference No.', 'Challan/ Certificate Date', 'Challan/ Certificate Amount', 'Claimed Amount', 'Action'],
-  'source-ltu': ['SL.', 'Section', 'Claim Amount', 'Payment Document Type', 'Challan No', 'Action'],
+  'source-ltu': ['SL.', 'Section', 'Claim Amount', 'Payment Document Type', 'Challan/Certificate No', 'Action'],
   refund: ['SL.', 'Assessment Year', 'Return Register No. / Reference No.', 'Date of Submission', 'Return Filing Zone', 'Return Filing Circle', 'Refund Amount', 'Adjustment Claim Amount', 'Action'],
 };
 
@@ -349,6 +349,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const bnColumns: Record<string,string> = {
     'SL.':'ক্রম', 'Section':'ধারা', 'Claim Amount':'দাবিকৃত অঙ্ক',
     'Payment Document Type':'পরিশোধ দলিলের ধরন', 'Challan No':'চালান নম্বর',
+    'Challan/Certificate No':'চালান/সনদ নম্বর',
     'Depositing Authority':'জমাদানকারী কর্তৃপক্ষ', 'Challan/ Certificate Reference No.':'চালান/সনদ নম্বর',
     'Challan/ Certificate Date':'চালান/সনদের তারিখ', 'Challan/ Certificate Amount':'চালান/সনদের অঙ্ক',
     'Claimed Amount':'দাবিকৃত অঙ্ক', 'Action':'কাজ', 'Purpose of the Payment':'পরিশোধের উদ্দেশ্য',
