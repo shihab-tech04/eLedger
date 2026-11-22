@@ -152,7 +152,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       </LedgerFormGrid>
       <div className="eledger-form-actions">
         <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>
-        <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{t('Save claim','দাবি সংরক্ষণ')}</button>
+        <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{activeId === 'new' ? t('Save claim','দাবি সংরক্ষণ') : t('Save Changes','পরিবর্তন সংরক্ষণ')}</button>
       </div>
     </form>
   );
