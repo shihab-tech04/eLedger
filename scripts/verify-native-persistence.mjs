@@ -94,6 +94,20 @@ async function testViewport(browser,width){
  assert.equal(response.status(),200);
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
+ if(width<600){
+   const tabs=page.locator('nav.eledger-mobile-bottom-nav');
+   assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
+   assert.equal(await tabs.locator('button').count(),5,'Five mobile destinations required');
+   await tabs.getByRole('button',{name:'Status',exact:true}).click();
+   await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
+   assert.deepEqual((await page.locator('table.eledger-status-page-table thead th').allTextContents())
+     .map(s=>s.trim()),['Particulars','Amount']);
+   await tabs.getByRole('button',{name:'Home',exact:true}).click();
+   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+   assert.ok(overflow<=2,'Mobile page must not overflow viewport: '+overflow);
+   report.push({width,check:'five quick tabs and genuine two-column status on phone',pass:true});
+ }
  report.push({width,check:'fresh native storage',pass:true});
  // Source-evidenced Income Sync is a disclosure, not an invented manual Add form.
  for (const route of ['Bank/FI Interest/Profit','Sanchayapatra']) {
@@ -173,39 +187,46 @@ async function testViewport(browser,width){
   'Motor Vehicle Registration No','Transaction ID','Bank Name','Branch Name','Payment Date','Paid Amount','Action',
  ]);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
- const surchargeForm=width>=768 ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog',{name:'Add Entry'});
+ const surchargeForm=width>=768 ? page.locator('tr[aria-label="New surcharge record"]') : page.getByRole('dialog',{name:'Add Entry'});
  await surchargeForm.waitFor({state:'visible'});
  await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
  await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
- await surchargeForm.locator('input[aria-label="Bank Name"]').fill('Synthetic Source Bank');
+ await surchargeForm.getByRole('combobox',{name:'Bank Name'}).selectOption('AB Bank PLC');
  await surchargeForm.getByRole('textbox',{name:'Branch Name'}).fill('E2E Local Branch');
  await surchargeForm.locator('input[type=date]').fill('2026-05-14');
  await surchargeForm.getByRole('spinbutton',{name:'Paid Amount'}).fill('250');
- await surchargeForm.getByRole('button',{name:'Save',exact:true}).click();
+ if(width>=768) await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
+ else await surchargeForm.getByRole('button',{name:'Save',exact:true}).click();
  await surchargeForm.waitFor({state:'detached'});
  let surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
  assert.ok(surcharge,'Surcharge Add did not persist');
  assert.equal(surcharge.claimEvidence.registrationNo,'E2E-MOTOR-01');
- assert.equal(surcharge.claimEvidence.bankName,'Synthetic Source Bank');
+ assert.equal(surcharge.claimEvidence.bankName,'AB Bank PLC');
  assert.equal(surcharge.taxDeducted,250);
  assert.equal(surcharge.status,'PENDING_VERIFICATION');
  assert.equal(surcharge.externalVerified,false);
  report.push({width,category:'Environmental Surcharge',check:'original six-field Add persists pending local record',pass:true});
  await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
- let surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ let surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
  await surchargeRow.waitFor({state:'visible'});
- assert.match(await surchargeRow.innerText(),/Synthetic Source Bank/);
- await surchargeRow.getByRole('button',{name:'Edit'}).click();
- const editSurcharge=width>=768 ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog',{name:'Edit Entry'});
- await editSurcharge.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
- await editSurcharge.getByRole('button',{name:'Save',exact:true}).click();
- await editSurcharge.waitFor({state:'detached'});
+ if(width>=768){
+   await surchargeRow.getByRole('combobox',{name:'Bank Name'}).waitFor();
+   await surchargeRow.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
+   await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
+ } else {
+   assert.match(await surchargeRow.innerText(),/AB Bank PLC/);
+   await surchargeRow.getByRole('button',{name:'Edit'}).click();
+   const editSurcharge=page.getByRole('dialog',{name:'Edit Entry'});
+   await editSurcharge.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
+   await editSurcharge.getByRole('button',{name:'Save',exact:true}).click();
+   await editSurcharge.waitFor({state:'detached'});
+ }
  await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
  surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
  assert.equal(surcharge.taxDeducted,275);
- assert.equal(surcharge.claimEvidence.bankName,'Synthetic Source Bank');
+ assert.equal(surcharge.claimEvidence.bankName,'AB Bank PLC');
  report.push({width,category:'Environmental Surcharge',check:'edit, source columns and reload persistence',pass:true});
- surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
  page.once('dialog',d=>d.dismiss());
  await surchargeRow.getByRole('button',{name:'Delete'}).click();
  assert.ok((await stored(page)).some(row=>row.id===surcharge.id));
@@ -214,6 +235,39 @@ async function testViewport(browser,width){
  await surchargeRow.waitFor({state:'detached'});
  assert.ok(!(await stored(page)).some(row=>row.id===surcharge.id));
  report.push({width,category:'Environmental Surcharge',check:'delete confirmation and isolated local persistence',pass:true});
+ // Original PDF p18 permits more than one unsaved desktop row and one shared Save.
+ if(width>=768){
+   await page.getByRole('button',{name:'Add Entry',exact:true}).click();
+   await page.getByRole('button',{name:'Add Entry',exact:true}).click();
+   const grid=page.locator('.eledger-surcharge-grid-row');
+   assert.equal(await grid.count(),2,'Two unsaved surcharge rows must coexist');
+   const drafts=[
+     {ref:'E2E-SUR-BATCH-1',vehicle:'BATCH-MOTOR-1',amount:'150'},
+     {ref:'E2E-SUR-BATCH-2',vehicle:'BATCH-MOTOR-2',amount:'350'},
+   ];
+   for(let i=0;i<2;i++){
+     const row=grid.nth(i);
+     await row.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill(drafts[i].vehicle);
+     await row.getByRole('textbox',{name:'Transaction ID'}).fill(drafts[i].ref);
+     await row.getByRole('combobox',{name:'Bank Name'}).selectOption('Community Bank Bangladesh PLC');
+     await row.getByRole('textbox',{name:'Branch Name'}).fill('Local branch');
+     await row.locator('input[type=date]').fill('2026-05-14');
+     await row.getByRole('spinbutton',{name:'Paid Amount'}).fill(drafts[i].amount);
+   }
+   assert.match(await page.locator('.eledger-payment-columns').first().innerText(),/500/);
+   await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
+   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,2);
+   await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
+   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,2);
+   report.push({width,category:'Environmental Surcharge',check:'two editable rows and one shared Save persist 500 in local ledger',pass:true});
+   for(const ref of drafts.map(x=>x.ref)){
+     page.once('dialog',d=>d.accept());
+     await page.locator('tr.eledger-surcharge-grid-row').filter({
+       has:page.locator('input[aria-label="Transaction ID"][value="'+ref+'"]')
+     }).getByRole('button',{name:'Delete '+ref}).click();
+   }
+   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,0);
+ }
 
  await openRoute(page,'Salary (Others)',width);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
@@ -234,7 +288,7 @@ async function testViewport(browser,width){
 let proc,browser;
 try{
  proc=await startPreview();browser=await chromium.launch({headless:true,args:['--no-sandbox']});
- for(const width of [1280,390])await testViewport(browser,width);
+ for(const width of [1280,390,320])await testViewport(browser,width);
  console.log('NATIVE_BROWSER_ACCEPTANCE PASS '+report.length+'/'+report.length);
  console.log(JSON.stringify(report));
 }catch(e){console.error('NATIVE_BROWSER_ACCEPTANCE FAIL',e.stack||String(e));process.exitCode=1;}

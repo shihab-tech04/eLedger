@@ -281,6 +281,14 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                     aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}
                     onClick={() => setDetailId(entry.id)} disabled={activeId !== null}>
                     <Eye size={16}/>{t('View','দেখুন')}</button>
+                  <button type="button" className="eledger-button eledger-button-secondary"
+                    aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
+                    disabled={activeId !== null || saving} onClick={() => openEdit(entry)}>
+                    <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
+                  <button type="button" className="eledger-button eledger-button-danger"
+                    aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
+                    disabled={activeId !== null || saving} onClick={() => void remove(entry)}>
+                    <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
                 </div></td>
               </tr>
             ))}

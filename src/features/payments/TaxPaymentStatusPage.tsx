@@ -60,7 +60,9 @@ export const TaxPaymentStatusPage: React.FC = () => {
           </tbody>
         </table>
       </div>
-      <p className="eledger-status-caveat">{t('These are local ledger records. Authority-verified credits are shown separately; no government submission has occurred.', 'এগুলো স্থানীয় লেজার রেকর্ড। কর্তৃপক্ষ যাচাইকৃত ক্রেডিট আলাদাভাবে প্রদর্শিত হয়; কোনো সরকারি দাখিল হয়নি।')} {amount(totals.grandTotalCredits)}</p>
+      <p className="eledger-status-caveat">{t('These are local ledger records. Authority-verified credits are shown separately; no government submission has occurred.', 'এগুলো স্থানীয় লেজার রেকর্ড। কর্তৃপক্ষ যাচাইকৃত ক্রেডিট আলাদাভাবে প্রদর্শিত হয়; কোনো সরকারি দাখিল হয়নি।')}</p>
+      <p className="eledger-status-caveat eledger-status-verified-amount">
+        <strong>{t('Authority-verified credits', 'কর্তৃপক্ষের যাচাইকৃত ক্রেডিট')}:</strong> {amount(totals.grandTotalCredits)}</p>
       <div className="eledger-status-next">
         <span>{t('Update tax payment using Menu in left', 'বাম পাশের মেনু থেকে কর পরিশোধের তথ্য সংশোধন করুন')}</span>
         <a href="https://staging.etaxnbr.gov.bd/#/user-panel/home" target="_blank" rel="noopener noreferrer"

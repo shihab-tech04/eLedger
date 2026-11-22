@@ -247,7 +247,7 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
     assert.equal((await repo.getEntries('987654321098', assessmentYear)).length, 0);
   });
 
-  it('keeps Add and an accessible View action in manual tables, with Edit/Delete in record drawers', () => {
+  it('keeps accessible direct View/Edit/Delete table actions and preserves record drawers', () => {
     const salaryRecord: LedgerEntry = {
       ...INITIAL_LEDGER_ENTRIES[0],
       id: 'fixture-salary-other',
@@ -268,8 +268,8 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       onDeleteEntry: async () => true,
     }));
     assert.match(salaryHtml, /aria-label="View details /);
-    assert.doesNotMatch(salaryHtml, /aria-label="Edit /);
-    assert.doesNotMatch(salaryHtml, /aria-label="Delete /);
+    assert.match(salaryHtml, /aria-label="Edit SYNTHETIC-SALARY-123"/);
+    assert.match(salaryHtml, /aria-label="Delete SYNTHETIC-SALARY-123"/);
     assert.match(salaryHtml, /Add Entry/);
     assert.doesNotMatch(salaryHtml, /role="dialog"/);
 
@@ -286,8 +286,8 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
     }));
     assert.match(manualHtml, /aria-label="View details /);
-    assert.doesNotMatch(manualHtml, /aria-label="Edit /);
-    assert.doesNotMatch(manualHtml, /aria-label="Delete /);
+    assert.match(manualHtml, /aria-label="Edit SYNTHETIC-SERVICE-123"/);
+    assert.match(manualHtml, /aria-label="Delete SYNTHETIC-SERVICE-123"/);
     assert.match(manualHtml, /Add Entry/);
     assert.doesNotMatch(manualHtml, /role="dialog"/);
   });
@@ -2226,8 +2226,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Certificate/);
     assert.doesNotMatch(markup, /Test Bank \/ Main/);
     assert.match(markup, /View details/);
-    assert.doesNotMatch(markup, /aria-label="Edit /);
-    assert.doesNotMatch(markup, /aria-label="Delete /);
+    assert.match(markup, /aria-label="Edit IBAS\/GOV\/2026\/08821"/);
+    assert.match(markup, /aria-label="Delete IBAS\/GOV\/2026\/08821"/);
     assert.match(markup, /Add Entry/);
   });
 
@@ -2624,7 +2624,9 @@ describe('Original screenshot p18 surcharge and p10 LTU parity (19 November 2026
     assert.match(markup, /LOCAL-SURCHARGE-REFERENCE/);
     assert.match(markup, /Synthetic Bank/);
     assert.match(markup, /Test Branch/);
-    assert.match(markup, /20-07-2026/);
+    assert.match(markup, /aria-label="Payment Date"[^>]*value="2026-07-20"/);
+    assert.match(markup, /<select[^>]*aria-label="Bank Name"/);
+    assert.match(markup, /class="eledger-surcharge-grid-footer"/);
     assert.match(markup, /250/);
     assert.match(markup, /Edit/);
     assert.match(markup, /Delete/);

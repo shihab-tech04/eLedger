@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Car, ChevronDown, ChevronRight, FileCheck2,
   LayoutDashboard, Menu, PhoneCall, ReceiptText,
@@ -50,16 +50,33 @@ export const Sidebar: React.FC = () => {
   const { language } = useLedgerLanguage();
   const bn = language === 'bn';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileMenuOpener = useRef<HTMLButtonElement>(null);
+  const mobileDrawer = useRef<HTMLElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState({ source: true, ait: false });
 
   useEffect(() => {
     if (!mobileOpen) return;
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileOpen(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    mobileDrawer.current?.querySelector<HTMLElement>('.eledger-sidebar-mobile-heading button')?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); setMobileOpen(false); return; }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(mobileDrawer.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]),a[href]'
+      ) ?? []).filter((element) => element.getClientRects().length > 0);
+      if (!controls.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
-    window.addEventListener('keydown', onEscape);
-    return () => window.removeEventListener('keydown', onEscape);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKey);
+      mobileMenuOpener.current?.focus();
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -74,6 +91,7 @@ export const Sidebar: React.FC = () => {
     if (routeId) setActiveRouteId(routeId);
     setActiveNavTab(tab);
     setMobileOpen(false);
+    if (window.matchMedia('(max-width: 960px)').matches) window.scrollTo(0, 0);
   };
 
   const openStatus = () => {
@@ -112,14 +130,18 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       <div className="eledger-mobile-nav">
-        <button type="button" onClick={() => setMobileOpen(true)} aria-label={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}>
+        <button type="button" ref={mobileMenuOpener} onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen}
+          aria-controls="eledger-mobile-sidebar" aria-label={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}>
           <Menu size={19}/><span>{bn ? 'মেনু' : 'Menu'}</span>
         </button>
         <span>eReturn Ledger</span>
       </div>
       {mobileOpen && <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'}
         className="eledger-sidebar-scrim" onClick={() => setMobileOpen(false)}/>}
-      <aside className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (collapsed ? 'is-collapsed' : '')} aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
+      <aside ref={mobileDrawer} id="eledger-mobile-sidebar"
+        className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (collapsed ? 'is-collapsed' : '')}
+        role={mobileOpen ? 'dialog' : undefined} aria-modal={mobileOpen ? true : undefined}
+        aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
         <div className="eledger-sidebar-desktop-toggle">
           <button type="button" onClick={() => setCollapsed((value) => !value)}
             title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
@@ -188,6 +210,25 @@ export const Sidebar: React.FC = () => {
           </a>
         </div>
       </aside>
+      <nav className="eledger-mobile-bottom-nav" aria-label={bn ? 'দ্রুত নেভিগেশন' : 'Quick navigation'}>
+        <button type="button" className={activeNavTab === 'dashboard' ? 'is-active' : ''}
+          aria-current={activeNavTab === 'dashboard' ? 'page' : undefined}
+          onClick={() => navigate('dashboard')}><LayoutDashboard size={20} aria-hidden="true"/><span>{bn ? 'ড্যাশবোর্ড' : 'Home'}</span></button>
+        <button type="button" className={activeNavTab === 'source-tax' ? 'is-active' : ''}
+          aria-current={activeNavTab === 'source-tax' ? 'page' : undefined}
+          onClick={() => navigate('source-tax', activeIdForGroup('Source Tax'))}>
+          <ReceiptText size={20} aria-hidden="true"/><span>{bn ? 'উৎস কর' : 'Source Tax'}</span></button>
+        <button type="button" className={activeNavTab === 'ait' ? 'is-active' : ''}
+          aria-current={activeNavTab === 'ait' ? 'page' : undefined}
+          onClick={() => navigate('ait', activeIdForGroup('AIT'))}><Car size={20} aria-hidden="true"/><span>{bn ? 'অগ্রিম কর' : 'AIT'}</span></button>
+        <button type="button" className={activeNavTab === 'payments' || activeNavTab === 'adjustments' ? 'is-active' : ''}
+          aria-current={activeNavTab === 'payments' || activeNavTab === 'adjustments' ? 'page' : undefined}
+          onClick={() => navigate('payments', activeIdForGroup('Payment'))}>
+          <ShieldCheck size={20} aria-hidden="true"/><span>{bn ? 'পরিশোধ' : 'Payments'}</span></button>
+        <button type="button" className={activeNavTab === 'status' ? 'is-active' : ''}
+          aria-current={activeNavTab === 'status' ? 'page' : undefined}
+          onClick={openStatus}><FileCheck2 size={20} aria-hidden="true"/><span>{bn ? 'অবস্থা' : 'Status'}</span></button>
+      </nav>
     </>
   );
 };
