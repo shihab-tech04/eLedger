@@ -58,6 +58,11 @@ async function openNav(page,label,group,width){
  }
  await nav.getByRole('button',{name:label,exact:true}).click();
 }
+async function referenceContext(options){
+ const ctx=await browser.newContext(options);
+ await ctx.addInitScript(()=>localStorage.setItem('eledger_sidebar_collapsed_v2','false'));
+ return ctx;
+}
 async function expandDesktopForReferenceScreens(page,width){
  if(width<961)return;
  const nav=page.locator('aside.eledger-sidebar');
@@ -81,7 +86,7 @@ try {
  preview=await boot();browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  // The first navigation page is audited separately at four viewports, in both languages.
  for(const width of [375,768,1280,1920]){
-  const ctx=await browser.newContext({viewport:{width,height:width<600?844:900},
+  const ctx=await referenceContext({viewport:{width,height:width<600?844:900},
     isMobile:width<600,hasTouch:width<600,locale:'en-US'});
   const page=await ctx.newPage();page.setDefaultTimeout(12000);
   page.on('pageerror',e=>out.javascriptExceptions.push({width,error:String(e)}));
@@ -168,7 +173,7 @@ try {
  }
  // Independently exercise Page 02 iBAS++ at small phone, tablet and desktop widths.
  for(const width of [375,768,1280,1920]){
-  const ctx=await browser.newContext({viewport:{width,height:width<=375?812:900},
+  const ctx=await referenceContext({viewport:{width,height:width<=375?812:900},
     isMobile:width<600,hasTouch:width<600,locale:'en-US'});
   const page=await ctx.newPage();page.setDefaultTimeout(12000);
   page.on('pageerror',e=>out.javascriptExceptions.push({width,error:String(e)}));
@@ -214,7 +219,7 @@ try {
   await ctx.close();
  }
  for(const width of [1280,390,320]){
-  const context=await browser.newContext({viewport:{width,height:width<600?844:900},
+  const context=await referenceContext({viewport:{width,height:width<600?844:900},
     isMobile:width<600,hasTouch:width<600,locale:'en-US'});
   const page=await context.newPage();page.setDefaultTimeout(12000);
   page.on('pageerror',x=>out.javascriptExceptions.push({width,error:String(x)}));
@@ -307,7 +312,7 @@ try {
  // NEIR component parity on a synthetic, isolated read-only bank record.
  // This fixture never reaches production storage or claims official tax verification.
  for(const width of [390,1280]){
-  const ctx=await browser.newContext({viewport:{width,height:width===390?844:900},
+  const ctx=await referenceContext({viewport:{width,height:width===390?844:900},
     isMobile:width===390,hasTouch:width===390,locale:'en-US'});
   const fixture={id:'neir-ui-test-01',taxpayerTin:'123456789012',assessmentYear:'2026-2027',
     category:'SOURCE_TAX',routeId:'bank-fi',referenceNo:'NEIR-UI-FIXTURE-001',
