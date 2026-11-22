@@ -100,6 +100,47 @@ async function testViewport(browser,width){
  assert.equal(response.status(),200);
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
+ // Computed CSS acceptance for the exact compiled browser version, not a stylesheet guess.
+ const system=await page.evaluate(()=>{
+   const app=document.querySelector('.eledger-app');
+   const primary=document.querySelector('main .eledger-button-primary');
+   const footer=document.querySelector('.eledger-footer');
+   const nav=document.querySelector('.eledger-mobile-bottom-nav button');
+   const get=el=>el?getComputedStyle(el):null;
+   return {
+     font:get(app)?.fontFamily,
+     primary:{fg:get(primary)?.color,bg:get(primary)?.backgroundColor},
+     footer:{fg:get(footer)?.color,bg:get(footer)?.backgroundColor,size:parseFloat(get(footer)?.fontSize||'0')},
+     navFont:parseFloat(get(nav)?.fontSize||'0'),
+     footerNote:footer?.textContent||'',
+   };
+ });
+ const ratio=(fg,bg)=>{
+   const toRGB=c=>(c?.match(/[0-9.]+/g)||[]).slice(0,3).map(Number).map(v=>{
+     const n=v/255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;
+   });
+   const lum=c=>{const [r,g,b]=toRGB(c);return .2126*r+.7152*g+.0722*b;};
+   const a=lum(fg),b=lum(bg);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+ };
+ assert.ok(system.font?.includes('Poppins'),'English typeface must follow approved Poppins stack');
+ assert.ok(ratio(system.primary.fg,system.primary.bg)>=4.5,
+   'Computed primary CTA text must meet AA: '+JSON.stringify(system.primary));
+ assert.ok(ratio(system.footer.fg,system.footer.bg)>=4.5,
+   'Computed footer contrast must meet AA: '+JSON.stringify(system.footer));
+ assert.ok(system.footer.size>=12,'Footer supporting text must be at least 12px');
+ assert.match(system.footerNote,/Standalone local ledger/,'Global financial provenance must be clear');
+ if(width<600)assert.ok(system.navFont>=12,'Phone bottom tab labels must be at least 12px');
+ if(width<600){
+   const targets=await page.locator('aside.eledger-sidebar .eledger-side-link').evaluateAll(els=>
+     els.slice(0,20).map(el=>parseFloat(getComputedStyle(el).minHeight)));
+   assert.ok(targets.every(x=>x>=44),'Mobile drawer link targets must be at least 44px');
+ }
+ await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+ await page.locator('.eledger-app[lang="bn"]').waitFor();
+ assert.ok((await page.locator('.eledger-app').evaluate(el=>getComputedStyle(el).fontFamily))
+   .includes('Noto Sans Bengali Variable'),'Bengali must use the bundled variable font');
+ await page.getByRole('button',{name:'English',exact:true}).click();
+ report.push({width,check:'computed AA primary/footer contrast, EN/BN font contract and mobile label sizes',pass:true});
  if(width>=961){
    const nav=page.locator('aside.eledger-sidebar');
    const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
@@ -339,6 +380,27 @@ async function testViewport(browser,width){
  await page.getByRole('combobox',{name:'Assessment Year'}).selectOption('2026-2027');
  await page.locator('table tbody tr').filter({hasText:'E2E-AY-ISOLATION'}).waitFor({state:'visible'});
  report.push({width,check:'AY context isolation in actual UI',pass:true});
+ if(width>=961){
+   // Source UI had discarded a dirty inline editor without asking. Cancel must
+   // retain all entered fields, while Confirm must complete the route transition.
+   await page.getByRole('button',{name:'Add Entry',exact:true}).click();
+   const editor=page.locator('tr.eledger-source-inline-editor');
+   await editor.waitFor({state:'visible'});
+   await editor.getByRole('textbox',{name:'Depositing Authority'}).fill('UNSAVED E2E DRAFT');
+   const nav=page.locator('aside.eledger-sidebar');
+   let asked=0;
+   page.once('dialog',d=>{asked++;d.dismiss()});
+   await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+   assert.equal(asked,1,'Dirty editor must request discard confirmation');
+   assert.ok(await editor.isVisible(),'Cancel must preserve unsaved editor');
+   assert.equal(await editor.getByRole('textbox',{name:'Depositing Authority'}).inputValue(),'UNSAVED E2E DRAFT');
+   page.once('dialog',d=>d.accept());
+   await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+   assert.ok(!(await stored(page)).some(x=>x.sourceEntity==='UNSAVED E2E DRAFT'),
+     'Unsaved draft must not become an accepted tax credit');
+   report.push({width,check:'unsaved-editor navigation Cancel/Discard and no fabricated ledger record',pass:true});
+ }
  const nextPage=await context.newPage();await nextPage.goto(SITE,{waitUntil:'networkidle'});
  assert.deepEqual(await stored(nextPage),await stored(page));
  report.push({width,check:'native persistence shared with second tab',pass:true});
