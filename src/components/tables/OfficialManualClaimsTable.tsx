@@ -454,6 +454,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
             <td data-label={colLabel('SL.')}>{index + 1}</td>
             {rowValues(entry).map((value, i) => <td key={i} data-label={colLabel(cols[routeId][i + 1])}>{value}</td>)}
             <td data-label={colLabel('Action')}>
+              <div className="eledger-row-direct-actions">
               <button type="button" className="eledger-button eledger-button-secondary" disabled={active !== null}
                 onClick={() => setDetailId(entry.id)} aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}>
                 <Eye size={16}/>{t('View','দেখুন')}
@@ -466,6 +467,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
                 onClick={() => void remove(entry)} aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}>
                 <Trash2 size={16}/>{t('Delete','মুছুন')}
               </button>
+              </div>
             </td>
           </tr>)}
           {routeId === 'refund' && active === 'new' && !compactEditor && inlineRefundRow(filteredEntries.length + 1, 'new')}
