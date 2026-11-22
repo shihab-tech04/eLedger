@@ -172,7 +172,8 @@ export const SourceTaxView: React.FC = () => {
             {isIbas && routeEntries.length > 0 && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
               {t('These locally recorded salary deductions are not authority-verified tax credits.','স্থানীয়ভাবে রেকর্ডকৃত এই বেতন-উৎস কর কর্তৃপক্ষের যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
             {isOfficialReadOnlyRoute(currentRoute.id) ? (
-              <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+              <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}
+                  onDeleteEntry={handleDeleteEntry}/>
             ) : isIbas && routeEntries.length === 0 ? (
               <section className="eledger-panel eledger-ibas-empty" aria-labelledby="eledger-ibas-empty-title">
                 <span className="eledger-ibas-empty-icon" aria-hidden="true"><FileSearch size={24}/></span>
