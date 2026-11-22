@@ -1491,3 +1491,117 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
     min-height: var(--el-touch-target); padding-block: 10px;
   }
 }
+
+
+/* Approved prototype v2: sidebar identity and collapse toggle share one logo row.
+   Preserve original 260/72px sidebar widths and accessible named controls. */
+.eledger-sidebar-brand-row {
+  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  height:71px; flex:0 0 71px; padding:10px 12px;
+  border-bottom:1px solid var(--el-border); background:#fff;
+}
+.eledger-sidebar-brand { display:flex; min-width:0; align-items:center; gap:10px; overflow:hidden; }
+.eledger-sidebar-brand-mark {
+  display:grid; flex:0 0 40px; place-items:center; height:40px; width:40px;
+  background:#087c87; color:#fff; font-size:15px; font-weight:800; border-radius:9px;
+}
+.eledger-sidebar-brand-wordmark { display:flex; flex-direction:column; white-space:nowrap; line-height:1.2; color:#087c87; }
+.eledger-sidebar-brand-wordmark strong { font-size:16px; font-weight:750; }
+.eledger-sidebar-brand-wordmark small { margin-top:5px; font-size:9px; letter-spacing:2px; font-weight:700; color:#4c607b; }
+.eledger-sidebar-collapse-button {
+  display:grid; flex:0 0 34px; place-items:center; width:34px; min-width:34px;
+  height:38px; border:1px solid var(--el-border); border-radius:8px;
+  color:#526989; background:#fff; cursor:pointer;
+}
+.eledger-sidebar-collapse-button:hover { color:var(--el-primary); border-color:#8bd4da; background:#eefafb; }
+.eledger-sidebar-collapse-button:focus-visible { outline:3px solid var(--el-primary); outline-offset:2px; }
+.eledger-sidebar.is-collapsed .eledger-sidebar-brand-row {
+  padding:9px 4px; gap:2px; justify-content:center;
+}
+.eledger-sidebar.is-collapsed .eledger-sidebar-brand { flex:0 0 29px; }
+.eledger-sidebar.is-collapsed .eledger-sidebar-brand-mark {
+  flex:0 0 29px; width:29px; height:34px; font-size:11px; border-radius:7px;
+}
+.eledger-sidebar.is-collapsed .eledger-sidebar-collapse-button { flex:0 0 30px; width:30px; min-width:30px; height:34px; }
+@media (min-width:961px) {
+  .eledger-header .eledger-brand { display:none; }
+}
+@media (max-width:960px) {
+  .eledger-sidebar-brand-row { display:none; }
+}
+
+
+/* Prototype v2: single reusable View / More action-cell pattern. The menu is
+   portalled to the document so table/card clipping never hides Edit/Delete. */
+.eledger-row-view-more { display:inline-flex; justify-content:flex-end; align-items:center; gap:7px; white-space:nowrap; }
+.eledger-row-view-more .eledger-button { min-height:40px; padding:8px 10px; font-size:12px; }
+.eledger-record-more-menu {
+  display:flex; flex-direction:column; min-width:184px; padding:6px;
+  border:1px solid var(--el-border); border-radius:10px; background:#fff;
+  box-shadow:0 15px 35px rgba(14,36,61,.18);
+}
+.eledger-record-more-menu button {
+  display:flex; align-items:center; gap:10px; width:100%; min-height:44px;
+  padding:9px 12px; border:0; border-radius:7px; color:var(--el-text);
+  background:transparent; text-align:left; font-size:13px; cursor:pointer;
+}
+.eledger-record-more-menu button:hover,
+.eledger-record-more-menu button:focus-visible { background:#eaf6f7; outline:2px solid var(--el-primary); }
+.eledger-record-more-menu button.is-danger { color:#9c2941; }
+.eledger-record-more-menu button.is-danger:hover { background:#fff0f2; }
+.eledger-menu-no-actions { padding:13px 10px; color:var(--el-muted); font-size:12px; line-height:1.4; }
+.eledger-page-header { gap:10px; align-items:flex-start; }
+.eledger-page-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.eledger-page-actions .eledger-button { min-height:44px; }
+.eledger-neir-drawer-content .eledger-salary-editor,
+.eledger-neir-drawer-content .eledger-entry-editor { width:100%; min-width:0; }
+.eledger-neir-drawer-content .eledger-form-grid { grid-template-columns:minmax(0,1fr); gap:13px; }
+.eledger-neir-drawer-content .eledger-form-actions {
+  position:sticky; bottom:0; z-index:2; margin:18px -16px -16px;
+  padding:13px 16px max(14px,env(safe-area-inset-bottom,0px)); background:#fff;
+  box-shadow:0 -5px 12px rgba(20,45,65,.07); border-top:1px solid var(--el-border);
+}
+@media (max-width:767px) {
+  .eledger-row-view-more { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+  .eledger-row-view-more .eledger-button { min-height:44px; width:100%; justify-content:center; }
+  .eledger-page-actions { width:100%; justify-content:stretch; }
+  .eledger-page-actions .eledger-button { flex:1 1 auto; }
+  .eledger-neir-drawer-content .eledger-form-actions { margin-inline:-16px; }
+}
+
+
+/* Prototype v2 page hierarchy: heading/actions row, full-width subtitle row. */
+.eledger-page-header {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-rows:auto auto;
+  align-items:center; column-gap:16px; row-gap:8px; width:100%;
+}
+.eledger-page-heading { grid-column:1; grid-row:1; min-width:0; }
+.eledger-page-heading h1 { margin:0; overflow-wrap:anywhere; }
+.eledger-page-actions { grid-column:2; grid-row:1; display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.eledger-page-subheading { grid-column:1 / -1; grid-row:2; margin:0; color:var(--el-muted); font-size:13px; line-height:1.55; }
+.eledger-neir-drawer-footer.is-editing:empty { display:none; }
+@media (max-width:767px) {
+  .eledger-page-header { grid-template-columns:minmax(0,1fr); grid-template-rows:auto auto auto; align-items:stretch; }
+  .eledger-page-heading { grid-column:1; grid-row:1; }
+  .eledger-page-subheading { grid-column:1; grid-row:2; }
+  .eledger-page-actions { grid-column:1; grid-row:3; justify-content:stretch; width:100%; }
+}
+
+
+/* Shared eLedger table search + financial-year filter in the existing toolbar. */
+.eledger-table-period { display:inline-flex; min-width:132px; align-items:center; }
+.eledger-table-period select {
+  width:100%; min-height:44px; padding:9px 25px 9px 11px;
+  border:1px solid var(--el-border); border-radius:8px;
+  color:var(--el-text); background:#fff; font:inherit; font-size:13px;
+}
+.eledger-table-period select:focus-visible { outline:2px solid var(--el-primary); outline-offset:2px; }
+.eledger-surcharge-batch-modal { display:flex; flex-direction:column; gap:16px; }
+.eledger-surcharge-batch-item { border:1px solid var(--el-border); border-radius:10px; padding:14px; }
+.eledger-surcharge-batch-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px; }
+.eledger-surcharge-batch-heading strong { font-size:14px; color:var(--el-text); }
+.eledger-surcharge-batch-item .eledger-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media (max-width:767px) {
+  .eledger-table-period { width:100%; }
+  .eledger-surcharge-batch-item .eledger-form-grid { grid-template-columns:1fr; }
+}

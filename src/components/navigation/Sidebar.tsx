@@ -179,13 +179,16 @@ export const Sidebar: React.FC = () => {
         className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (railCollapsed ? 'is-collapsed' : '')}
         role={mobileOpen ? 'dialog' : undefined} aria-modal={mobileOpen ? true : undefined}
         aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
-        <div className="eledger-sidebar-desktop-toggle">
-          <button type="button" onClick={() => setCollapsed((value) => !value)}
+        <div className="eledger-sidebar-brand-row">
+          <div className="eledger-sidebar-brand" aria-label="eReturn Ledger">
+            <span className="eledger-sidebar-brand-mark" aria-hidden="true">eR</span>
+            {!railCollapsed && <span className="eledger-sidebar-brand-wordmark"><strong>eReturn</strong><small>LEDGER</small></span>}
+          </div>
+          <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
             title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
             aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
-            aria-expanded={!collapsed}>
-            {collapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
-            {!collapsed && <span>{bn ? 'নেভিগেশন' : 'Navigation'}</span>}
+            aria-expanded={!railCollapsed}>
+            {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
           </button>
         </div>
         <div className="eledger-sidebar-mobile-heading">

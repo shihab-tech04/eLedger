@@ -2,14 +2,14 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 
-/** Adapted from the user's NEIR Drawer / RecordDetailsDrawer component contract.
- * Read-only details only. Does not make a tax claim, change a record or certify a credit.
- */
+/** Approved shared View / Edit details drawer. The parent owns all validation,
+ * persistence and permissions; this component never mutates financial data. */
 export type NeirRecordField = { label: string; value: string | number };
-export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose, footerActions, showCaveat = true }: {
+export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose, footerActions, editor, showCaveat = true }: {
   title: string;
   subtitle?: string;
   fields: readonly NeirRecordField[];
+  editor?: ReactNode;
   onClose: () => void;
   footerActions?: ReactNode;
   showCaveat?: boolean;
@@ -29,7 +29,7 @@ export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose, foot
     const keydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); return; }
       if (event.key !== 'Tab' || !panel) return;
-      const items = [...panel.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')]
+      const items = [...panel.querySelectorAll<HTMLElement>('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])')]
         .filter(element => element.getClientRects().length > 0);
       if (items.length === 0) { event.preventDefault(); return; }
       const first = items[0], last = items[items.length - 1];
@@ -57,23 +57,25 @@ export function NeirRecordDetailsDrawer({ title, subtitle, fields, onClose, foot
           aria-label={t('Close drawer','ড্রয়ার বন্ধ করুন')} onClick={onClose}><X size={20} aria-hidden="true"/></button>
       </header>
       <div className="eledger-neir-drawer-content">
-        <section aria-label={t('Record information','রেকর্ডের তথ্য')} className="eledger-neir-drawer-section">
+        {editor ? <section aria-label={t('Edit record fields','রেকর্ডের তথ্য সম্পাদনা')} className="eledger-neir-drawer-section">
+          {editor}
+        </section> : <section aria-label={t('Record information','রেকর্ডের তথ্য')} className="eledger-neir-drawer-section">
           <h3>{t('Record information','রেকর্ডের তথ্য')}</h3>
           <dl className="eledger-neir-drawer-fields">
             {fields.map((field, index) => <div key={index}>
               <dt>{field.label}</dt><dd>{field.value === '' ? '—' : field.value}</dd>
             </div>)}
           </dl>
-        </section>
-        {showCaveat && <p className="eledger-neir-drawer-caveat">
+        </section>}
+        {!editor && showCaveat && <p className="eledger-neir-drawer-caveat">
           {t('Details shown here are local ledger records, not independently authorized tax credits.',
             'এখানে দেখানো তথ্য স্থানীয় লেজারের রেকর্ড, কর্তৃপক্ষের স্বতন্ত্র যাচাইকৃত কর ক্রেডিট নয়।')}
         </p>}
       </div>
-      <footer className="eledger-neir-drawer-footer">
-        {footerActions ?? <button type="button" className="eledger-button eledger-button-secondary" onClick={onClose}>
+      <footer className={'eledger-neir-drawer-footer ' + (editor ? 'is-editing' : '')}>
+        {footerActions ?? (editor ? null : <button type="button" className="eledger-button eledger-button-secondary" onClick={onClose}>
           {t('Close','বন্ধ করুন')}
-        </button>}
+        </button>)}
       </footer>
     </aside>
   </div>;

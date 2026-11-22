@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { LedgerRecordActions } from './LedgerRecordActions.tsx';
+import { Search } from 'lucide-react';
 import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 import type { LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
@@ -117,6 +118,8 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
   const [selected, setSelected] = useState<LedgerEntry | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
+  const [search, setSearch] = useState('');
+  const [period, setPeriod] = useState('all');
   useEffect(() => { setSelected(null); }, [routeId]);
   const labelStatus = (status: LedgerEntry['status']) => {
     switch (status) {
@@ -142,14 +145,39 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
   };
   const columns = OFFICIAL_READONLY_COLUMNS[routeId];
   const columnLabel = (label: string) => t(label, OFFICIAL_BENGALI_COLUMN_LABELS[label] ?? label);
+  const visibleEntries = entries.filter((entry)=>
+    (period === 'all' || entry.date.startsWith(period)) &&
+    [entry.referenceNo,entry.sourceEntity,...recordValues(entry,routeId,labelStatus)]
+      .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   return <section className="eledger-panel eledger-official-manual-table eledger-neir-table-workspace" aria-label={t('Tax details','করের বিবরণ')}>
     {deleteError && <p role="alert" className="eledger-entry-error">{deleteError}</p>}
+    <div className="eledger-ledger-toolbar">
+      <h2>{t('Recorded Ledger Entries','রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
+      <div className="eledger-table-controls">
+        <label className="eledger-table-search"><Search size={17} aria-hidden="true"/>
+          <input type="search" value={search} onChange={event=>setSearch(event.target.value)}
+            aria-label={t('Search records','রেকর্ড খুঁজুন')}
+            placeholder={t('Search records','রেকর্ড খুঁজুন')}/></label>
+        <label className="eledger-table-period">
+          <span className="sr-only">{t('Filter by year','বছর অনুযায়ী ছাঁকুন')}</span>
+          <select value={period} aria-label={t('Filter by year','বছর অনুযায়ী ছাঁকুন')}
+            onChange={event=>setPeriod(event.target.value)}>
+            <option value="all">{t('All years','সব বছর')}</option>
+            {Array.from(new Set(entries.map(entry=>entry.date.slice(0,4)))).sort().reverse()
+              .map(year=><option key={year} value={year}>{year}</option>)}
+          </select>
+        </label>
+        <button type="button" className="eledger-button eledger-button-secondary"
+          disabled={!search && period==='all'} onClick={()=>{setSearch('');setPeriod('all');}}>
+          {t('Reset','রিসেট')}</button>
+      </div>
+    </div>
     <div className="overflow-x-auto">
       <table className="eledger-official-records eledger-data-table">
         <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{columnLabel(column)}</th>)}</tr></thead>
         <tbody>
-          {entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
-            entries.map((entry, index) => <tr key={entry.id} tabIndex={0}
+          {visibleEntries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
+            visibleEntries.map((entry, index) => <tr key={entry.id} tabIndex={0}
               className="eledger-neir-record-row"
               aria-label={t('View record details','রেকর্ডের বিস্তারিত দেখুন') + ': ' + entry.referenceNo}
               onClick={() => setSelected(entry)}
@@ -161,14 +189,12 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
               }}>
               <td data-label={columnLabel('SL.')}>{index + 1}</td>
               {recordValues(entry, routeId, labelStatus).map((value, i) => columns[i + 1] === 'Action' ?
-                <td data-label={columnLabel('Action')} key={i}>
-                  {onDeleteEntry ? <button type="button" className="eledger-button eledger-button-danger"
-                    aria-label={`${t('Remove local claim', 'স্থানীয় দাবি সরান')}: ${entry.referenceNo}`}
-                    disabled={deletingId !== null}
-                    onClick={(event) => { event.stopPropagation(); void removeLocalClaim(entry); }}
-                    onKeyDown={(event) => event.stopPropagation()}>
-                    <Trash2 size={16} aria-hidden="true"/>{t('Delete', 'মুছুন')}
-                  </button> : value}
+                <td data-label={columnLabel('Action')} key={i}
+                  onClick={(event)=>event.stopPropagation()} onKeyDown={(event)=>event.stopPropagation()}>
+                  <LedgerRecordActions reference={entry.referenceNo}
+                    onView={() => setSelected(entry)}
+                    onDelete={onDeleteEntry ? () => void removeLocalClaim(entry) : undefined}
+                    disabled={deletingId !== null}/>
                 </td> : <td data-label={columnLabel(columns[i + 1])} key={i}>{value}</td>)}
             </tr>)}
         </tbody>

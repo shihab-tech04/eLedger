@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Check, Eye, Plus, Search, Trash2, X, Pencil } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, Plus, Search, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { LTU_SECTIONS, OTHER_TDS_PURPOSES, REFUND_TAX_ZONES, observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { refundCirclesForZone } from '../../domain/refundCircleOptions.ts';
@@ -10,7 +10,8 @@ import { localDateInputValue } from '../../domain/localDate.ts';
 import { resolveLtuRecordedDate } from '../../domain/ltuRecordDate.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect } from '../ui/LedgerForm.tsx';
-import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
+import { LedgerFormGrid, LedgerPageAction } from '../ui/LedgerPage.tsx';
+import { LedgerRecordActions } from './LedgerRecordActions.tsx';
 import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
 import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 
@@ -111,14 +112,8 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
   const [fieldIssues, setFieldIssues] = useState<ManualFieldIssues>({});
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [period, setPeriod] = useState('all');
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [compactEditor, setCompactEditor] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)');
-    const refresh = () => setCompactEditor(mql.matches);
-    refresh(); mql.addEventListener('change', refresh);
-    return () => mql.removeEventListener('change', refresh);
-  }, []);
   const change = (name: keyof Draft, value: string) => {
     setDraft((prev) => ({ ...prev, [name]: value }));
     setFieldIssues((prev) => clearManualFieldIssueAfterEdit(routeId, prev, name));
@@ -137,7 +132,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
       return;
     }
-    setDraft(fromEntry(entry, routeId, assessmentYear)); setFieldIssues({}); setError(null); setActive(entry.id);
+    setDraft(fromEntry(entry, routeId, assessmentYear)); setFieldIssues({}); setError(null); setActive(entry.id); setDetailId(entry.id);
   };
 
   const buildPayload = (): Payload | null => {
@@ -356,7 +351,8 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
 
   const filteredEntries = entries.filter((entry) =>
     [entry.referenceNo, entry.sourceEntity, ...rowValues(entry)].join(' ').toLocaleLowerCase()
-      .includes(searchQuery.trim().toLocaleLowerCase())
+      .includes(searchQuery.trim().toLocaleLowerCase()) &&
+      (period === 'all' || entry.date.startsWith(period))
   );
   const detailEntry = detailId ? entries.find((entry) => entry.id === detailId) : undefined;
   const bnColumns: Record<string,string> = {
@@ -372,37 +368,19 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
     'Adjustment Claim Amount':'সমন্বয়ের দাবিকৃত অঙ্ক'
   };
   const colLabel = (column: string) => t(column, bnColumns[column] ?? column);
-  const refundInput = (field: keyof Draft, label: string, type: string = 'text') =>
-    <td data-label={label}><input type={type} className="eledger-control eledger-inline-input"
-      required aria-label={label} aria-invalid={!!fieldError(field)}
-      min={type === 'number' ? '0.01' : undefined} step={type === 'number' ? 'any' : undefined}
-      value={draft[field]} onChange={(event) => change(field, event.target.value)}/></td>;
-  const refundSelect = (field: 'zone' | 'circle', label: string, options: readonly string[]) =>
-    <td data-label={label}><select className="eledger-control eledger-inline-input"
-      required aria-label={label} aria-invalid={!!fieldError(field)} value={draft[field]}
-      onChange={(event) => field === 'zone' ?
-        (setDraft((prev) => ({...prev, zone: event.target.value, circle: ''})),
-          setFieldIssues((prev) => ({ ...prev, zone: undefined, circle: undefined }))) : change(field, event.target.value)}>
-      <option value="">{t('Select One','নির্বাচন করুন')}</option>
-      {options.map((item) => <option value={item} key={item}>{item}</option>)}
-    </select></td>;
-  const inlineRefundRow = (number: number, key: string) => <tr key={`refund-inline-${key}`}
-    className="eledger-row-being-edited eledger-source-inline-editor">
-    <td data-label={colLabel('SL.')}>{number}</td>
-    {refundInput('assessmentYear', colLabel('Assessment Year'))}
-    {refundInput('reference', colLabel('Return Register No. / Reference No.'))}
-    {refundInput('date', colLabel('Date of Submission'), 'date')}
-    {refundSelect('zone', colLabel('Return Filing Zone'), REFUND_TAX_ZONES)}
-    {refundSelect('circle', colLabel('Return Filing Circle'), refundCirclesForZone(draft.zone))}
-    {refundInput('total', colLabel('Refund Amount'), 'number')}
-    {refundInput('claim', colLabel('Adjustment Claim Amount'), 'number')}
-    <td data-label={colLabel('Action')}><div className="eledger-button-group">
-      <button type="button" className="eledger-button eledger-button-primary" disabled={saving}
-        onClick={() => void save()}><Check size={16}/>{t('Save','সংরক্ষণ')}</button>
-      <button type="button" className="eledger-button eledger-button-secondary" disabled={saving}
-        onClick={cancel}><X size={16}/>{t('Cancel','বাতিল')}</button>
-    </div></td>
-  </tr>;
+
+  const renderEditor = () => (<form noValidate aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
+        onSubmit={(event) => { event.preventDefault(); void save(); }}>
+        {error && <p role="alert" className="eledger-entry-error">{error}</p>}
+        {fieldSet()}
+        <div className="eledger-form-actions">
+          <button type="button" disabled={saving} className="eledger-button eledger-button-secondary"
+            onClick={() => active === 'new' && routeId === 'source-ltu' ? (setDraft(blank(routeId, assessmentYear)), setFieldIssues({}), setError(null)) : cancel()}>
+            <X size={16}/>{active === 'new' && routeId === 'source-ltu' ? t('Reset','রিসেট') : t('Cancel','বাতিল')}
+          </button>
+          <button type="submit" disabled={saving} className="eledger-button eledger-button-primary"><Check size={16}/>{active !== 'new' ? t('Save Changes','পরিবর্তন সংরক্ষণ') : routeId === 'source-ltu' ? t('Submit','দাখিল করুন') : t('Save','সংরক্ষণ')}</button>
+        </div>
+      </form>);
 
   return <section className="eledger-panel eledger-official-manual-table" aria-label={t('Recorded ledger entries','রেকর্ডকৃত লেজার এন্ট্রি')}>
     <div className="eledger-ledger-toolbar">
@@ -412,71 +390,54 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
           <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
             aria-label={t('Search records','রেকর্ড খুঁজুন')} placeholder={t('Search records','রেকর্ড খুঁজুন')}/>
         </label>
+        <label className="eledger-table-period">
+            <span className="sr-only">{t('Filter by year','বছর অনুযায়ী ছাঁকুন')}</span>
+            <select aria-label={t('Filter by year','বছর অনুযায়ী ছাঁকুন')} value={period}
+              onChange={(event)=>setPeriod(event.target.value)}>
+              <option value="all">{t('All years','সব বছর')}</option>
+              {Array.from(new Set(entries.map((entry)=>entry.date.slice(0,4)))).sort().reverse()
+                .map((year)=><option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>
         <div className="eledger-button-group">
           <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
-            onClick={() => setSearchQuery('')}>{t('Reset','রিসেট')}</button>
-          <button type="button" className="eledger-button eledger-button-primary" disabled={active !== null} onClick={openNew}>
-            <Plus size={16}/>{routeId === 'source-ltu' ? t('Add Source Tax','উৎস কর যোগ করুন') : t('Add Entry','রেকর্ড যোগ করুন')}
-          </button>
+            onClick={() => { setSearchQuery('');setPeriod('all'); }}>{t('Reset','রিসেট')}</button>
+
         </div>
       </div>
     </div>
+    <LedgerPageAction><button type="button" className="eledger-button eledger-button-primary"
+      disabled={active !== null} onClick={openNew}>
+      <Plus size={16}/>{routeId === 'source-ltu' ? t('Add Source Tax','উৎস কর যোগ করুন') : t('Add Entry','রেকর্ড যোগ করুন')}
+    </button></LedgerPageAction>
     {error && <p role="alert" className="eledger-entry-error">{error}</p>}
-    {routeId === 'refund' && active !== null && !compactEditor && Object.values(fieldIssues).some(Boolean) &&
-      <p role="alert" className="eledger-entry-error">{t('Please correct the highlighted refund table cells.','চিহ্নিত ফেরত সমন্বয় সেল সংশোধন করুন।')}</p>}
-    {active !== null && (routeId !== 'refund' || compactEditor) && <LedgerFormModal title={active === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
+    {active === 'new' && <LedgerFormModal title={t('Add Entry','রেকর্ড যোগ করুন')}
       onClose={() => { if (!saving) cancel(); }}>
-      <form noValidate aria-label={t('Official category fields','খাতভিত্তিক তথ্য')} className="eledger-entry-editor"
-        onSubmit={(event) => { event.preventDefault(); void save(); }}>
-        {error && <p role="alert" className="eledger-entry-error">{error}</p>}
-        {fieldSet()}
-        <div className="eledger-form-actions">
-          <button type="button" disabled={saving} className="eledger-button eledger-button-secondary"
-            onClick={() => routeId === 'source-ltu' ? (setDraft(blank(routeId, assessmentYear)), setFieldIssues({}), setError(null)) : cancel()}>
-            <X size={16}/>{routeId === 'source-ltu' ? t('Reset','রিসেট') : t('Cancel','বাতিল')}
-          </button>
-          <button type="submit" disabled={saving} className="eledger-button eledger-button-primary"><Check size={16}/>{routeId === 'source-ltu' ? t('Submit','দাখিল করুন') : t('Save','সংরক্ষণ')}</button>
-        </div>
-      </form>
+      {renderEditor()}
     </LedgerFormModal>}
-    {detailEntry && <NeirRecordDetailsDrawer title={t('Record Details','রেকর্ডের বিস্তারিত')}
-      subtitle={detailEntry.referenceNo} onClose={() => setDetailId(null)} showCaveat={false}
+    {detailEntry && <NeirRecordDetailsDrawer
+      title={active === detailEntry.id ? t('Edit Record','রেকর্ড সম্পাদনা') : t('Record Details','রেকর্ডের বিস্তারিত')}
+      subtitle={detailEntry.referenceNo}
+      onClose={() => { if (active === detailEntry.id) cancel(); setDetailId(null); }}
+      showCaveat={false} editor={active === detailEntry.id ? renderEditor() : undefined}
       fields={cols[routeId].slice(1, -1).map((label, index) => ({
         label: colLabel(label), value: String(rowValues(detailEntry)[index] ?? '—')
       }))}
-      footerActions={<div className="eledger-button-group">
-        <button type="button" className="eledger-button eledger-button-secondary" onClick={() => { setDetailId(null); openEdit(detailEntry); }}>
-          <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
-        <button type="button" className="eledger-button eledger-button-danger" onClick={() => { setDetailId(null); void remove(detailEntry); }}>
-          <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
-      </div>}
     />}
     <div className="overflow-x-auto">
       <table className="eledger-official-records eledger-data-table">
         <thead><tr>{cols[routeId].map((col) => <th scope="col" key={col}>{colLabel(col)}</th>)}</tr></thead>
         <tbody>{filteredEntries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
-          filteredEntries.map((entry, index) => routeId === 'refund' && active === entry.id && !compactEditor ?
-            inlineRefundRow(index + 1, entry.id) : <tr key={entry.id}>
+          filteredEntries.map((entry, index) => <tr key={entry.id}>
             <td data-label={colLabel('SL.')}>{index + 1}</td>
             {rowValues(entry).map((value, i) => <td key={i} data-label={colLabel(cols[routeId][i + 1])}>{value}</td>)}
             <td data-label={colLabel('Action')}>
-              <div className="eledger-row-direct-actions">
-              <button type="button" className="eledger-button eledger-button-secondary" disabled={active !== null}
-                onClick={() => setDetailId(entry.id)} aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}>
-                <Eye size={16}/>{t('View','দেখুন')}
-              </button>
-              <button type="button" className="eledger-button eledger-button-secondary" disabled={active !== null || saving}
-                onClick={() => openEdit(entry)} aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}>
-                <Pencil size={16}/>{t('Edit','সম্পাদনা')}
-              </button>
-              <button type="button" className="eledger-button eledger-button-danger" disabled={active !== null || saving}
-                onClick={() => void remove(entry)} aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}>
-                <Trash2 size={16}/>{t('Delete','মুছুন')}
-              </button>
-              </div>
+              <LedgerRecordActions reference={entry.referenceNo}
+                onView={() => setDetailId(entry.id)} onEdit={() => openEdit(entry)}
+                onDelete={() => void remove(entry)} disabled={active !== null || saving}/>
             </td>
           </tr>)}
-          {routeId === 'refund' && active === 'new' && !compactEditor && inlineRefundRow(filteredEntries.length + 1, 'new')}
+
         </tbody>
       </table>
     </div>

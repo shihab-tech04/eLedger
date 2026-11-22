@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Check, Eye, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, Plus, Search, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { observedDocumentTypeForEdit } from '../../domain/officialLedgerFields.ts';
 import { validateDocumentClaimDraft, documentClaimIssueText, type DocumentClaimField, type DocumentClaimIssues } from '../../domain/documentClaimValidation.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../../components/ui/LedgerForm.tsx';
-import { LedgerFormGrid } from '../../components/ui/LedgerPage.tsx';
+import { LedgerFormGrid, LedgerPageAction } from '../../components/ui/LedgerPage.tsx';
+import { LedgerRecordActions } from '../../components/tables/LedgerRecordActions.tsx';
 import { LedgerFormModal } from '../../components/ui/LedgerFormModal.tsx';
 import { NeirRecordDetailsDrawer } from '../../components/neir/NeirRecordDetailsDrawer.tsx';
 
@@ -61,15 +62,8 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues>({});
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [period, setPeriod] = useState('all');
   const [detailId, setDetailId] = useState<string | null>(null);
-  // The original PDF has an inline desktop editor; retain the approved mobile form sheet.
-  const [compactEditor, setCompactEditor] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)');
-    const refresh = () => setCompactEditor(mql.matches);
-    refresh(); mql.addEventListener('change', refresh);
-    return () => mql.removeEventListener('change', refresh);
-  }, []);
 
   const openNew = () => { setDraft(blankDraft()); setFieldIssues({}); setError(null); setActiveId('new'); };
   const openEdit = (entry: LedgerEntry) => {
@@ -78,7 +72,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         'পুরোনো রেকর্ডের দলিলের ধরন বর্তমান এনবিআর ফরমে নেই; রেকর্ডটি অপরিবর্তিত রাখা হয়েছে।'));
       return;
     }
-    setDraft(draftFromEntry(entry)); setFieldIssues({}); setError(null); setActiveId(entry.id);
+    setDraft(draftFromEntry(entry)); setFieldIssues({}); setError(null); setActiveId(entry.id); setDetailId(entry.id);
   };
   const cancel = () => { setActiveId(null); setFieldIssues({}); setError(null); };
   const change = (field: keyof SalaryDraft, value: string) => {
@@ -159,51 +153,16 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
       </LedgerFormGrid>
       <div className="eledger-form-actions">
         <button type="button" className="eledger-button eledger-button-secondary" onClick={cancel} disabled={saving}><X size={16}/>{t('Cancel','বাতিল')}</button>
-        <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{t('Save claim','দাবি সংরক্ষণ')}</button>
+        <button type="submit" className="eledger-button eledger-button-primary" disabled={saving}><Check size={16}/>{activeId === 'new' ? t('Save claim','দাবি সংরক্ষণ') : t('Save Changes','পরিবর্তন সংরক্ষণ')}</button>
       </div>
     </form>
-  );
-
-  const inlineCell = (field: keyof SalaryDraft, label: string, options?: 'document') => (
-    <td data-label={label}>
-      {options === 'document' ? <select className="eledger-control eledger-inline-input" value={draft.documentType}
-        aria-label={label} aria-invalid={!!fieldError('documentType')}
-        onChange={(event) => change('documentType', event.target.value)}>
-        <option value="">{t('Select One','নির্বাচন করুন')}</option>
-        <option value="CHALLAN">{t('Challan','চালান')}</option>
-        <option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
-      </select> : <input className="eledger-control eledger-inline-input"
-        aria-label={label} title={label}
-        aria-invalid={!!fieldError(field === 'documentAmount' ? 'documentAmount' : field === 'claimedAmount' ? 'claimedAmount' : field === 'authority' ? 'authority' : field === 'reference' ? 'reference' : 'date')}
-        type={field === 'date' ? 'date' : (field === 'documentAmount' || field === 'claimedAmount' ? 'number' : 'text')}
-        min={field === 'documentAmount' || field === 'claimedAmount' ? '0.01' : undefined}
-        step={field === 'documentAmount' || field === 'claimedAmount' ? 'any' : undefined}
-        required value={draft[field]} onChange={(event) => change(field, event.target.value)}/>
-      }
-    </td>
-  );
-  const renderInlineRow = (number: number, key: string) => (
-    <tr key={`edit-${key}`} className="eledger-row-being-edited eledger-source-inline-editor" aria-label={t('Salary claim inline editor','বেতনের দাবির ইনলাইন ফরম')}>
-      <td className="eledger-salary-row-index">{number}</td>
-      {inlineCell('authority', t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ'))}
-      {inlineCell('documentType', t('Payment Document Type','পরিশোধ দলিলের ধরন'),'document')}
-      {inlineCell('reference', t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর'))}
-      {inlineCell('date', t('Challan/ Certificate Date','চালান/সনদের তারিখ'))}
-      {inlineCell('documentAmount', t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক'))}
-      {inlineCell('claimedAmount', t('Claimed Amount','দাবিকৃত অঙ্ক'))}
-      <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
-        <button type="button" className="eledger-button eledger-button-primary" disabled={saving}
-          onClick={() => void save()}><Check size={16}/>{t('Save','সংরক্ষণ')}</button>
-        <button type="button" className="eledger-button eledger-button-secondary" disabled={saving}
-          onClick={cancel}><X size={16}/>{t('Cancel','বাতিল')}</button>
-      </div></td>
-    </tr>
   );
 
   const filteredEntries = entries.filter((entry) =>
     [entry.referenceNo, entry.sourceEntity, entry.claimEvidence?.depositingAuthority ?? '',
       entry.claimEvidence?.paymentDocumentType ?? '', entry.taxDeducted]
-      .join(' ').toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase())
+      .join(' ').toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase()) &&
+    (period === 'all' || entry.date.startsWith(period))
   );
   const detailEntry = detailId ? entries.find((entry) => entry.id === detailId) : undefined;
 
@@ -216,25 +175,38 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
               aria-label={t('Search records','রেকর্ড খুঁজুন')} placeholder={t('Search records','রেকর্ড খুঁজুন')}/>
           </label>
-          <div className="eledger-button-group">
+          <label className="eledger-table-period">
+            <span className="sr-only">{t('Filter by year','বছর অনুযায়ী ছাঁকুন')}</span>
+            <select aria-label={t('Filter by year','বছর অনুযায়ী ছাঁকুন')} value={period}
+              onChange={(event)=>setPeriod(event.target.value)}>
+              <option value="all">{t('All years','সব বছর')}</option>
+              {Array.from(new Set(entries.map((entry)=>entry.date.slice(0,4)))).sort().reverse()
+                .map((year)=><option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>
+        <div className="eledger-button-group">
             <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
-              onClick={() => setSearchQuery('')}>{t('Reset','রিসেট')}</button>
-            <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null}
-              onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
+              onClick={() => { setSearchQuery('');setPeriod('all'); }}>{t('Reset','রিসেট')}</button>
+
           </div>
         </div>
       </div>
+      <LedgerPageAction>
+        <button type="button" className="eledger-button eledger-button-primary" disabled={activeId !== null}
+          onClick={openNew}><Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}</button>
+      </LedgerPageAction>
       {error && <div role="alert" className="eledger-salary-error">{error}</div>}
-      {activeId !== null && !compactEditor && Object.values(fieldIssues).some(Boolean) &&
-        <div className="eledger-salary-error" role="alert">{t('Please correct the highlighted table cells.','চিহ্নিত সেলগুলোর তথ্য সংশোধন করুন।')}</div>}
-      {activeId !== null && compactEditor && <LedgerFormModal
+      {activeId === 'new' && <LedgerFormModal
         title={activeId === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
         onClose={() => { if (!saving) cancel(); }}>
         {error && <div role="alert" className="eledger-salary-error">{error}</div>}
         {renderEditor()}
       </LedgerFormModal>}
-      {detailEntry && <NeirRecordDetailsDrawer title={t('Record Details','রেকর্ডের বিস্তারিত')}
-        subtitle={detailEntry.referenceNo} showCaveat={false} onClose={() => setDetailId(null)}
+      {detailEntry && <NeirRecordDetailsDrawer
+        title={activeId === detailEntry.id ? t('Edit Record','রেকর্ড সম্পাদনা') : t('Record Details','রেকর্ডের বিস্তারিত')}
+        subtitle={detailEntry.referenceNo} showCaveat={false}
+        onClose={() => { if (activeId === detailEntry.id) cancel(); setDetailId(null); }}
+        editor={activeId === detailEntry.id ? renderEditor() : undefined}
         fields={[
           { label:t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ'), value:detailEntry.claimEvidence?.depositingAuthority ?? detailEntry.sourceEntity },
           { label:t('Payment Document Type','পরিশোধ দলিলের ধরন'), value:detailEntry.claimEvidence?.paymentDocumentType ?? '—' },
@@ -243,12 +215,6 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
           { label:t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক'), value:money(detailEntry.claimEvidence?.documentAmount ?? detailEntry.grossAmount) },
           { label:t('Claimed Amount','দাবিকৃত অঙ্ক'), value:money(detailEntry.taxDeducted) },
         ]}
-        footerActions={<div className="eledger-button-group">
-          <button type="button" className="eledger-button eledger-button-secondary" onClick={() => { setDetailId(null); openEdit(detailEntry); }}>
-            <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
-          <button type="button" className="eledger-button eledger-button-danger" onClick={() => { setDetailId(null); void remove(detailEntry); }}>
-            <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
-        </div>}
       />}
       <div className="eledger-salary-scroll">
         <table className="eledger-data-table">
@@ -265,7 +231,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             {filteredEntries.length === 0 && <tr className="eledger-salary-empty-row">
               <td colSpan={8} className="eledger-salary-empty-cell">{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td>
             </tr>}
-            {filteredEntries.map((entry, index) => activeId === entry.id && !compactEditor ? renderInlineRow(index + 1, entry.id) : (
+            {filteredEntries.map((entry, index) => (
               <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
                 <td data-label={t('SL.','ক্রম')} className="eledger-salary-row-index">{index + 1}</td>
                 <td data-label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
@@ -276,23 +242,14 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 <td data-label={t('Challan/ Certificate Date','চালান/সনদের তারিখ')}>{humanDate(entry.date)}</td>
                 <td data-label={t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক')} className="eledger-salary-number">{money(entry.claimEvidence?.documentAmount ?? entry.grossAmount)}</td>
                 <td data-label={t('Claimed Amount','দাবিকৃত অঙ্ক')} className="eledger-salary-number claimed">{money(entry.taxDeducted)}</td>
-                <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
-                  <button type="button" className="eledger-button eledger-button-secondary"
-                    aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}
-                    onClick={() => setDetailId(entry.id)} disabled={activeId !== null}>
-                    <Eye size={16}/>{t('View','দেখুন')}</button>
-                  <button type="button" className="eledger-button eledger-button-secondary"
-                    aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
-                    disabled={activeId !== null || saving} onClick={() => openEdit(entry)}>
-                    <Pencil size={16}/>{t('Edit','সম্পাদনা')}</button>
-                  <button type="button" className="eledger-button eledger-button-danger"
-                    aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
-                    disabled={activeId !== null || saving} onClick={() => void remove(entry)}>
-                    <Trash2 size={16}/>{t('Delete','মুছুন')}</button>
-                </div></td>
+                <td data-label={t('Action','কাজ')}>
+                  <LedgerRecordActions reference={entry.referenceNo} onView={() => setDetailId(entry.id)}
+                    onEdit={() => openEdit(entry)} onDelete={() => void remove(entry)}
+                    disabled={activeId !== null || saving}/>
+                </td>
               </tr>
             ))}
-            {activeId === 'new' && !compactEditor && renderInlineRow(filteredEntries.length + 1, 'new')}
+
           </tbody>
         </table>
       </div>
