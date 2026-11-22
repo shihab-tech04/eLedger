@@ -1378,3 +1378,39 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-mobile-bottom-nav button svg { width: 18px; height: 18px; }
   .eledger-app .eledger-status-page-table :is(th,td) { padding: 9px 6px; font-size: 11px; }
 }
+
+
+/* PDF page 18: one desktop editable ledger grid with shared Save.
+   Keep all existing mobile card/dialog controls and NBR caveats. */
+.eledger-surcharge-grid-row td { background: #fff; }
+.eledger-surcharge-grid-row td:first-child { border-left: 2px solid transparent; }
+.eledger-surcharge-grid-row:focus-within td:first-child { border-left-color: var(--el-blue); }
+.eledger-surcharge-grid-row .eledger-control {
+  min-width: 120px; padding: 8px; min-height: 44px; border-radius: 6px; font-size: 12px;
+}
+.eledger-surcharge-grid-row select.eledger-control { min-width: 185px; text-align: left; }
+.eledger-surcharge-grid-row input[type="number"] { min-width: 105px; font-variant-numeric: tabular-nums; }
+.eledger-surcharge-grid-actions { display: inline-flex; justify-content: center; gap: 6px; }
+.eledger-action-icon {
+  display: inline-grid; place-items: center; min-width: 40px; min-height: 42px;
+  padding: 8px; border-radius: 7px; border: 1px solid var(--el-border);
+  background: #fff; color: #23687a; cursor: pointer;
+}
+.eledger-action-icon:hover { border-color: #9bd7dc; background: #eefafb; }
+.eledger-action-icon.is-danger { color: #a32743; border-color: #f0cdd3; }
+.eledger-action-icon.is-danger:hover { background: #fff1f3; }
+.eledger-action-icon:disabled { opacity: .5; cursor: default; }
+.eledger-surcharge-grid-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 14px; padding: 15px 16px; border-top: 1px solid var(--el-border);
+}
+.eledger-surcharge-unsaved-note { max-width: 54ch; font-size: 12px; color: var(--el-muted); }
+.eledger-surcharge-grid-footer-actions { display: flex; gap: 8px; margin-left: auto; }
+.eledger-surcharge-grid-footer-actions .eledger-button { min-height: 44px; border-radius: 8px; }
+.eledger-official-manual-table:has(.eledger-surcharge-grid-row) .overflow-x-auto { max-width: 100%; }
+.eledger-official-manual-table:has(.eledger-surcharge-grid-row) .eledger-official-records { min-width: 1080px; }
+@media (max-width: 767px) {
+  .eledger-surcharge-grid-footer { flex-direction: column; align-items: stretch; gap: 10px; }
+  .eledger-surcharge-grid-footer-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
+  .eledger-surcharge-grid-footer-actions .eledger-button { width: 100%; }
+}
