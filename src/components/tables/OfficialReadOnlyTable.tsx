@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { LedgerRecordActions } from './LedgerRecordActions.tsx';
 import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 import type { LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
@@ -161,14 +161,12 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
               }}>
               <td data-label={columnLabel('SL.')}>{index + 1}</td>
               {recordValues(entry, routeId, labelStatus).map((value, i) => columns[i + 1] === 'Action' ?
-                <td data-label={columnLabel('Action')} key={i}>
-                  {onDeleteEntry ? <button type="button" className="eledger-button eledger-button-danger"
-                    aria-label={`${t('Remove local claim', 'স্থানীয় দাবি সরান')}: ${entry.referenceNo}`}
-                    disabled={deletingId !== null}
-                    onClick={(event) => { event.stopPropagation(); void removeLocalClaim(entry); }}
-                    onKeyDown={(event) => event.stopPropagation()}>
-                    <Trash2 size={16} aria-hidden="true"/>{t('Delete', 'মুছুন')}
-                  </button> : value}
+                <td data-label={columnLabel('Action')} key={i}
+                  onClick={(event)=>event.stopPropagation()} onKeyDown={(event)=>event.stopPropagation()}>
+                  <LedgerRecordActions reference={entry.referenceNo}
+                    onView={() => setSelected(entry)}
+                    onDelete={onDeleteEntry ? () => void removeLocalClaim(entry) : undefined}
+                    disabled={deletingId !== null}/>
                 </td> : <td data-label={columnLabel(columns[i + 1])} key={i}>{value}</td>)}
             </tr>)}
         </tbody>
