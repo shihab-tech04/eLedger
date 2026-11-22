@@ -27,8 +27,8 @@ interface LedgerContextType {
   isLoading: boolean;
   loadError: string | null;
   totals: TaxCategoryTotals;
-  activeNavTab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments';
-  setActiveNavTab: (tab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments') => void;
+  activeNavTab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status';
+  setActiveNavTab: (tab: 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status') => void;
   activeRouteId: LedgerRouteId;
   setActiveRouteId: (routeId: LedgerRouteId) => void;
   isStatusModalOpen: boolean;
@@ -52,7 +52,7 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadSequence = useRef(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments'>('dashboard');
+  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status'>('dashboard');
   const [activeRouteId, setActiveRouteId] = useState<LedgerRouteId>('salary-ibas');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
 
