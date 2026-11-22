@@ -409,10 +409,10 @@ async function conditionalLocalRows(browser,width){
  assert.match(await row.innerText(),/175/);
  assert.equal(await row.getByRole('button').count(),2,'Dividend cell shows View and More only');
  page.once('dialog',d=>d.dismiss());
- await action.click();
+ await moreAction(page,'E2E-DIVIDEND-117','Delete');
  assert.equal((await stored(page)).length,1);
  page.once('dialog',d=>d.accept());
- await action.click();
+ await moreAction(page,'E2E-DIVIDEND-117','Delete');
  await row.waitFor({state:'detached'});
  assert.equal((await stored(page)).length,0);
  report.push({width,category:'Dividend',
