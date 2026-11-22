@@ -1371,6 +1371,14 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-footer { padding-bottom: 12px; font-size: 11px; }
 }
 @media (max-width: 360px) {
+  /* At 320px, place Assessment Year on its own header-control line so 2026-2027
+     is never clipped by the language, notification, or account controls. */
+  .eledger-header-controls { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 7px; align-items: center; }
+  .eledger-header-controls .eledger-assessment { grid-column: 1 / -1; width: 100%; min-width: 0; display: flex; justify-content: flex-start; gap: 10px; }
+  .eledger-header-controls .eledger-assessment strong { display: block; white-space: nowrap; }
+  .eledger-header-controls .eledger-assessment select { min-width: 116px; width: 116px; max-width: 116px; flex: 0 0 116px; font-size: 12px; }
+  .eledger-header-controls .eledger-language-switch { justify-self: start; }
+  .eledger-header-controls .eledger-header-popover { justify-self: end; }
   .eledger-main { padding-inline: 10px; }
   .eledger-header-controls { gap: 6px; }
   .eledger-language-switch button { min-width: 41px; padding-inline: 5px; }
