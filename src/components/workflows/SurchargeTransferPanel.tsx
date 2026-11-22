@@ -131,10 +131,6 @@ export const SurchargeTransferPanel: React.FC<{
     else setDraft((previous)=>({...previous,[field]:value}));
     setError('');
   };
-  const gridChanges = entries.some((entry) => {
-    const changed = gridDrafts[entry.id];
-    return !!changed && JSON.stringify(changed) !== JSON.stringify(draftFromEntry(entry));
-  }) || newGridRows.length > 0;
   const validGridDraft = (row: Draft): string | null => {
     if (!row.reference.trim()) return t('Transaction ID is required.', 'লেনদেন আইডি আবশ্যক।');
     if (!row.bankName || !bankNames.includes(row.bankName)) return t('Choose a bank from the list.', 'তালিকা থেকে ব্যাংক নির্বাচন করুন।');
