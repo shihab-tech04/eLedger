@@ -180,9 +180,9 @@ try {
   assert.equal(out.javascriptExceptions.filter(x=>x.width===width).length,0);
   await ctx.close();
  }
- for(const width of [1280,390]){
-  const context=await browser.newContext({viewport:{width,height:width===390?844:900},
-    isMobile:width===390,hasTouch:width===390,locale:'en-US'});
+ for(const width of [1280,390,320]){
+  const context=await browser.newContext({viewport:{width,height:width<600?844:900},
+    isMobile:width<600,hasTouch:width<600,locale:'en-US'});
   const page=await context.newPage();page.setDefaultTimeout(12000);
   page.on('pageerror',x=>out.javascriptExceptions.push({width,error:String(x)}));
   const response=await page.goto(SITE,{waitUntil:'networkidle'});
@@ -193,6 +193,15 @@ try {
    if(group==='status'){
     await openNav(page,label,group,width);
     await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
+    assert.match(await page.locator('.eledger-status-verified-amount').innerText(),/Authority-verified credits/,
+      'PDF p21 must label verified amounts rather than printing a bare zero');
+    if(width<600){
+      const quick=page.locator('nav.eledger-mobile-bottom-nav');
+      assert.equal(await quick.locator('button').count(),5,'Mobile quick navigation must expose five targets');
+      assert.ok(await quick.isVisible(),'Mobile quick navigation must be visible');
+      const viewportOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
+      assert.equal(viewportOverflow,false,'Mobile status must not overflow viewport');
+    }
     const statusTable=page.locator('main.eledger-main table.eledger-status-page-table');
     assert.deepEqual((await statusTable.locator('thead th').allTextContents()).map(x=>x.trim()),['Particulars','Amount'],
       'PDF p21 requires its two exact table headers');
@@ -219,7 +228,7 @@ try {
     const langValue=await page.locator('.eledger-app').getAttribute('lang');
     assert.equal(langValue,lang);
     await checkOverflow(page);
-    if(width===390){
+    if(width<600){
       const empty=page.locator('table.eledger-official-records tr.eledger-empty-records-row td');
       if(await empty.count()){
         const bounds=await empty.first().evaluate(td=>{
