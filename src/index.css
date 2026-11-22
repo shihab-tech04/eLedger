@@ -1586,3 +1586,22 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-page-subheading { grid-column:1; grid-row:2; }
   .eledger-page-actions { grid-column:1; grid-row:3; justify-content:stretch; width:100%; }
 }
+
+
+/* Shared eLedger table search + financial-year filter in the existing toolbar. */
+.eledger-table-period { display:inline-flex; min-width:132px; align-items:center; }
+.eledger-table-period select {
+  width:100%; min-height:44px; padding:9px 25px 9px 11px;
+  border:1px solid var(--el-border); border-radius:8px;
+  color:var(--el-text); background:#fff; font:inherit; font-size:13px;
+}
+.eledger-table-period select:focus-visible { outline:2px solid var(--el-primary); outline-offset:2px; }
+.eledger-surcharge-batch-modal { display:flex; flex-direction:column; gap:16px; }
+.eledger-surcharge-batch-item { border:1px solid var(--el-border); border-radius:10px; padding:14px; }
+.eledger-surcharge-batch-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px; }
+.eledger-surcharge-batch-heading strong { font-size:14px; color:var(--el-text); }
+.eledger-surcharge-batch-item .eledger-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+@media (max-width:767px) {
+  .eledger-table-period { width:100%; }
+  .eledger-surcharge-batch-item .eledger-form-grid { grid-template-columns:1fr; }
+}
