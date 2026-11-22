@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { observeUnsavedLedgerForms } from './services/unsavedNavigation.ts';
 import { LedgerProvider, useLedger } from './context/LedgerContext.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { Sidebar } from './components/navigation/Sidebar.tsx';
@@ -19,6 +20,7 @@ import { TaxPaymentStatusPage } from './features/payments/TaxPaymentStatusPage.t
 import { LanguageProvider, useLedgerCopy, useLedgerLanguage } from './context/LanguageContext.tsx';
 
 const AppContent: React.FC = () => {
+  React.useEffect(observeUnsavedLedgerForms, []);
   const t = useLedgerCopy();
   const { language } = useLedgerLanguage();
   const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen, loadError } = useLedger();
