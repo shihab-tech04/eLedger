@@ -391,6 +391,16 @@ async function testViewport(browser,width){
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
  const form=editorFor(page,cases[0],width);
  await fill(form,{...cases[0],ref:'E2E-AY-ISOLATION'});await save(form,cases[0]);
+ // A year-only filter must enable Reset even when search text is empty.
+ // Previously Reset was incorrectly disabled on the search-query state alone.
+ const salaryYearFilter=page.getByRole('combobox',{name:'Filter by year',exact:true});
+ const salaryReset=page.locator('.eledger-salary-table').getByRole('button',{name:'Reset',exact:true});
+ assert.equal(await salaryReset.isDisabled(),true,'Untouched Salary filter Reset remains disabled');
+ await salaryYearFilter.selectOption('2026');
+ assert.equal(await salaryReset.isEnabled(),true,'Year-only filter must enable Reset');
+ await salaryReset.click();
+ assert.equal(await salaryYearFilter.inputValue(),'all','Reset clears the active year filter');
+ report.push({width,category:'Salary (Others)',check:'year-only filter enables Reset, restores All years',pass:true});
  await page.getByRole('combobox',{name:'Assessment Year'}).selectOption('2025-2026');
  await page.locator('table tbody tr').filter({hasText:'E2E-AY-ISOLATION'}).waitFor({state:'detached'});
  await page.getByRole('combobox',{name:'Assessment Year'}).selectOption('2026-2027');
