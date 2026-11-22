@@ -37,9 +37,12 @@ async function openRoute(page,name,width){
  }
  await aside.getByRole('button',{name,exact:true}).click();
 }
-function editorFor(page,c,width){
- const inline=width>=768 && (c.route==='Salary (Others)' || c.route==='Adjustment of Tax Refund');
- return inline ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog');
+function editorFor(page,c,width,mode='add'){
+ return page.getByRole('dialog',{name:mode==='edit'?'Edit Record':'Add Entry'});
+}
+async function moreAction(page,reference,action){
+ await page.getByRole('button',{name:'More actions '+reference,exact:true}).click();
+ await page.getByRole('menuitem',{name:action,exact:true}).click();
 }
 async function fill(form,c){
  if(['Salary (Others)','Service Payment','Others'].includes(c.route)){
@@ -75,11 +78,12 @@ async function fill(form,c){
  }
 }
 async function save(form,c){
- const inline=await form.evaluate(el=>el.tagName==='TR');
- const label=c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'&&!inline?'Save claim':'Save';
+ const edit=await form.getAttribute('aria-label')==='Edit Record';
+ const label=c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'?'Save claim':'Save';
  await form.getByRole('button',{name:label,exact:true}).click();
  try {
-  await form.waitFor({state:'detached'});
+  if(edit)await page.getByRole('dialog',{name:'Edit Record'}).waitFor({state:'detached'});
+  else await form.waitFor({state:'detached'});
  } catch (error) {
   const state = await form.evaluate((node) => ({
    alerts: [...node.querySelectorAll('[role="alert"]')].map((item) => item.textContent?.trim()),
@@ -222,9 +226,10 @@ async function testViewport(browser,width){
   const add=c.route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
   await page.getByRole('button',{name:add,exact:true}).click();
   const form=editorFor(page,c,width); await form.waitFor({state:'visible'});
-  if(width>=768 && (c.route==='Salary (Others)' || c.route==='Adjustment of Tax Refund'))
-    assert.equal(await form.locator('td').count(),c.route==='Salary (Others)'?8:9,
-      'Original PDF inline row must include each source cell and its Action cell');
+  assert.equal(await form.getAttribute('aria-modal'),'true',
+    'Every Add must open an accessible modal at desktop and phone widths');
+  assert.equal(await page.locator('tr.eledger-source-inline-editor').count(),0,
+    'No desktop inline Add rows permitted');
   await fill(form,c); await save(form,c);
   const saved=(await stored(page)).find(row=>row.referenceNo===c.ref);
   assert.ok(saved,'Native saved row missing '+c.ref);
@@ -245,38 +250,42 @@ async function testViewport(browser,width){
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.referenceNo,c.ref);
   report.push({width,category:c.route,check:'real browser reload preserves Add',pass:true});
 
-  await page.getByRole('button',{name:'View details '+c.ref}).click();
-   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
-  const cancelEditor=editorFor(page,c,width);
+  // A populated row has exactly View + More, never directly exposed Edit/Delete.
+  const row=page.locator('table tbody tr').filter({hasText:c.ref});
+  assert.equal(await row.getByRole('button').count(),2,'Row action surface must have View and More only');
+  assert.equal(await row.getByRole('button',{name:'Edit',exact:true}).count(),0);
+  assert.equal(await row.getByRole('button',{name:'Delete',exact:true}).count(),0);
+  await moreAction(page,c.ref,'Edit');
+  const cancelEditor=editorFor(page,c,width,'edit');
+  await cancelEditor.waitFor({state:'visible'});
   await cancelEditor.getByRole('spinbutton',{name:c.claim,exact:true}).fill('110');
-  await cancelEditor.getByRole('button',{name:c.route==='Source Tax (LTU)' ? 'Close form' : 'Cancel',exact:true}).click();
+  await cancelEditor.getByRole('button',{name:'Cancel',exact:true}).click();
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.taxDeducted,250);
-  report.push({width,category:c.route,check:'Cancel preserves amount after reload',pass:true});
+  report.push({width,category:c.route,check:'More/Edit drawer Cancel preserves amount after reload',pass:true});
 
-  await page.getByRole('button',{name:'View details '+c.ref}).click();
-   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
-  const edit=editorFor(page,c,width);
-  await edit.getByRole('spinbutton',{name:c.claim,exact:true}).fill('300');await save(edit,c);
+  await moreAction(page,c.ref,'Edit');
+  const edit=editorFor(page,c,width,'edit');
+  await edit.waitFor({state:'visible'});
+  await edit.getByRole('spinbutton',{name:c.claim,exact:true}).fill('300');
+  await save(edit,c);
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   const updated=(await stored(page)).find(row=>row.id===saved.id);
   assert.ok(updated);assert.equal(updated.taxDeducted,300);assert.equal(updated.date,date);
   assert.equal(updated.createdAt,saved.createdAt);
-  report.push({width,category:c.route,check:'Edit/Save preserves identity/date after reload',pass:true});
+  report.push({width,category:c.route,check:'More/Edit drawer Save persists original reference and date',pass:true});
 
   page.once('dialog',d=>d.dismiss());
-  await page.getByRole('button',{name:'View details '+c.ref}).click();
-   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Delete',exact:true}).click();
+  await moreAction(page,c.ref,'Delete');
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   assert.ok((await stored(page)).some(row=>row.id===saved.id));
-  report.push({width,category:c.route,check:'dismissed Delete preserves row after reload',pass:true});
+  report.push({width,category:c.route,check:'dismissed More/Delete preserves row after reload',pass:true});
 
   page.once('dialog',d=>d.accept());
-  await page.getByRole('button',{name:'View details '+c.ref}).click();
-   await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Delete',exact:true}).click();
+  await moreAction(page,c.ref,'Delete');
   await page.locator('table tbody tr').filter({hasText:c.ref}).waitFor({state:'detached'});
   await page.reload({waitUntil:'networkidle'});
   assert.ok(!(await stored(page)).some(row=>row.id===saved.id));
