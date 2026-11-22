@@ -1,0 +1,49 @@
+name: eLedger pre-release source and Git recovery
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/pre-release-offsite-backup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  restore-tested-backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Archive pre-release Main and full reachable Git history
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          mkdir -p artifacts/eledger-recovery
+          git branch backup-main origin/main
+          git branch backup-pr-head HEAD
+          git bundle create artifacts/eledger-recovery/history.bundle --all
+          git bundle verify artifacts/eledger-recovery/history.bundle
+          git archive --format=tar.gz origin/main > artifacts/eledger-recovery/main-source.tar.gz
+          git archive --format=tar.gz HEAD > artifacts/eledger-recovery/proposed-source.tar.gz
+          MAIN_SHA="$(git rev-parse origin/main)"
+          PR_SHA="$(git rev-parse HEAD)"
+          printf 'main=%s\npr_head=%s\n' "$MAIN_SHA" "$PR_SHA" > artifacts/eledger-recovery/SHAS
+          git clone --branch backup-main artifacts/eledger-recovery/history.bundle "$RUNNER_TEMP/restore-eledger"
+          test "$(git -C "$RUNNER_TEMP/restore-eledger" rev-parse HEAD)" = "$MAIN_SHA"
+          git -C "$RUNNER_TEMP/restore-eledger" fsck --full --no-reflogs
+          git -C "$RUNNER_TEMP/restore-eledger" archive --format=tar.gz HEAD | cmp - artifacts/eledger-recovery/main-source.tar.gz
+          ( cd artifacts/eledger-recovery && sha256sum history.bundle main-source.tar.gz proposed-source.tar.gz SHAS > SHA256SUMS && sha256sum -c SHA256SUMS )
+      - name: Preserve full restore-tested history and sources for off-GitHub transfer
+        uses: actions/upload-artifact@v4
+        with:
+          name: eLedger-restored-pre-release-${{ github.run_id }}
+          path: artifacts/eledger-recovery/
+          retention-days: 30
+          if-no-files-found: error
