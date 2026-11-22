@@ -124,7 +124,8 @@ export const PaymentsView: React.FC = () => {
       ) : (
         <section className="eledger-ait-records" aria-label={t('Recorded tax payments','রেকর্ডকৃত কর পরিশোধ')}>
           {isOfficialReadOnlyRoute(currentRoute.id) ? (
-            <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+            <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}
+                  onDeleteEntry={handleDeleteEntry}/>
           ) : (
             <InlineEditableTable key={currentRoute.id} entries={routeEntries} category="PAYMENT"
               routeId={currentRoute.id} defaultSection={currentRoute.statutorySection}
