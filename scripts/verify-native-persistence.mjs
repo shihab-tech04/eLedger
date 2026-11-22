@@ -31,8 +31,13 @@ async function openRoute(page,name,width){
   if(await opener.isVisible())await opener.click();
  }
  const aside=page.locator('aside.eledger-sidebar');
- if(['Salary (Others)','Service Payment','Others','Source Tax (LTU)'].includes(name)){
+ if(['Salary (Others)','Service Payment','Others','Source Tax (LTU)','Dividend'].includes(name)){
   const group=aside.getByRole('button',{name:'Claim Source Tax',exact:true});
+  if(await aside.evaluate(el=>el.classList.contains('is-collapsed'))){
+   await group.click();
+   await page.getByRole('menu',{name:'Source Tax categories'}).getByRole('menuitem',{name,exact:true}).click();
+   return;
+  }
   if(await group.getAttribute('aria-expanded')==='false')await group.click();
  }
  await aside.getByRole('button',{name,exact:true}).click();
