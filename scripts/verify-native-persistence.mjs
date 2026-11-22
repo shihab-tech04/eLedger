@@ -177,7 +177,7 @@ async function testViewport(browser,width){
  await surchargeForm.waitFor({state:'visible'});
  await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
  await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
- await surchargeForm.getByRole('textbox',{name:'Bank Name'}).fill('Synthetic Source Bank');
+ await surchargeForm.locator('input[aria-label="Bank Name"]').fill('Synthetic Source Bank');
  await surchargeForm.getByRole('textbox',{name:'Branch Name'}).fill('E2E Local Branch');
  await surchargeForm.locator('input[type=date]').fill('2026-05-14');
  await surchargeForm.getByRole('spinbutton',{name:'Paid Amount'}).fill('250');
