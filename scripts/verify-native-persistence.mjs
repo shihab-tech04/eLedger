@@ -145,58 +145,114 @@ async function testViewport(browser,width){
  report.push({width,check:'computed AA primary/footer contrast, EN/BN font contract and mobile label sizes',pass:true});
  if(width>=961){
    const nav=page.locator('aside.eledger-sidebar');
-   const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
-   const wordmark=nav.locator('.eledger-sidebar-brand-wordmark');
    const logo=nav.locator('.eledger-sidebar-brand-mark');
-   assert.ok(await wordmark.isVisible(),'Logo row must contain eReturn wordmark when expanded');
-   const markBox=await logo.boundingBox(), toggleBox=await collapse.boundingBox();
-   assert.ok(markBox&&toggleBox&&Math.abs((markBox.y+markBox.height/2)-(toggleBox.y+toggleBox.height/2))<9,
-     'Collapse icon must be centered on the SAME row as the eReturn logo');
+   const wordmark=nav.locator('.eledger-sidebar-brand-wordmark');
+   const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
+   assert.ok(await wordmark.isVisible(),'Expanded sidebar retains eReturn wordmark');
+   const before=await logo.boundingBox(),toggleBefore=await collapse.boundingBox();
+   assert.ok(before&&toggleBefore&&Math.abs(before.y+before.height/2-toggleBefore.y-toggleBefore.height/2)<9,
+     'Collapse control must be in same row as eReturn mark');
    await collapse.click();
-   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    await page.waitForFunction(() =>
-     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-72)<2,
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2,
      null,{timeout:3000});
-   assert.ok(Math.abs((await nav.boundingBox()).width-72)<2,'Collapsed rail must settle at 72px');
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
-   for(const item of ['Claim Source Tax','Claim AIT','Home / Guide','Tax Payment Status']){
-     const button=nav.getByRole('button',{name:item,exact:true});
-     assert.equal(await button.getAttribute('title'),item,'Collapsed route needs a tooltip and name');
-   }
-   for(const [name,icon] of [['Environmental Surcharge','lucide-leaf'],['Adjustment of Tax Refund','lucide-rotate-ccw'],
+   const expand=nav.getByRole('button',{name:'Expand navigation',exact:true});
+   const logoBox=await logo.boundingBox(),toggleBox=await expand.boundingBox();
+   assert.ok(logoBox&&toggleBox&&Math.abs(logoBox.y+logoBox.height/2-toggleBox.y-toggleBox.height/2)<9,
+     'The logo and expand button must remain in SAME row when collapsed');
+   assert.ok(toggleBox.width>=44&&toggleBox.height>=44,
+     'Collapsed expand button must meet 44x44 accessible target');
+   assert.equal(await logo.evaluate(el=>getComputedStyle(el).fontSize),'15px',
+     'Collapsed logo size cannot be crushed to unreadable type');
+   for(const [name,icon] of [['Home / Guide','lucide-book-open'],
+     ['Environmental Surcharge','lucide-leaf'],
+     ['Adjustment of Tax Refund','lucide-rotate-ccw'],
      ['Adjustment of carry forward tax u/s 163','lucide-history']]){
-     assert.equal(await nav.getByRole('button',{name,exact:true}).locator('svg.'+icon).count(),1,
-       'Collapsed credit destinations require distinct pictograms: '+name);
+     const b=nav.getByRole('button',{name,exact:true});
+     assert.equal(await b.getAttribute('title'),name);
+     assert.equal(await b.locator('svg.'+icon).count(),1,'Distinct compact icon for '+name);
    }
+   const support=nav.getByRole('link',{name:'Taxes Helpline · 09643717171'});
+   assert.ok(await support.isVisible(),'Compact rail must keep telephone help available');
+   const helpBox=await support.boundingBox();
+   assert.ok(helpBox&&helpBox.height>=44&&helpBox.width>=44,'Help shortcut must be >=44px');
+
+   // Source Tax compact flyout: every route accessible without widening sidebar.
+   const sourceGroup=nav.getByRole('button',{name:'Claim Source Tax',exact:true});
+   await sourceGroup.click();
+   const sourceMenu=page.getByRole('menu',{name:'Source Tax categories'});
+   await sourceMenu.waitFor({state:'visible'});
+   assert.equal(await sourceGroup.getAttribute('aria-expanded'),'true');
+   assert.equal(await sourceMenu.getByRole('menuitem').count(),10,
+     'Compact Source Tax must expose all ten destinations');
+   assert.ok(Math.abs((await nav.boundingBox()).width-104)<2,
+     'Opening a flyout must NOT expand the compact sidebar');
+   const first=sourceMenu.getByRole('menuitem').first();
+   assert.ok(await first.evaluate(el=>el===document.activeElement),
+     'Flyout keyboard focus must be placed on the first route');
+   await page.keyboard.press('End');
+   assert.ok(await sourceMenu.getByRole('menuitem').last().evaluate(el=>el===document.activeElement),
+     'Flyout End must reach its last route');
+   await page.keyboard.press('Escape');
+   await sourceMenu.waitFor({state:'detached'});
+   assert.ok(await sourceGroup.evaluate(el=>el===document.activeElement),
+     'Escape returns focus to the compact group button');
+
+   await sourceGroup.click();
+   await page.getByRole('menu',{name:'Source Tax categories'})
+     .getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
+   await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
+   assert.equal(await sourceGroup.getAttribute('aria-current'),'true',
+     'Selected Source Tax child must highlight its compact parent');
+   assert.ok((await sourceGroup.getAttribute('class')).includes('is-active-parent'));
+   assert.equal(await page.getByRole('menu').count(),0,'Navigation closes the flyout');
    await page.reload({waitUntil:'networkidle'});
+   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
-     'Desktop rail preference must survive reload');
-   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+     'Compact rail preference survives reload without changing existing route reset');
+   await sourceGroup.click();
+   await page.getByRole('menu',{name:'Source Tax categories'})
+     .getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
+   await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
+   assert.equal(await sourceGroup.getAttribute('aria-current'),'true',
+     'Reopening selected route must restore the active parent highlight');
+
+   const aitGroup=nav.getByRole('button',{name:'Claim AIT',exact:true});
+   await aitGroup.click();
+   const aitMenu=page.getByRole('menu',{name:'AIT categories'});
+   await aitMenu.waitFor();
+   assert.equal(await aitMenu.getByRole('menuitem').count(),3,
+     'Compact AIT must expose all three routes');
+   await aitMenu.getByRole('menuitem',{name:'AIT on Car',exact:true}).click();
+   await page.getByRole('heading',{name:'AIT on Car',exact:true}).waitFor();
+   assert.equal(await aitGroup.getAttribute('aria-current'),'true',
+     'AIT compact parent inherits active child state');
+   assert.equal(await sourceGroup.getAttribute('aria-current'),null,
+     'Previous group must no longer appear selected');
+
+   await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+   await page.locator('.eledger-app[lang="bn"]').waitFor();
+   const bnGroup=nav.getByRole('button',{name:'অগ্রিম কর দাবি',exact:true});
+   await bnGroup.click();
+   const bnMenu=page.getByRole('menu',{name:'অগ্রিম করের খাতসমূহ'});
+   assert.equal(await bnMenu.getByRole('menuitem').count(),3);
+   assert.ok(await bnMenu.getByRole('menuitem',{name:'ব্যক্তিগত গাড়ির অগ্রিম কর'}).isVisible());
+   await page.keyboard.press('Escape');
+   await bnMenu.waitFor({state:'detached'});
+   await page.getByRole('button',{name:'English',exact:true}).click();
+   await expand.click();
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2,
      null,{timeout:3000});
-   assert.ok(Math.abs((await nav.boundingBox()).width-260)<2,'AIT group click must open full rail');
-   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'true',
-     'The FIRST click must expose AIT children');
-   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible());
-   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
-   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'false');
-   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
-   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
-   await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
-   assert.equal(await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).getAttribute('aria-expanded'),'true');
-   assert.ok(await nav.getByRole('button',{name:'Salary (Others)',exact:true}).isVisible());
-   await page.getByRole('button',{name:'বাংলা',exact:true}).click();
-   await page.locator('.eledger-app[lang="bn"]').waitFor();
-   await nav.getByRole('button',{name:'নেভিগেশন সংকুচিত করুন'}).click();
-   assert.equal(await nav.getByRole('button',{name:'অগ্রিম কর দাবি'}).getAttribute('title'),'অগ্রিম কর দাবি');
-   await nav.getByRole('button',{name:'নেভিগেশন প্রসারিত করুন'}).click();
-   await page.getByRole('button',{name:'English',exact:true}).click();
-   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
-   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
-   await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'false');
-   report.push({width,check:'persistent sidebar width, first-click accordion, distinct tooltip/icons, bilingual and reload',pass:true});
+   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible(),
+     'Expanded original accordion must still show selected AIT route');
+   // Restore neutral Dashboard so the existing CRUD regression suite is independent.
+   await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+   report.push({width,check:'logo-row 44px controls; all 13 compact flyout routes; keyboard; EN/BN; active parent; Help; refresh; expanded regression',pass:true});
  }
  if(width<600){
    const tabs=page.locator('nav.eledger-mobile-bottom-nav');

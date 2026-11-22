@@ -1084,12 +1084,11 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 
 @media (min-width: 961px) {
   .eledger-sidebar { transition: width .18s ease, flex-basis .18s ease; }
-  .eledger-sidebar.is-collapsed { width: 72px; flex-basis: 72px; }
+  .eledger-sidebar.is-collapsed { width: 104px; flex-basis: 104px; }
   .eledger-sidebar.is-collapsed .eledger-sidebar-links { padding-inline: 10px; }
   .eledger-sidebar.is-collapsed .eledger-side-link { justify-content: center; padding-inline: 10px; min-height: 44px; }
   .eledger-sidebar.is-collapsed .eledger-side-link > span,
   .eledger-sidebar.is-collapsed .eledger-source-route-list,
-  .eledger-sidebar.is-collapsed .eledger-sidebar-bottom,
   .eledger-sidebar.is-collapsed .eledger-group-toggle > svg:last-child { display: none; }
   .eledger-sidebar.is-collapsed .eledger-nav-group { margin-block: 6px; }
   .eledger-sidebar.is-collapsed .eledger-side-link svg { width: 19px; height: 19px; }
@@ -1509,20 +1508,22 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-sidebar-brand-wordmark strong { font-size:16px; font-weight:750; }
 .eledger-sidebar-brand-wordmark small { margin-top:5px; font-size:9px; letter-spacing:2px; font-weight:700; color:#4c607b; }
 .eledger-sidebar-collapse-button {
-  display:grid; flex:0 0 34px; place-items:center; width:34px; min-width:34px;
-  height:38px; border:1px solid var(--el-border); border-radius:8px;
+  display:grid; flex:0 0 44px; place-items:center; width:44px; min-width:44px;
+  height:44px; border:1px solid var(--el-border); border-radius:8px;
   color:#526989; background:#fff; cursor:pointer;
 }
 .eledger-sidebar-collapse-button:hover { color:var(--el-primary); border-color:#8bd4da; background:#eefafb; }
 .eledger-sidebar-collapse-button:focus-visible { outline:3px solid var(--el-primary); outline-offset:2px; }
 .eledger-sidebar.is-collapsed .eledger-sidebar-brand-row {
-  padding:9px 4px; gap:2px; justify-content:center;
+  padding:10px 6px; gap:8px; justify-content:space-between;
 }
-.eledger-sidebar.is-collapsed .eledger-sidebar-brand { flex:0 0 29px; }
+.eledger-sidebar.is-collapsed .eledger-sidebar-brand { flex:0 0 40px; }
 .eledger-sidebar.is-collapsed .eledger-sidebar-brand-mark {
-  flex:0 0 29px; width:29px; height:34px; font-size:11px; border-radius:7px;
+  flex:0 0 40px; width:40px; height:40px; font-size:15px; border-radius:9px;
 }
-.eledger-sidebar.is-collapsed .eledger-sidebar-collapse-button { flex:0 0 30px; width:30px; min-width:30px; height:34px; }
+.eledger-sidebar.is-collapsed .eledger-sidebar-collapse-button {
+  flex:0 0 44px; width:44px; min-width:44px; height:44px;
+}
 @media (min-width:961px) {
   .eledger-header .eledger-brand { display:none; }
 }
@@ -1605,3 +1606,66 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-table-period { width:100%; }
   .eledger-surcharge-batch-item .eledger-form-grid { grid-template-columns:1fr; }
 }
+
+/* Post-TinyFish P1/P2 correction: compact rail must remain a functional
+   keyboard-operable navigation, not a control that forces the full sidebar open.
+   The flyout is portalled so the sidebar's scroll/overflow never clips it. */
+.eledger-compact-group-flyout {
+  position:fixed; z-index:85; width:284px; max-width:calc(100vw - 126px);
+  max-height:calc(100dvh - 24px); display:flex; flex-direction:column;
+  border:1px solid var(--el-border); border-radius:12px;
+  background:#fff; box-shadow:0 16px 45px rgba(20,44,64,.2);
+  overflow:hidden;
+}
+.eledger-compact-flyout-heading {
+  padding:14px 16px 12px; color:var(--el-text); font-size:13px;
+  font-weight:700; border-bottom:1px solid var(--el-border);
+  background:var(--el-surface-muted); flex:0 0 auto;
+}
+.eledger-compact-flyout-list {
+  padding:6px; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  scrollbar-width:thin;
+}
+.eledger-compact-group-flyout .eledger-flyout-route {
+  min-height:44px; padding:10px 12px; border-radius:7px;
+  color:var(--el-text); font-size:13px; font-weight:500; text-align:start;
+}
+.eledger-compact-group-flyout .eledger-flyout-route:hover,
+.eledger-compact-group-flyout .eledger-flyout-route:focus-visible {
+  background:#eaf6f7; color:#075f65;
+}
+.eledger-compact-group-flyout .eledger-flyout-route:focus-visible {
+  outline:2px solid var(--el-primary); outline-offset:-2px;
+}
+.eledger-compact-group-flyout .eledger-flyout-route.is-active {
+  background:#def5f6; color:#075f65; font-weight:700;
+  box-shadow:inset 3px 0 0 var(--el-primary);
+}
+@media (min-width:961px) {
+  .eledger-sidebar.is-collapsed .eledger-sidebar-bottom {
+    display:flex; align-items:center; justify-content:center;
+    padding:8px 12px; border-top:1px solid var(--el-border);
+  }
+  .eledger-sidebar.is-collapsed .eledger-helpline {
+    min-height:44px; min-width:44px; width:44px; height:44px;
+    display:grid; place-items:center; border-top:0;
+    border-radius:8px; padding:0; background:#eef8fa; color:#0a767e;
+  }
+  .eledger-sidebar.is-collapsed .eledger-helpline span { display:none; }
+  .eledger-sidebar.is-collapsed .eledger-helpline svg { width:20px; height:20px; }
+  .eledger-sidebar.is-collapsed .eledger-helpline:focus-visible {
+    outline:3px solid var(--el-primary); outline-offset:2px;
+  }
+  .eledger-sidebar.is-collapsed .eledger-group-toggle {
+    position:relative; padding-right:20px; cursor:pointer;
+  }
+  .eledger-sidebar.is-collapsed .eledger-group-toggle::after {
+    content:'›'; position:absolute; right:7px; top:50%;
+    transform:translateY(-50%); color:#64758b; font-size:17px;
+    font-weight:700; line-height:1;
+  }
+  .eledger-sidebar.is-collapsed .eledger-group-toggle.is-active-parent::after {
+    color:#075f65;
+  }
+}
+@media (max-width:960px) { .eledger-compact-group-flyout { display:none; } }

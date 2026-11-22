@@ -37,7 +37,7 @@ const forms = [
 ];
 const out={source:'compiled Vite dist, isolated empty browser storage',release:process.env.GITHUB_SHA||'LOCAL',
   observedAt:new Date().toISOString(),scope:'original NBR signed-in visual comparison NOT performed',
-  viewports:[],routes:[],forms:[],dashboard:[],ibas:[],javascriptExceptions:[],pass:false};
+  viewports:[],routes:[],forms:[],dashboard:[],ibas:[],compact:[],javascriptExceptions:[],pass:false};
 async function boot(){
  const p=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173','--strictPort'],{stdio:['ignore','pipe','pipe']});
  let logs='';
@@ -58,10 +58,10 @@ async function openNav(page,label,group,width){
  }
  await nav.getByRole('button',{name:label,exact:true}).click();
 }
-async function screenshot(page,rel){
+async function screenshot(page,rel,{fullPage=true}={}){
  const target=path.join(DEST,rel+'.png');
  await page.evaluate(()=>window.scrollTo(0,0));
- await page.screenshot({path:target,fullPage:true,animations:'disabled'});
+ await page.screenshot({path:target,fullPage,animations:'disabled'});
  return target;
 }
 async function checkOverflow(page){
@@ -92,6 +92,33 @@ try {
   await ctas.waitFor({state:'visible'});
   await checkOverflow(page);
   const enShot=await screenshot(page,'dashboard/'+width+'-en');
+  if(width===1280){
+    // Targeted post-fix visual proof of collapsed rail, source flyout and active child.
+    const nav=page.locator('aside.eledger-sidebar');
+    await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+    await page.waitForFunction(() =>
+      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
+    await checkOverflow(page);
+    out.compact.push({state:'collapsed',screenshot:await screenshot(page,'compact/1280-rail-en')});
+    await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+    await page.getByRole('menu',{name:'Source Tax categories'}).waitFor();
+    await checkOverflow(page);
+    out.compact.push({state:'flyout',screenshot:await screenshot(page,'compact/1280-source-tax-flyout-en',{fullPage:false})});
+    // Playwright fullPage screenshots can temporarily resize the page,
+    // legitimately closing the position-sensitive popover. Reopen if needed.
+    if(await page.getByRole('menu',{name:'Source Tax categories'}).count()===0){
+      await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+      await page.getByRole('menu',{name:'Source Tax categories'}).waitFor();
+    }
+    await page.getByRole('menu',{name:'Source Tax categories'})
+      .getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
+    await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
+    assert.equal(await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).getAttribute('aria-current'),'true');
+    out.compact.push({state:'active-source',screenshot:await screenshot(page,'compact/1280-active-source-en')});
+    await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+    await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+  }
   const summaryBounding=await page.locator('.eledger-dashboard-primary-next').boundingBox();
   const statusBounding=await status.boundingBox();
   assert.ok(summaryBounding && statusBounding);
