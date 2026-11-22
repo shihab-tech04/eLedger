@@ -104,6 +104,12 @@ try {
     await page.getByRole('menu',{name:'Source Tax categories'}).waitFor();
     await checkOverflow(page);
     out.compact.push({state:'flyout',screenshot:await screenshot(page,'compact/1280-source-tax-flyout-en')});
+    // Playwright fullPage screenshots can temporarily resize the page,
+    // legitimately closing the position-sensitive popover. Reopen if needed.
+    if(await page.getByRole('menu',{name:'Source Tax categories'}).count()===0){
+      await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+      await page.getByRole('menu',{name:'Source Tax categories'}).waitFor();
+    }
     await page.getByRole('menu',{name:'Source Tax categories'})
       .getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
     await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
