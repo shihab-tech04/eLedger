@@ -173,7 +173,7 @@ async function testViewport(browser,width){
   'Motor Vehicle Registration No','Transaction ID','Bank Name','Branch Name','Payment Date','Paid Amount','Action',
  ]);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
- const surchargeForm=width>=768 ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog',{name:'Add Entry'});
+ const surchargeForm=width>=768 ? page.locator('tr[aria-label="New surcharge record"]') : page.getByRole('dialog',{name:'Add Entry'});
  await surchargeForm.waitFor({state:'visible'});
  await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
  await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
