@@ -249,11 +249,11 @@ try {
    await openNav(page,route,group,width);
    const add=route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
    await page.getByRole('button',{name:add,exact:true}).click();
-   const inline=width>=768 && (route==='Salary (Others)' || route==='Adjustment of Tax Refund');
-   const form=inline ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog');
+   const form=page.getByRole('dialog',{name:'Add Entry'});
    await form.waitFor();
-   if(inline)assert.equal(await form.locator('td').count(),route==='Salary (Others)'?8:9,
-     'Inline PDF table editor must retain every original table cell');
+   assert.equal(await form.getAttribute('aria-modal'),'true');
+   assert.equal(await page.locator('tr.eledger-source-inline-editor').count(),0,
+     'Prototype v2 requires Add modal at every viewport');
    const inputs=form.locator('input,select,textarea');
    const fieldCount=await inputs.count();
    const fields=await inputs.evaluateAll(nodes=>nodes.map(x=>({
