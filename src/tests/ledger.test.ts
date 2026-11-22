@@ -247,7 +247,7 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
     assert.equal((await repo.getEntries('987654321098', assessmentYear)).length, 0);
   });
 
-  it('keeps accessible direct View/Edit/Delete table actions and preserves record drawers', () => {
+  it('keeps exactly View/More in row actions and preserves editor drawer and confirmation callbacks', () => {
     const salaryRecord: LedgerEntry = {
       ...INITIAL_LEDGER_ENTRIES[0],
       id: 'fixture-salary-other',
@@ -267,10 +267,11 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true,
     }));
-    assert.match(salaryHtml, /aria-label="View details /);
-    assert.match(salaryHtml, /aria-label="Edit SYNTHETIC-SALARY-123"/);
-    assert.match(salaryHtml, /aria-label="Delete SYNTHETIC-SALARY-123"/);
-    assert.match(salaryHtml, /Add Entry/);
+    assert.match(salaryHtml, /aria-label="View SYNTHETIC-SALARY-123"/);
+    assert.match(salaryHtml, /aria-label="More actions SYNTHETIC-SALARY-123"/);
+    assert.doesNotMatch(salaryHtml, /aria-label="Edit SYNTHETIC-SALARY-123"/);
+    assert.doesNotMatch(salaryHtml, /aria-label="Delete SYNTHETIC-SALARY-123"/);
+    assert.match(salaryHtml, /eledger-row-view-more/);
     assert.doesNotMatch(salaryHtml, /role="dialog"/);
 
     const manualRecord: LedgerEntry = {
@@ -285,10 +286,11 @@ describe('Authenticated NBR eLedger route-parity regression (20 October 2026)', 
       defaultSection: 'Sec 90', onSaveNewEntry: async () => ({ success: true }),
       onUpdateEntry: async () => ({ success: true }), onDeleteEntry: async () => true,
     }));
-    assert.match(manualHtml, /aria-label="View details /);
-    assert.match(manualHtml, /aria-label="Edit SYNTHETIC-SERVICE-123"/);
-    assert.match(manualHtml, /aria-label="Delete SYNTHETIC-SERVICE-123"/);
-    assert.match(manualHtml, /Add Entry/);
+    assert.match(manualHtml, /aria-label="View SYNTHETIC-SERVICE-123"/);
+    assert.match(manualHtml, /aria-label="More actions SYNTHETIC-SERVICE-123"/);
+    assert.doesNotMatch(manualHtml, /aria-label="Edit SYNTHETIC-SERVICE-123"/);
+    assert.doesNotMatch(manualHtml, /aria-label="Delete SYNTHETIC-SERVICE-123"/);
+    assert.match(manualHtml, /eledger-row-view-more/);
     assert.doesNotMatch(manualHtml, /role="dialog"/);
   });
 
@@ -1290,7 +1292,7 @@ describe('eLedger — Phase 10 Local Import and Surcharge Handoff', () => {
     }));
     assert.match(markup, /Tax &amp; Payment/);
     assert.match(markup, /No tax rate is calculated/);
-    assert.match(markup, /Add Entry/);
+    assert.doesNotMatch(markup, /eledger-source-inline-editor/);
     assert.doesNotMatch(markup, /Record Local Surcharge Transfer/);
   });
 });
@@ -2225,10 +2227,10 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Employer Accounts/);
     assert.match(markup, /Certificate/);
     assert.doesNotMatch(markup, /Test Bank \/ Main/);
-    assert.match(markup, /View details/);
-    assert.match(markup, /aria-label="Edit IBAS\/GOV\/2026\/08821"/);
-    assert.match(markup, /aria-label="Delete IBAS\/GOV\/2026\/08821"/);
-    assert.match(markup, /Add Entry/);
+    assert.match(markup, /aria-label="View IBAS\/GOV\/2026\/08821"/);
+    assert.match(markup, /aria-label="More actions IBAS\/GOV\/2026\/08821"/);
+    assert.doesNotMatch(markup, /aria-label="Edit IBAS\/GOV\/2026\/08821"/);
+    assert.doesNotMatch(markup, /eledger-source-inline-editor/);
   });
 
   it('keeps the original Salary (Others) eight-column table visible when empty on desktop and mobile', () => {
@@ -2240,7 +2242,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     }));
     assert.equal((markup.match(/<th\b/g) ?? []).length, 8);
     assert.match(markup, /<td colSpan="8" class="eledger-salary-empty-cell">No Data Found<\/td>/);
-    assert.match(markup, /Add Entry/);
+    assert.doesNotMatch(markup, /eledger-source-inline-editor/);
     assert.doesNotMatch(markup, /No salary claims yet/);
   });
 
@@ -2542,7 +2544,7 @@ describe('eLedger — Historical UI restoration guardrails', () => {
       onSaveNewEntry: async () => ({ success: true }), onUpdateEntry: async () => ({ success: true }),
       onDeleteEntry: async () => true }));
     assert.match(salary, /কোনো তথ্য পাওয়া যায়নি/);
-    assert.match(salary, /রেকর্ড যোগ করুন/);
+    assert.match(salary, /রেকর্ড খুঁজুন/);
   });
 
   it('localizes all route headings and supplies keyboard-friendly labels to reconciliation and carry-forward forms', () => {
@@ -2595,7 +2597,7 @@ describe('Original screenshot p18 surcharge and p10 LTU parity (19 November 2026
     ]) assert.match(blank, new RegExp(heading));
     assert.match(blank, /No Environmental Surcharge Payable/);
     assert.match(blank, /No tax rate is calculated/);
-    assert.match(blank, /Add Entry/);
+    assert.doesNotMatch(blank, /eledger-source-inline-editor/);
     assert.doesNotMatch(blank, /government-verified tax credits/);
     const bn = renderToStaticMarkup(React.createElement(LanguageProvider, { initialLanguage: 'bn' },
       React.createElement(SurchargeTransferPanel, {
@@ -2624,12 +2626,11 @@ describe('Original screenshot p18 surcharge and p10 LTU parity (19 November 2026
     assert.match(markup, /LOCAL-SURCHARGE-REFERENCE/);
     assert.match(markup, /Synthetic Bank/);
     assert.match(markup, /Test Branch/);
-    assert.match(markup, /aria-label="Payment Date"[^>]*value="2026-07-20"/);
-    assert.match(markup, /<select[^>]*aria-label="Bank Name"/);
-    assert.match(markup, /class="eledger-surcharge-grid-footer"/);
+    assert.match(markup, /data-label="Payment Date">20-07-2026/);
+    assert.match(markup, /aria-label="View LOCAL-SURCHARGE-REFERENCE"/);
+    assert.match(markup, /aria-label="More actions LOCAL-SURCHARGE-REFERENCE"/);
+    assert.doesNotMatch(markup, /aria-label="Delete LOCAL-SURCHARGE-REFERENCE"/);
     assert.match(markup, /250/);
-    assert.match(markup, /Edit/);
-    assert.match(markup, /Delete/);
     assert.match(markup, /unverified entries/);
     assert.doesNotMatch(markup, /Verified Tax Credit/);
     const totals = calculateCategoryTotals([record]);
