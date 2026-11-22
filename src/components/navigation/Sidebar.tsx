@@ -37,7 +37,9 @@ const ORIGINAL_LABELS: Partial<Record<LedgerRouteId, string>> = {
   'carry-forward': 'Adjustment of carry forward tax u/s 163',
 };
 
-const SIDEBAR_COLLAPSE_KEY = 'eledger_sidebar_collapsed_v1';
+// New visible-by-default compact navigation. Old v1 preference is left untouched
+// for recovery; a new v2 preference gives users one fresh, discoverable layout.
+const SIDEBAR_COLLAPSE_KEY = 'eledger_sidebar_collapsed_v2';
 
 const CREDIT_ROUTES: Array<{ group: 'Payment' | 'Adjustment'; id: LedgerRouteId }> = [
   { group: 'Payment', id: 'sec-173' },
@@ -61,8 +63,11 @@ export const Sidebar: React.FC = () => {
   const [flyoutGroup, setFlyoutGroup] = useState<'source'|'ait'|null>(null);
   const [flyoutPosition, setFlyoutPosition] = useState({top:12,left:112});
   const [collapsed, setCollapsed] = useState(() => {
-    try { return typeof window !== 'undefined' && window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true'; }
-    catch { return false; }
+    try {
+      if (typeof window === 'undefined') return true;
+      const preference = window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY);
+      return preference === null ? true : preference === 'true';
+    } catch { return true; }
   });
   const [desktopViewport, setDesktopViewport] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(min-width: 961px)').matches);
