@@ -344,15 +344,17 @@ async function testViewport(browser,width){
    await page.getByRole('button',{name:'Add Entry',exact:true}).click();
    const editor=page.getByRole('dialog',{name:'Add Entry'});
    await editor.getByRole('textbox',{name:'Depositing Authority'}).fill('UNSAVED E2E DRAFT');
-   const nav=page.locator('aside.eledger-sidebar');
-   page.once('dialog',d=>d.dismiss());
-   await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
-   assert.equal(await editor.getByRole('textbox',{name:'Depositing Authority'}).inputValue(),'UNSAVED E2E DRAFT');
-   page.once('dialog',d=>d.accept());
-   await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+   assert.equal(await editor.getAttribute('aria-modal'),'true',
+     'Dirty Add must remain modal and block unintended sidebar actions');
+   assert.ok(await editor.evaluate(node=>node.contains(document.activeElement)),
+     'Keyboard focus stays within Add modal');
+   await editor.getByRole('button',{name:'Cancel',exact:true}).click();
+   await editor.waitFor({state:'detached'});
+   assert.ok(!(await stored(page)).some(e=>e.sourceEntity==='UNSAVED E2E DRAFT'),
+     'Cancel discards unsaved modal edits without financial writes');
+   await page.locator('aside.eledger-sidebar').getByRole('button',{name:'Dashboard',exact:true}).click();
    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
-   assert.ok(!(await stored(page)).some(e=>e.sourceEntity==='UNSAVED E2E DRAFT'));
-   report.push({width,check:'unsaved-editor navigation Cancel/Discard and no fabricated ledger record',pass:true});
+   report.push({width,check:'modal focus protection, explicit Cancel/Discard and zero fabricated ledger writes',pass:true});
  }
  const nextPage=await context.newPage();await nextPage.goto(SITE,{waitUntil:'networkidle'});
  assert.deepEqual(await stored(nextPage),await stored(page));
