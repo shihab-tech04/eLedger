@@ -1529,3 +1529,42 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 @media (max-width:960px) {
   .eledger-sidebar-brand-row { display:none; }
 }
+
+
+/* Prototype v2: single reusable View / More action-cell pattern. The menu is
+   portalled to the document so table/card clipping never hides Edit/Delete. */
+.eledger-row-view-more { display:inline-flex; justify-content:flex-end; align-items:center; gap:7px; white-space:nowrap; }
+.eledger-row-view-more .eledger-button { min-height:40px; padding:8px 10px; font-size:12px; }
+.eledger-record-more-menu {
+  display:flex; flex-direction:column; min-width:184px; padding:6px;
+  border:1px solid var(--el-border); border-radius:10px; background:#fff;
+  box-shadow:0 15px 35px rgba(14,36,61,.18);
+}
+.eledger-record-more-menu button {
+  display:flex; align-items:center; gap:10px; width:100%; min-height:44px;
+  padding:9px 12px; border:0; border-radius:7px; color:var(--el-text);
+  background:transparent; text-align:left; font-size:13px; cursor:pointer;
+}
+.eledger-record-more-menu button:hover,
+.eledger-record-more-menu button:focus-visible { background:#eaf6f7; outline:2px solid var(--el-primary); }
+.eledger-record-more-menu button.is-danger { color:#9c2941; }
+.eledger-record-more-menu button.is-danger:hover { background:#fff0f2; }
+.eledger-menu-no-actions { padding:13px 10px; color:var(--el-muted); font-size:12px; line-height:1.4; }
+.eledger-page-header { gap:10px; align-items:flex-start; }
+.eledger-page-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.eledger-page-actions .eledger-button { min-height:44px; }
+.eledger-neir-drawer-content .eledger-salary-editor,
+.eledger-neir-drawer-content .eledger-entry-editor { width:100%; min-width:0; }
+.eledger-neir-drawer-content .eledger-form-grid { grid-template-columns:minmax(0,1fr); gap:13px; }
+.eledger-neir-drawer-content .eledger-form-actions {
+  position:sticky; bottom:0; z-index:2; margin:18px -16px -16px;
+  padding:13px 16px max(14px,env(safe-area-inset-bottom,0px)); background:#fff;
+  box-shadow:0 -5px 12px rgba(20,45,65,.07); border-top:1px solid var(--el-border);
+}
+@media (max-width:767px) {
+  .eledger-row-view-more { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; }
+  .eledger-row-view-more .eledger-button { min-height:44px; width:100%; justify-content:center; }
+  .eledger-page-actions { width:100%; justify-content:stretch; }
+  .eledger-page-actions .eledger-button { flex:1 1 auto; }
+  .eledger-neir-drawer-content .eledger-form-actions { margin-inline:-16px; }
+}
