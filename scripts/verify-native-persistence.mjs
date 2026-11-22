@@ -133,7 +133,7 @@ async function testViewport(browser,width){
    await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
   const cancelEditor=editorFor(page,c,width);
   await cancelEditor.getByRole('spinbutton',{name:c.claim,exact:true}).fill('110');
-  await cancelEditor.getByRole('button',{name:'Cancel',exact:true}).click();
+  await cancelEditor.getByRole('button',{name:c.route==='Source Tax (LTU)' ? 'Close form' : 'Cancel',exact:true}).click();
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.taxDeducted,250);
