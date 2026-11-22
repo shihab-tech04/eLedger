@@ -94,6 +94,20 @@ async function testViewport(browser,width){
  assert.equal(response.status(),200);
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
+ if(width<600){
+   const tabs=page.locator('nav.eledger-mobile-bottom-nav');
+   assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
+   assert.equal(await tabs.locator('button').count(),5,'Five mobile destinations required');
+   await tabs.getByRole('button',{name:'Status',exact:true}).click();
+   await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
+   assert.deepEqual((await page.locator('table.eledger-status-page-table thead th').allTextContents())
+     .map(s=>s.trim()),['Particulars','Amount']);
+   await tabs.getByRole('button',{name:'Home',exact:true}).click();
+   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
+   assert.ok(overflow<=2,'Mobile page must not overflow viewport: '+overflow);
+   report.push({width,check:'five quick tabs and genuine two-column status on phone',pass:true});
+ }
  report.push({width,check:'fresh native storage',pass:true});
  // Source-evidenced Income Sync is a disclosure, not an invented manual Add form.
  for (const route of ['Bank/FI Interest/Profit','Sanchayapatra']) {
