@@ -62,6 +62,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [fieldIssues, setFieldIssues] = useState<DocumentClaimIssues>({});
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [period, setPeriod] = useState('all');
   const [detailId, setDetailId] = useState<string | null>(null);
 
   const openNew = () => { setDraft(blankDraft()); setFieldIssues({}); setError(null); setActiveId('new'); };
@@ -160,7 +161,8 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const filteredEntries = entries.filter((entry) =>
     [entry.referenceNo, entry.sourceEntity, entry.claimEvidence?.depositingAuthority ?? '',
       entry.claimEvidence?.paymentDocumentType ?? '', entry.taxDeducted]
-      .join(' ').toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase())
+      .join(' ').toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase()) &&
+    (period === 'all' || entry.date.startsWith(period))
   );
   const detailEntry = detailId ? entries.find((entry) => entry.id === detailId) : undefined;
 
@@ -173,9 +175,18 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
               aria-label={t('Search records','রেকর্ড খুঁজুন')} placeholder={t('Search records','রেকর্ড খুঁজুন')}/>
           </label>
-          <div className="eledger-button-group">
+          <label className="eledger-table-period">
+            <span className="sr-only">{t('Filter by year','বছর অনুযায়ী ছাঁকুন')}</span>
+            <select aria-label={t('Filter by year','বছর অনুযায়ী ছাঁকুন')} value={period}
+              onChange={(event)=>setPeriod(event.target.value)}>
+              <option value="all">{t('All years','সব বছর')}</option>
+              {Array.from(new Set(entries.map((entry)=>entry.date.slice(0,4)))).sort().reverse()
+                .map((year)=><option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>
+        <div className="eledger-button-group">
             <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
-              onClick={() => setSearchQuery('')}>{t('Reset','রিসেট')}</button>
+              onClick={() => { setSearchQuery('');setPeriod('all'); }}>{t('Reset','রিসেট')}</button>
 
           </div>
         </div>
