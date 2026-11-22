@@ -395,10 +395,10 @@ async function conditionalLocalRows(browser,width){
  assert.match(await panel.innerText(),/400/);
  assert.ok(await panel.getByRole('button',{name:'More actions E2E-CARRY-163',exact:true}).isVisible());
  page.once('dialog',d=>d.dismiss());
- await panel.getByRole('button',{name:'Delete',exact:true}).click();
+ await moreAction(page,'E2E-CARRY-163','Delete');
  assert.equal((await stored(page)).length,2,'Dismissed carry-forward deletion preserves source');
  page.once('dialog',d=>d.accept());
- await panel.getByRole('button',{name:'Delete',exact:true}).click();
+ await moreAction(page,'E2E-CARRY-163','Delete');
  await panel.getByRole('button',{name:'Claim',exact:true}).waitFor();
  assert.equal((await stored(page)).length,1);
  report.push({width,category:'Carry Forward 163',
