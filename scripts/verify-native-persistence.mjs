@@ -78,13 +78,10 @@ async function fill(form,c){
  }
 }
 async function save(form,c){
- const edit=await form.getAttribute('aria-label')==='Edit Record';
  const label=c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'?'Save claim':'Save';
  await form.getByRole('button',{name:label,exact:true}).click();
  try {
-  if(edit)await page.getByRole('dialog',{name:'Edit Record'}).waitFor({state:'detached'});
-  else await form.waitFor({state:'detached'});
- } catch (error) {
+  await form.waitFor({state:'detached'}); } catch (error) {
   const state = await form.evaluate((node) => ({
    alerts: [...node.querySelectorAll('[role="alert"]')].map((item) => item.textContent?.trim()),
    fields: [...node.querySelectorAll('input,select,textarea')].map((item) => ({
