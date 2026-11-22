@@ -407,8 +407,7 @@ async function conditionalLocalRows(browser,width){
  const row=page.locator('.eledger-official-records tbody tr').filter({hasText:'E2E-DIVIDEND-117'});
  await row.waitFor({state:'visible'});
  assert.match(await row.innerText(),/175/);
- const action=row.getByRole('button',{name:'Remove local claim: E2E-DIVIDEND-117'});
- assert.equal(await action.count(),1,'Populated PDF Dividend Action exists');
+ assert.equal(await row.getByRole('button').count(),2,'Dividend cell shows View and More only');
  page.once('dialog',d=>d.dismiss());
  await action.click();
  assert.equal((await stored(page)).length,1);
