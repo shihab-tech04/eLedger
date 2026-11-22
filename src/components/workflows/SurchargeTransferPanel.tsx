@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Pencil, Trash2, Eye, Check, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Plus, Trash2, Check, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 import { LedgerInput, LedgerSelect, LedgerTip } from '../ui/LedgerForm.tsx';
-import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
+import { LedgerFormGrid, LedgerPageAction } from '../ui/LedgerPage.tsx';
+import { LedgerRecordActions } from '../tables/LedgerRecordActions.tsx';
 import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
 import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 
@@ -34,18 +35,11 @@ export const SurchargeTransferPanel: React.FC<{
   const t = useLedgerCopy();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const newRowId = useRef(0);
-  const [gridDrafts, setGridDrafts] = useState<Record<string,Draft>>({});
+
   const [newGridRows, setNewGridRows] = useState<Array<{ key: string; draft: Draft }>>([]);
   const [editing, setEditing] = useState<LedgerEntry | null>(null);
   const [selected, setSelected] = useState<LedgerEntry | null>(null);
   const [open, setOpen] = useState(false);
-  const [compactEditor, setCompactEditor] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 767px)');
-    const refresh = () => setCompactEditor(mql.matches);
-    refresh(); mql.addEventListener('change', refresh);
-    return () => mql.removeEventListener('change', refresh);
-  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -70,24 +64,19 @@ export const SurchargeTransferPanel: React.FC<{
     setError('');
   };
   const startAdd = () => {
-    setError(''); setFeedback('');
-    if (!compactEditor) {
-      newRowId.current += 1;
-      setNewGridRows((rows) => [...rows, {key: 'new-'+newRowId.current, draft: emptyDraft()}]);
-      return;
-    }
-    setDraft(emptyDraft()); setEditing(null); setOpen(true);
+    setError(''); setFeedback(''); setEditing(null); setOpen(true);
+    newRowId.current += 1;
+    setNewGridRows([{key:'new-'+newRowId.current, draft:emptyDraft()}]);
   };
   const startEdit = (entry: LedgerEntry) => {
-    setError(''); setFeedback('');
-    if (!compactEditor) {
-      setGridDrafts((drafts) => ({...drafts, [entry.id]: drafts[entry.id] ?? draftFromEntry(entry)}));
-      return;
-    }
-    setDraft(draftFromEntry(entry));
-    setSelected(null); setEditing(entry); setOpen(true);
+    setError(''); setFeedback(''); setOpen(false);
+    setDraft(draftFromEntry(entry)); setEditing(entry); setSelected(entry);
   };
-  const close = () => { if (!busy) { setOpen(false); setEditing(null); setError(''); } };
+  const close = () => {
+    if (busy) return;
+    setOpen(false); setEditing(null); setSelected(null);
+    setNewGridRows([]); setError('');
+  };
   const submit = async () => {
     if (busy) return;
     setError('');
@@ -117,7 +106,7 @@ export const SurchargeTransferPanel: React.FC<{
           })
         : await onRecord(reference, amount, draft.date, details);
       if (!result.success) { setError(result.error || t('Local record could not be saved.', 'স্থানীয় রেকর্ড সংরক্ষণ করা যায়নি।')); return; }
-      setOpen(false); setEditing(null); setDraft(emptyDraft());
+      setOpen(false); setEditing(null); setSelected(null); setDraft(emptyDraft());
       setFeedback(t('Local surcharge recorded pending verification; no government payment was made.',
         'স্থানীয় সারচার্জ যাচাই অপেক্ষমাণ হিসেবে সংরক্ষিত হয়েছে; কোনো সরকারি পরিশোধ করা হয়নি।'));
     } catch {
@@ -139,19 +128,13 @@ export const SurchargeTransferPanel: React.FC<{
   const updateGrid = (key: string, field: keyof Draft, value: string, isNew: boolean) => {
     if (isNew) setNewGridRows((rows) => rows.map((row) => row.key === key ?
       { ...row, draft: {...row.draft,[field]:value} } : row));
-    else setGridDrafts((drafts) => ({
-      ...drafts, [key]: {...(drafts[key] ?? draftFromEntry(entries.find((e) => e.id === key)!)), [field]: value},
-    }));
+    else setDraft((previous)=>({...previous,[field]:value}));
     setError('');
   };
   const gridChanges = entries.some((entry) => {
     const changed = gridDrafts[entry.id];
     return !!changed && JSON.stringify(changed) !== JSON.stringify(draftFromEntry(entry));
   }) || newGridRows.length > 0;
-  const draftTotal = entries.reduce((total, entry) =>
-    total + Number((gridDrafts[entry.id] ?? draftFromEntry(entry)).amount || 0), 0) +
-    newGridRows.reduce((total, row) => total + Number(row.draft.amount || 0),0);
-  const cancelGrid = () => { if (!busy) { setGridDrafts({}); setNewGridRows([]); setError(''); } };
   const validGridDraft = (row: Draft): string | null => {
     if (!row.reference.trim()) return t('Transaction ID is required.', 'লেনদেন আইডি আবশ্যক।');
     if (!row.bankName || !bankNames.includes(row.bankName)) return t('Choose a bank from the list.', 'তালিকা থেকে ব্যাংক নির্বাচন করুন।');
@@ -161,17 +144,10 @@ export const SurchargeTransferPanel: React.FC<{
     return null;
   };
   const saveGrid = async () => {
-    if (busy || !gridChanges) return;
+    if (busy || newGridRows.length === 0) return;
     setError('');
-    const changedExisting = entries.map((entry) => ({ entry, draft: gridDrafts[entry.id] }))
-      .filter(({entry,draft}) => !!draft && JSON.stringify(draft) !== JSON.stringify(draftFromEntry(entry)));
-    const changes = [
-      ...changedExisting.map(({entry,draft}) => ({key:entry.id,entry,draft:draft!})),
-      ...newGridRows.map((row) => ({key:row.key,entry:null as LedgerEntry|null,draft:row.draft})),
-    ];
-    const changedIds = new Set(changedExisting.map(({entry}) => entry.id));
-    const ids = new Set(entries.filter((entry) => !changedIds.has(entry.id))
-      .map((entry) => entry.referenceNo.trim().toLowerCase()));
+    const changes = newGridRows.map((row)=>({key:row.key,entry:null as LedgerEntry|null,draft:row.draft}));
+    const ids = new Set(entries.map((entry)=>entry.referenceNo.trim().toLowerCase()));
     for (const row of changes) {
       const issue = validGridDraft(row.draft);
       if (issue) { setError(issue); return; }
@@ -179,9 +155,7 @@ export const SurchargeTransferPanel: React.FC<{
       if (ids.has(identifier)) { setError(t('Duplicate transaction ID in this ledger.', 'এই লেজারে একই লেনদেন আইডি একাধিকবার আছে।')); return; }
       ids.add(identifier);
     }
-    if (!onUpdate && changedExisting.length > 0) {
-      setError(t('Editing is unavailable for these records.', 'রেকর্ড সম্পাদনার অনুমতি নেই।')); return;
-    }
+
     setBusy(true);
     let saved = 0;
     try {
@@ -206,14 +180,10 @@ export const SurchargeTransferPanel: React.FC<{
           return;
         }
         saved += 1;
-        if (entry) setGridDrafts((rows) => {
-          const next = {...rows}; delete next[entry.id]; return next;
-        });
-        else setNewGridRows((rows) => rows.filter((row) => row.key !==
-          changes[saved - 1]?.key));
+        setNewGridRows((rows)=>rows.filter((row)=>row.key!==changes[saved-1]?.key));
       }
-      setGridDrafts({});
-      setNewGridRows([]);
+
+      setNewGridRows([]); setOpen(false);
       setFeedback(t('Local surcharge entries saved; none are government-verified payments.',
         'স্থানীয় সারচার্জ রেকর্ড সংরক্ষিত হয়েছে; এগুলো সরকারি যাচাইকৃত পরিশোধ নয়।'));
     } catch {
@@ -221,144 +191,7 @@ export const SurchargeTransferPanel: React.FC<{
         'সংরক্ষণ বাধাগ্রস্ত হয়েছে; রেকর্ড দেখে বাকি সারি আবার চেষ্টা করুন।'));
     } finally { setBusy(false); }
   };
-  const renderGridRow = (key: string, row: Draft, entry?: LedgerEntry) => {
-    const field = (name: keyof Draft, index: number, type: string = 'text') =>
-      <td key={name} data-label={headers[index]}>
-        {name === 'bankName' ? <select className="eledger-control eledger-inline-input"
-          aria-label={headers[index]} value={row.bankName} disabled={busy}
-          onChange={(event) => updateGrid(key, name, event.target.value, !entry)}>
-          <option value="">{t('Select Bank','ব্যাংক নির্বাচন করুন')}</option>
-          {bankNames.map((bank) => <option key={bank} value={bank}>{bank}</option>)}
-        </select> : <input className="eledger-control eledger-inline-input" type={type}
-          aria-label={headers[index]} value={row[name]} disabled={busy}
-          min={name === 'amount' ? '0.01' : undefined}
-          step={name === 'amount' ? '0.01' : undefined}
-          required={name === 'reference' || name === 'date' || name === 'amount'}
-          onChange={(event) => updateGrid(key,name,event.target.value,!entry)}/>}
-      </td>;
-    return <tr key={key} className="eledger-source-inline-editor eledger-surcharge-grid-row"
-      aria-label={entry ? t('Editable surcharge record','সম্পাদনাযোগ্য সারচার্জ রেকর্ড') :
-        t('New surcharge record','নতুন সারচার্জ রেকর্ড')}>
-      {field('registrationNo',0)}
-      {field('reference',1)}
-      {field('bankName',2)}
-      {field('branchName',3)}
-      {field('date',4,'date')}
-      {field('amount',5,'number')}
-      <td data-label={headers[6]}><div className="eledger-surcharge-grid-actions">
-        {entry ? <>
-          <button type="button" className="eledger-action-icon" disabled={busy}
-            aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}
-            onClick={() => setSelected(entry)}><Eye size={17}/></button>
-          {onUpdate && <button type="button" className="eledger-action-icon" disabled={busy}
-            aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
-            onClick={() => startEdit(entry)}><Pencil size={17}/></button>}
-          {onDelete && <button type="button" className="eledger-action-icon is-danger" disabled={busy}
-            aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
-            onClick={() => void remove(entry)}><Trash2 size={17}/></button>}
-        </> : <button type="button" className="eledger-action-icon is-danger"
-          aria-label={t('Remove unsaved row','অসংরক্ষিত সারি সরান')}
-          onClick={() => setNewGridRows((rows) => rows.filter((candidate) => candidate.key !== key))}>
-          <Trash2 size={17}/></button>}
-      </div></td>
-    </tr>;
-  };
-  const cells = (entry: LedgerEntry) => [
-    entry.claimEvidence?.registrationNo || '—',
-    entry.referenceNo,
-    entry.claimEvidence?.bankName || '—',
-    entry.claimEvidence?.branchName || '—',
-    formatDate(entry.date),
-    formatAmount(entry.taxDeducted),
-  ];
-  return <section className="eledger-panel eledger-official-manual-table"
-    aria-label={t('Environmental surcharge records', 'পরিবেশ সারচার্জের রেকর্ড')}>
-    <div className="eledger-ledger-toolbar">
-      <h2>{t('Recorded Ledger Entries', 'রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
-      <div className="eledger-table-controls">
-        <label className="eledger-table-search">
-          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('Search records', 'রেকর্ড খুঁজুন')} aria-label={t('Search records', 'রেকর্ড খুঁজুন')}/>
-        </label>
-        <div className="eledger-button-group">
-          <button type="button" className="eledger-button eledger-button-secondary" disabled={!search}
-            onClick={() => setSearch('')}>{t('Reset', 'রিসেট')}</button>
-          <button type="button" className="eledger-button eledger-button-primary" onClick={startAdd}>
-            <Plus size={16}/>{t('Add Entry', 'রেকর্ড যোগ করুন')}
-          </button>
-        </div>
-      </div>
-    </div>
-    <p className="eledger-claim-summary-content">
-      {t('Tax & Payment reference only. No tax rate is calculated, no NBR service is connected, and no payment is transmitted.',
-        'শুধু কর ও পরিশোধের রেফারেন্স। করহার গণনা, এনবিআর সেবা সংযোগ বা অর্থ পরিশোধ করা হয় না।')}
-    </p>
-    {feedback && <p role="status" className="eledger-claim-feedback">{feedback}</p>}
-    {entries.length === 0 && newGridRows.length === 0 && !open && <p className="eledger-entry-empty">
-      {t('No Environmental Surcharge Payable. Please set Environmental Surcharge in Tax Payment.',
-        'পরিবেশ সারচার্জ পরিশোধযোগ্য নেই। ট্যাক্স পেমেন্টে পরিবেশ সারচার্জ নির্ধারণ করুন।')}
-    </p>}
-    {error && !compactEditor && <p role="alert" className="eledger-entry-error">{error}</p>}
-    <div className="overflow-x-auto">
-      <table className="eledger-official-records eledger-data-table">
-        <thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
-        <tbody>{listed.length === 0 && (compactEditor || newGridRows.length === 0) ? <tr className="eledger-empty-records-row"><td colSpan={headers.length}>
-          {t('No Data Found', 'কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
-          listed.map((entry) => !compactEditor ? renderGridRow(entry.id, gridDrafts[entry.id] ?? draftFromEntry(entry), entry)
-            : <tr key={entry.id} className="eledger-neir-record-row">
-            {cells(entry).map((value, index) =>
-              <td key={index} data-label={headers[index]}>{value}</td>)}
-            <td data-label={headers[6]}>
-              <div className="eledger-button-group">
-                <button type="button" className="eledger-button eledger-button-secondary"
-                  aria-label={t('View details', 'বিস্তারিত দেখুন')} onClick={() => setSelected(entry)}>
-                  <Eye size={16}/>{t('View', 'দেখুন')}
-                </button>
-                {onUpdate && <button type="button" className="eledger-button eledger-button-secondary"
-                  onClick={() => startEdit(entry)}><Pencil size={16}/>{t('Edit', 'সম্পাদনা')}</button>}
-                {onDelete && <button type="button" className="eledger-button eledger-button-danger"
-                  onClick={() => void remove(entry)}><Trash2 size={16}/>{t('Delete', 'মুছুন')}</button>}
-              </div>
-            </td>
-          </tr>)}
-          {!compactEditor && newGridRows.map((row) => renderGridRow(row.key,row.draft))}
-        </tbody>
-      </table>
-    </div>
-    <div className="eledger-payment-columns">
-      <strong>{t('Total Paid Amount', 'মোট পরিশোধিত অঙ্ক')}</strong>
-      <strong>{formatAmount(!compactEditor && gridChanges ? draftTotal : sum)}</strong>
-    </div>
-    <div className="eledger-payment-columns">
-      <span>{t('Surcharge Declared By Assessee', 'করদাতার ঘোষিত সারচার্জ')}</span>
-      <span title={t('Tax & Payment data is not connected.', 'কর ও পরিশোধের তথ্য সংযুক্ত নয়।')}>—</span>
-    </div>
-    {!compactEditor && <div className="eledger-surcharge-grid-footer">
-      <p className="eledger-surcharge-unsaved-note">{gridChanges
-        ? t('Draft total — Save to record these local changes.', 'খসড়ার মোট অঙ্ক — স্থানীয় পরিবর্তন সংরক্ষণ করতে Save চাপুন।')
-        : t('All changes are browser-local. No payment is transmitted.', 'সব পরিবর্তন ব্রাউজারের স্থানীয়। কোনো পরিশোধ পাঠানো হয় না।')}</p>
-      <div className="eledger-surcharge-grid-footer-actions">
-        <button type="button" className="eledger-button eledger-button-secondary" disabled={!gridChanges || busy}
-          onClick={cancelGrid}><X size={16}/>{t('Discard changes','পরিবর্তন বাতিল করুন')}</button>
-        <button type="button" className="eledger-button eledger-button-primary" disabled={!gridChanges || busy}
-          onClick={() => void saveGrid()}><Check size={16}/>{busy ? t('Saving…','সংরক্ষণ হচ্ছে…') : t('Save','সংরক্ষণ')}</button>
-      </div>
-    </div>}
-    <LedgerTip label={t('About this record', 'এই রেকর্ড সম্পর্কে')}>
-      {t('Amounts shown are browser-local unverified entries, not an NBR-confirmed payment or credit.',
-        'প্রদর্শিত অঙ্ক ব্রাউজারের স্থানীয় অযাচাইকৃত রেকর্ড, এনবিআর নিশ্চিত পরিশোধ বা কর ক্রেডিট নয়।')}
-    </LedgerTip>
-    {selected && <NeirRecordDetailsDrawer title={t('Record Details', 'রেকর্ডের বিস্তারিত')}
-      subtitle={selected.referenceNo} onClose={() => setSelected(null)}
-      fields={cells(selected).map((value, index) => ({ label: headers[index], value: String(value) }))}
-      footerActions={<div className="eledger-button-group">
-        {onUpdate && <button type="button" className="eledger-button eledger-button-secondary"
-          onClick={() => startEdit(selected)}>{t('Edit', 'সম্পাদনা')}</button>}
-        {onDelete && <button type="button" className="eledger-button eledger-button-danger"
-          onClick={() => void remove(selected)}>{t('Delete', 'মুছুন')}</button>}
-      </div>} showCaveat={false}/>}
-    {open && compactEditor && <LedgerFormModal title={editing ? t('Edit Entry', 'রেকর্ড সম্পাদনা') : t('Add Entry', 'রেকর্ড যোগ করুন')} onClose={close}>
-      <form noValidate aria-label={t('Environmental surcharge fields', 'পরিবেশ সারচার্জের তথ্য')} onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+  const renderSingleEditor = () => (<form noValidate aria-label={t('Environmental surcharge fields', 'পরিবেশ সারচার্জের তথ্য')} onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <LedgerFormGrid>
           <LedgerInput label={t('Motor Vehicle Registration No', 'মোটরযানের নিবন্ধন নম্বর')}
             value={draft.registrationNo} onValueChange={(value) => change('registrationNo', value)}/>
@@ -385,7 +218,126 @@ export const SurchargeTransferPanel: React.FC<{
             <Check size={16}/>{busy ? t('Saving…', 'সংরক্ষণ হচ্ছে…') : t('Save', 'সংরক্ষণ')}
           </button>
         </div>
-      </form>
+      </form>);
+  const cells = (entry: LedgerEntry) => [
+    entry.claimEvidence?.registrationNo || '—',
+    entry.referenceNo,
+    entry.claimEvidence?.bankName || '—',
+    entry.claimEvidence?.branchName || '—',
+    formatDate(entry.date),
+    formatAmount(entry.taxDeducted),
+  ];
+  return <section className="eledger-panel eledger-official-manual-table"
+    aria-label={t('Environmental surcharge records', 'পরিবেশ সারচার্জের রেকর্ড')}>
+    <div className="eledger-ledger-toolbar">
+      <h2>{t('Recorded Ledger Entries', 'রেকর্ডকৃত লেজার এন্ট্রি')} ({entries.length})</h2>
+      <div className="eledger-table-controls">
+        <label className="eledger-table-search">
+          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('Search records', 'রেকর্ড খুঁজুন')} aria-label={t('Search records', 'রেকর্ড খুঁজুন')}/>
+        </label>
+        <div className="eledger-button-group">
+          <button type="button" className="eledger-button eledger-button-secondary" disabled={!search}
+            onClick={() => setSearch('')}>{t('Reset', 'রিসেট')}</button>
+
+        </div>
+      </div>
+    </div>
+    <LedgerPageAction><button type="button" className="eledger-button eledger-button-primary"
+      disabled={busy || open || !!editing} onClick={startAdd}>
+      <Plus size={16}/>{t('Add Entry','রেকর্ড যোগ করুন')}
+    </button></LedgerPageAction>
+    <p className="eledger-claim-summary-content">
+      {t('Tax & Payment reference only. No tax rate is calculated, no NBR service is connected, and no payment is transmitted.',
+        'শুধু কর ও পরিশোধের রেফারেন্স। করহার গণনা, এনবিআর সেবা সংযোগ বা অর্থ পরিশোধ করা হয় না।')}
+    </p>
+    {feedback && <p role="status" className="eledger-claim-feedback">{feedback}</p>}
+    {entries.length === 0 && newGridRows.length === 0 && !open && <p className="eledger-entry-empty">
+      {t('No Environmental Surcharge Payable. Please set Environmental Surcharge in Tax Payment.',
+        'পরিবেশ সারচার্জ পরিশোধযোগ্য নেই। ট্যাক্স পেমেন্টে পরিবেশ সারচার্জ নির্ধারণ করুন।')}
+    </p>}
+    {error && !open && <p role="alert" className="eledger-entry-error">{error}</p>}
+    <div className="overflow-x-auto">
+      <table className="eledger-official-records eledger-data-table">
+        <thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
+        <tbody>{listed.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={headers.length}>
+          {t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
+          listed.map((entry) => <tr key={entry.id} className="eledger-neir-record-row">
+            {cells(entry).map((value,index)=><td key={index} data-label={headers[index]}>{value}</td>)}
+            <td data-label={headers[6]}>
+              <LedgerRecordActions reference={entry.referenceNo}
+                onView={() => setSelected(entry)}
+                onEdit={onUpdate ? () => startEdit(entry) : undefined}
+                onDelete={onDelete ? () => void remove(entry) : undefined}
+                disabled={busy}/>
+            </td>
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    <div className="eledger-payment-columns">
+      <strong>{t('Total Paid Amount', 'মোট পরিশোধিত অঙ্ক')}</strong>
+      <strong>{formatAmount(sum)}</strong>
+    </div>
+    <div className="eledger-payment-columns">
+      <span>{t('Surcharge Declared By Assessee', 'করদাতার ঘোষিত সারচার্জ')}</span>
+      <span title={t('Tax & Payment data is not connected.', 'কর ও পরিশোধের তথ্য সংযুক্ত নয়।')}>—</span>
+    </div>
+    <LedgerTip label={t('About this record', 'এই রেকর্ড সম্পর্কে')}>
+      {t('Amounts shown are browser-local unverified entries, not an NBR-confirmed payment or credit.',
+        'প্রদর্শিত অঙ্ক ব্রাউজারের স্থানীয় অযাচাইকৃত রেকর্ড, এনবিআর নিশ্চিত পরিশোধ বা কর ক্রেডিট নয়।')}
+    </LedgerTip>
+    {selected && <NeirRecordDetailsDrawer
+      title={editing?.id === selected.id ? t('Edit Record','রেকর্ড সম্পাদনা') : t('Record Details','রেকর্ডের বিস্তারিত')}
+      subtitle={selected.referenceNo} onClose={close}
+      editor={editing?.id === selected.id ? renderSingleEditor() : undefined}
+      fields={cells(selected).map((value,index)=>({label:headers[index],value:String(value)}))}
+      showCaveat={false}/>}
+    {open && <LedgerFormModal title={t('Add Entry','রেকর্ড যোগ করুন')} onClose={close}>
+      <div className="eledger-surcharge-batch-modal">
+        {newGridRows.map((row,index) => <section className="eledger-surcharge-batch-item" key={row.key}>
+          <div className="eledger-surcharge-batch-heading">
+            <strong>{t('Transaction','লেনদেন')} {index+1}</strong>
+            {newGridRows.length>1 && <button type="button" className="eledger-button eledger-button-secondary"
+              disabled={busy} onClick={() => setNewGridRows((rows)=>rows.filter(item=>item.key!==row.key))}>
+              <Trash2 size={16}/>{t('Remove','সরান')}</button>}
+          </div>
+          <LedgerFormGrid>
+            <LedgerInput label={t('Motor Vehicle Registration No','মোটরযানের নিবন্ধন নম্বর')}
+              value={row.draft.registrationNo} onValueChange={v=>updateGrid(row.key,'registrationNo',v,true)}/>
+            <LedgerInput label={t('Transaction ID','লেনদেন আইডি')} required
+              value={row.draft.reference} onValueChange={v=>updateGrid(row.key,'reference',v,true)}/>
+            <LedgerSelect label={t('Bank Name','ব্যাংকের নাম')} required
+              value={row.draft.bankName} onValueChange={v=>updateGrid(row.key,'bankName',v,true)}>
+              <option value="">{t('Select Bank','ব্যাংক নির্বাচন করুন')}</option>
+              {bankNames.map(bank=><option key={bank} value={bank}>{bank}</option>)}
+            </LedgerSelect>
+            <LedgerInput label={t('Branch Name','শাখার নাম')}
+              value={row.draft.branchName} onValueChange={v=>updateGrid(row.key,'branchName',v,true)}/>
+            <LedgerInput label={t('Payment Date','পরিশোধের তারিখ')} required type="date"
+              value={row.draft.date} onValueChange={v=>updateGrid(row.key,'date',v,true)}/>
+            <LedgerInput label={t('Paid Amount','পরিশোধিত অঙ্ক')} required type="number" min="0.01" step="0.01"
+              value={row.draft.amount} onValueChange={v=>updateGrid(row.key,'amount',v,true)}/>
+          </LedgerFormGrid>
+        </section>)}
+        <button type="button" className="eledger-button eledger-button-secondary" disabled={busy}
+          onClick={() => {newRowId.current++;setNewGridRows(rows=>[...rows,{key:'new-'+newRowId.current,draft:emptyDraft()}]);}}>
+          <Plus size={16}/>{t('Add another transaction','আরেকটি লেনদেন যোগ করুন')}
+        </button>
+        <div className="eledger-payment-columns">
+          <strong>{t('Total Paid Amount','মোট পরিশোধিত অঙ্ক')}</strong>
+          <strong>{formatAmount(newGridRows.reduce((total,row)=>total+Number(row.draft.amount||0),0))}</strong>
+        </div>
+        {error && <p role="alert" className="eledger-entry-error">{error}</p>}
+        <p className="eledger-surcharge-unsaved-note">{t('Local records only; no payment is transmitted.','শুধু স্থানীয় রেকর্ড; কোনো পরিশোধ পাঠানো হয় না।')}</p>
+        <div className="eledger-form-actions">
+          <button type="button" className="eledger-button eledger-button-secondary" disabled={busy} onClick={close}>
+            <X size={16}/>{t('Cancel','বাতিল')}</button>
+          <button type="button" className="eledger-button eledger-button-primary"
+            disabled={busy||newGridRows.length===0} onClick={()=>void saveGrid()}>
+            <Check size={16}/>{busy?t('Saving…','সংরক্ষণ হচ্ছে…'):t('Save all transactions','সব লেনদেন সংরক্ষণ')}</button>
+        </div>
+      </div>
     </LedgerFormModal>}
   </section>;
 };
