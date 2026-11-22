@@ -1180,3 +1180,51 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-table-controls .eledger-button-group { display:flex; width:100%; }
   .eledger-table-controls .eledger-button-group .eledger-button { flex:1; padding-inline:8px; }
 }
+
+
+/* Original 21-page eReturn Ledger table-cell contract.
+   Desktop editors remain inside their original table cells; the approved
+   responsive form sheet is retained below 768px. Scope deliberately narrow. */
+.eledger-source-inline-editor td {
+  vertical-align: middle;
+  background: var(--surface-muted, #f3fafb);
+  padding: 8px 6px;
+}
+.eledger-source-inline-editor .eledger-inline-input {
+  display: block;
+  width: 100%;
+  min-width: 125px;
+  min-height: 42px;
+  font: inherit;
+}
+.eledger-source-inline-editor .eledger-button-group,
+.eledger-source-inline-editor .eledger-salary-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.eledger-source-inline-editor input[aria-invalid="true"],
+.eledger-source-inline-editor select[aria-invalid="true"] {
+  outline: 2px solid #bd3434;
+  outline-offset: 1px;
+}
+.eledger-status-page-panel { padding: 16px; }
+.eledger-status-page-table th:first-child,
+.eledger-status-page-table td:first-child { width: 78%; text-align: left; }
+.eledger-status-page-table .eledger-status-amount { text-align: right; font-variant-numeric: tabular-nums; }
+.eledger-status-page-table .eledger-status-total { font-weight: 700; background: #e7f3f6; }
+.eledger-status-page-table .eledger-status-subrow td:first-child { padding-left: 36px; }
+.eledger-status-expand {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; border: 0; background: transparent;
+  font: inherit; font-weight: 600; text-align: left; cursor: pointer;
+}
+.eledger-status-expand:focus-visible { outline: 2px solid #0a767e; outline-offset: 2px; }
+.eledger-status-caveat { margin: 14px 0; font-size: 0.875rem; }
+.eledger-status-next { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 18px; }
+@media (max-width: 767px) {
+  .eledger-status-page-panel { padding: 10px; }
+  .eledger-status-page-table th:first-child,
+  .eledger-status-page-table td:first-child { width: auto; }
+  .eledger-status-next .eledger-button { width: 100%; justify-content: center; }
+}
