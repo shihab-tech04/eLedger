@@ -92,7 +92,8 @@ export const AitView: React.FC = () => {
 
       <section className="eledger-ait-records" aria-label={t('Recorded AIT claims','রেকর্ডকৃত অগ্রিম কর দাবি')}>
         {isOfficialReadOnlyRoute(currentRoute.id) ? (
-          <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+          <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}
+                  onDeleteEntry={handleDeleteEntry}/>
         ) : (
         <InlineEditableTable
           key={currentRoute.id} entries={routeEntries} category="AIT"

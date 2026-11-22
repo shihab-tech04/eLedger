@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Check, Eye, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
@@ -62,6 +62,14 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  // The original PDF has an inline desktop editor; retain the approved mobile form sheet.
+  const [compactEditor, setCompactEditor] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const refresh = () => setCompactEditor(mql.matches);
+    refresh(); mql.addEventListener('change', refresh);
+    return () => mql.removeEventListener('change', refresh);
+  }, []);
 
   const openNew = () => { setDraft(blankDraft()); setFieldIssues({}); setError(null); setActiveId('new'); };
   const openEdit = (entry: LedgerEntry) => {
@@ -156,6 +164,42 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
     </form>
   );
 
+  const inlineCell = (field: keyof SalaryDraft, label: string, options?: 'document') => (
+    <td data-label={label}>
+      {options === 'document' ? <select className="eledger-control eledger-inline-input" value={draft.documentType}
+        aria-label={label} aria-invalid={!!fieldError('documentType')}
+        onChange={(event) => change('documentType', event.target.value)}>
+        <option value="">{t('Select One','নির্বাচন করুন')}</option>
+        <option value="CHALLAN">{t('Challan','চালান')}</option>
+        <option value="CERTIFICATE">{t('Certificate','সনদ')}</option>
+      </select> : <input className="eledger-control eledger-inline-input"
+        aria-label={label} title={label}
+        aria-invalid={!!fieldError(field === 'documentAmount' ? 'documentAmount' : field === 'claimedAmount' ? 'claimedAmount' : field === 'authority' ? 'authority' : field === 'reference' ? 'reference' : 'date')}
+        type={field === 'date' ? 'date' : (field === 'documentAmount' || field === 'claimedAmount' ? 'number' : 'text')}
+        min={field === 'documentAmount' || field === 'claimedAmount' ? '0.01' : undefined}
+        step={field === 'documentAmount' || field === 'claimedAmount' ? 'any' : undefined}
+        required value={draft[field]} onChange={(event) => change(field, event.target.value)}/>
+      }
+    </td>
+  );
+  const renderInlineRow = (number: number, key: string) => (
+    <tr key={`edit-${key}`} className="eledger-row-being-edited eledger-source-inline-editor" aria-label={t('Salary claim inline editor','বেতনের দাবির ইনলাইন ফরম')}>
+      <td className="eledger-salary-row-index">{number}</td>
+      {inlineCell('authority', t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ'))}
+      {inlineCell('documentType', t('Payment Document Type','পরিশোধ দলিলের ধরন'),'document')}
+      {inlineCell('reference', t('Challan/ Certificate Reference No.','চালান/সনদ নম্বর'))}
+      {inlineCell('date', t('Challan/ Certificate Date','চালান/সনদের তারিখ'))}
+      {inlineCell('documentAmount', t('Challan/ Certificate Amount','চালান/সনদের অঙ্ক'))}
+      {inlineCell('claimedAmount', t('Claimed Amount','দাবিকৃত অঙ্ক'))}
+      <td data-label={t('Action','কাজ')}><div className="eledger-salary-row-actions">
+        <button type="button" className="eledger-button eledger-button-primary" disabled={saving}
+          onClick={() => void save()}><Check size={16}/>{t('Save','সংরক্ষণ')}</button>
+        <button type="button" className="eledger-button eledger-button-secondary" disabled={saving}
+          onClick={cancel}><X size={16}/>{t('Cancel','বাতিল')}</button>
+      </div></td>
+    </tr>
+  );
+
   const filteredEntries = entries.filter((entry) =>
     [entry.referenceNo, entry.sourceEntity, entry.claimEvidence?.depositingAuthority ?? '',
       entry.claimEvidence?.paymentDocumentType ?? '', entry.taxDeducted]
@@ -180,8 +224,10 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
           </div>
         </div>
       </div>
-      {error && activeId === null && <div role="alert" className="eledger-salary-error">{error}</div>}
-      {activeId !== null && <LedgerFormModal
+      {error && <div role="alert" className="eledger-salary-error">{error}</div>}
+      {activeId !== null && !compactEditor && Object.values(fieldIssues).some(Boolean) &&
+        <div className="eledger-salary-error" role="alert">{t('Please correct the highlighted table cells.','চিহ্নিত সেলগুলোর তথ্য সংশোধন করুন।')}</div>}
+      {activeId !== null && compactEditor && <LedgerFormModal
         title={activeId === 'new' ? t('Add Entry','রেকর্ড যোগ করুন') : t('Edit Entry','রেকর্ড সম্পাদনা')}
         onClose={() => { if (!saving) cancel(); }}>
         {error && <div role="alert" className="eledger-salary-error">{error}</div>}
@@ -219,7 +265,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
             {filteredEntries.length === 0 && <tr className="eledger-salary-empty-row">
               <td colSpan={8} className="eledger-salary-empty-cell">{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td>
             </tr>}
-            {filteredEntries.map((entry, index) => (
+            {filteredEntries.map((entry, index) => activeId === entry.id && !compactEditor ? renderInlineRow(index + 1, entry.id) : (
               <tr key={entry.id} className={activeId === entry.id ? 'eledger-row-being-edited' : ''}>
                 <td data-label={t('SL.','ক্রম')} className="eledger-salary-row-index">{index + 1}</td>
                 <td data-label={t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}>{entry.claimEvidence?.depositingAuthority ?? entry.sourceEntity}</td>
@@ -238,6 +284,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
                 </div></td>
               </tr>
             ))}
+            {activeId === 'new' && !compactEditor && renderInlineRow(filteredEntries.length + 1, 'new')}
           </tbody>
         </table>
       </div>

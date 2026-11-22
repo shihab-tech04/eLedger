@@ -100,11 +100,11 @@ export const AdjustmentsView: React.FC = () => {
       <LedgerSummary amountLabel={t('Total adjustment','মোট সমন্বয়')} amount={formatLedgerAmount(totalTaxForRoute)} count={routeEntries.length}
         note={language === 'bn' ? 'সমন্বয় দাবির সহায়ক প্রমাণ সংরক্ষণ করুন।' : 'Keep supporting evidence for adjustment claims.'}/>
 
-      {currentRoute.id === 'carry-forward' && <OfficialCarryForwardPanel existingClaim={routeEntries[0]}/>}
+      {currentRoute.id === 'carry-forward' && <OfficialCarryForwardPanel existingClaim={routeEntries[0]} onDelete={handleDeleteEntry}/>}
 
       {/* Carry-forward already has a dedicated Add Entry action. Do not show a
           second empty record panel until there is a record to inspect. */}
-      {(currentRoute.id !== 'carry-forward' || routeEntries.length > 0) && (
+      {currentRoute.id !== 'carry-forward' && (
         <section className="eledger-ait-records" aria-label={t('Recorded tax adjustments','রেকর্ডকৃত কর সমন্বয়')}>
           {currentRoute.id === 'refund' ? (
             <OfficialManualClaimsTable key={currentRoute.id} entries={routeEntries}

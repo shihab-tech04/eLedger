@@ -121,15 +121,19 @@ export const SourceTaxView: React.FC = () => {
           </div>
           <div className="eledger-ibas-facts">
             <div><span>{t('Assessment Year','করবর্ষ')}</span><strong>{assessmentYear}</strong></div>
-            <div><span>{t('Office Name (local demo record)','কার্যালয় (স্থানীয় নমুনা)')}</span><strong>{routeEntries[0]?.sourceEntity ?? t('Not available','পাওয়া যায়নি')}</strong></div>
-            <div><span>{t('Designation','পদবি')}</span><strong>{t('Requires CGA/iBAS++ connection','CGA/iBAS++ সংযোগ প্রয়োজন')}</strong></div>
-            <div><span>{t('TDS Available (local records only)','উৎস কর (শুধু স্থানীয় রেকর্ড)')}</span><strong className="is-amount">{money(totalTaxForRoute)}</strong></div>
+            <div><span>{t('Office Name','কার্যালয়ের নাম')}</span><strong>{routeEntries[0]?.sourceEntity ?? t('Not available','পাওয়া যায়নি')}</strong></div>
+            <div><span>{t('Designation','পদবি')}</span><strong>{t('Not supplied in local payroll evidence','স্থানীয় বেতন তথ্যের মধ্যে পাওয়া যায়নি')}</strong></div>
+            <div><span>{t('TDS Available','প্রাপ্য উৎস কর')}</span><strong className="is-amount">{money(totalTaxForRoute)}</strong></div>
           </div>
           <div className="eledger-ibas-claim">
             <label htmlFor="eledger-ibas-claimed">{t('TDS Claim','উৎস কর দাবি')}</label>
             <input id="eledger-ibas-claimed" value={money(totalTaxForRoute)} readOnly className="eledger-control is-readonly"
               aria-describedby="eledger-ibas-integrity-note"/>
             <span id="eledger-ibas-integrity-note">{t('Local record only — no official submission.','শুধু স্থানীয় রেকর্ড — সরকারি দাখিল নয়।')}</span>
+            <button type="button" className="eledger-button eledger-button-primary" disabled
+              aria-label={t('Save is unavailable without verified payroll source','যাচাইকৃত বেতন উৎস ছাড়া সংরক্ষণ করা যাবে না')}>
+              {t('Save','সংরক্ষণ')}
+            </button>
             <LedgerTip label={t('Why can’t I save?','সংরক্ষণ বন্ধ কেন?')}>
               {t('Official submission requires a verified CGA/iBAS++ connection, which is not available here.','সরকারি দাখিলের জন্য যাচাইকৃত CGA/iBAS++ সংযোগ প্রয়োজন; এখানে তা নেই।')}
             </LedgerTip>
@@ -172,7 +176,8 @@ export const SourceTaxView: React.FC = () => {
             {isIbas && routeEntries.length > 0 && <div className="eledger-source-demo-note"><ShieldCheck size={16}/>
               {t('These locally recorded salary deductions are not authority-verified tax credits.','স্থানীয়ভাবে রেকর্ডকৃত এই বেতন-উৎস কর কর্তৃপক্ষের যাচাইকৃত কর ক্রেডিট নয়।')}</div>}
             {isOfficialReadOnlyRoute(currentRoute.id) ? (
-              <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}/>
+              <OfficialReadOnlyTable routeId={currentRoute.id} entries={routeEntries}
+                  onDeleteEntry={handleDeleteEntry}/>
             ) : isIbas && routeEntries.length === 0 ? (
               <section className="eledger-panel eledger-ibas-empty" aria-labelledby="eledger-ibas-empty-title">
                 <span className="eledger-ibas-empty-icon" aria-hidden="true"><FileSearch size={24}/></span>

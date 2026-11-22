@@ -10,7 +10,7 @@ import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../do
 import type { LedgerRouteId } from '../../domain/models.ts';
 
 type RouteGroup = 'Source Tax' | 'AIT' | 'Payment' | 'Adjustment';
-type NavTab = 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments';
+type NavTab = 'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status';
 
 const GROUP_TABS: Record<RouteGroup, NavTab> = {
   'Source Tax': 'source-tax', AIT: 'ait', Payment: 'payments', Adjustment: 'adjustments',
@@ -77,8 +77,8 @@ export const Sidebar: React.FC = () => {
   };
 
   const openStatus = () => {
-    setIsStatusModalOpen(true);
-    setMobileOpen(false);
+    setIsStatusModalOpen(false);
+    navigate('status');
   };
 
   const savedRouteIds = entries.map((entry) => entry.routeId);
@@ -138,6 +138,11 @@ export const Sidebar: React.FC = () => {
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </button>
+          <button type="button" className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
+            aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined}
+            onClick={() => navigate('ledger-guide')}>
+            <ReceiptText size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
+          </button>
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
               aria-expanded={expanded.source} onClick={() => { if (collapsed) setCollapsed(false); else setExpanded((current) => ({ ...current, source: !current.source })); }}>
@@ -172,7 +177,8 @@ export const Sidebar: React.FC = () => {
             })}
           </div>
 
-          <button type="button" className="eledger-side-link eledger-status-link" onClick={openStatus}>
+          <button type="button" className={'eledger-side-link eledger-status-link ' + (activeNavTab === 'status' ? 'is-active' : '')}
+            aria-current={activeNavTab === 'status' ? 'page' : undefined} onClick={openStatus}>
             <FileCheck2 size={16}/><span>{bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}</span>
           </button>
         </nav>

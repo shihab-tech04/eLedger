@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 import type { LedgerEntry, LedgerRouteId } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
@@ -111,9 +112,11 @@ export function isOfficialReadOnlyRoute(id: LedgerRouteId): id is ReadOnlyRoute 
   return Object.prototype.hasOwnProperty.call(OFFICIAL_READONLY_COLUMNS, id);
 }
 
-export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: LedgerEntry[] }> = ({ routeId, entries }) => {
+export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: LedgerEntry[]; onDeleteEntry?: (id: string) => Promise<boolean> }> = ({ routeId, entries, onDeleteEntry }) => {
   const t = useLedgerCopy();
   const [selected, setSelected] = useState<LedgerEntry | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState('');
   useEffect(() => { setSelected(null); }, [routeId]);
   const labelStatus = (status: LedgerEntry['status']) => {
     switch (status) {
@@ -124,9 +127,23 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
       default: return t('Draft', 'খসড়া');
     }
   };
+  const removeLocalClaim = async (entry: LedgerEntry) => {
+    if (!onDeleteEntry || deletingId) return;
+    if (!window.confirm(t('Remove this record from your local ledger? The original issuer record is not changed.',
+      'স্থানীয় লেজার থেকে এই রেকর্ডটি সরাবেন? মূল ইস্যুকারীর রেকর্ড পরিবর্তন হবে না।'))) return;
+    setDeletingId(entry.id); setDeleteError('');
+    try {
+      const deleted = await onDeleteEntry(entry.id);
+      if (deleted) setSelected(null);
+      else setDeleteError(t('Local record could not be removed; no data was changed.', 'স্থানীয় রেকর্ড সরানো যায়নি; তথ্য অপরিবর্তিত আছে।'));
+    } catch {
+      setDeleteError(t('Local record could not be removed; no data was changed.', 'স্থানীয় রেকর্ড সরানো যায়নি; তথ্য অপরিবর্তিত আছে।'));
+    } finally { setDeletingId(null); }
+  };
   const columns = OFFICIAL_READONLY_COLUMNS[routeId];
   const columnLabel = (label: string) => t(label, OFFICIAL_BENGALI_COLUMN_LABELS[label] ?? label);
   return <section className="eledger-panel eledger-official-manual-table eledger-neir-table-workspace" aria-label={t('Tax details','করের বিবরণ')}>
+    {deleteError && <p role="alert" className="eledger-entry-error">{deleteError}</p>}
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
         <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{columnLabel(column)}</th>)}</tr></thead>
@@ -143,7 +160,16 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
                 }
               }}>
               <td data-label={columnLabel('SL.')}>{index + 1}</td>
-              {recordValues(entry, routeId, labelStatus).map((value, i) => <td data-label={columnLabel(columns[i + 1])} key={i}>{value}</td>)}
+              {recordValues(entry, routeId, labelStatus).map((value, i) => columns[i + 1] === 'Action' ?
+                <td data-label={columnLabel('Action')} key={i}>
+                  {onDeleteEntry ? <button type="button" className="eledger-button eledger-button-danger"
+                    aria-label={`${t('Remove local claim', 'স্থানীয় দাবি সরান')}: ${entry.referenceNo}`}
+                    disabled={deletingId !== null}
+                    onClick={(event) => { event.stopPropagation(); void removeLocalClaim(entry); }}
+                    onKeyDown={(event) => event.stopPropagation()}>
+                    <Trash2 size={16} aria-hidden="true"/>{t('Delete', 'মুছুন')}
+                  </button> : value}
+                </td> : <td data-label={columnLabel(columns[i + 1])} key={i}>{value}</td>)}
             </tr>)}
         </tbody>
       </table>

@@ -37,13 +37,18 @@ async function openRoute(page,name,width){
  }
  await aside.getByRole('button',{name,exact:true}).click();
 }
+function editorFor(page,c,width){
+ const inline=width>=768 && (c.route==='Salary (Others)' || c.route==='Adjustment of Tax Refund');
+ return inline ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog');
+}
 async function fill(form,c){
  if(['Salary (Others)','Service Payment','Others'].includes(c.route)){
   await form.getByRole('textbox',{name:'Depositing Authority'}).fill('Synthetic E2E Authority');
   if(c.route==='Others')await form.getByRole('combobox',{name:'Purpose of the Payment'}).selectOption({index:1});
   if(c.route==='Service Payment')await form.getByRole('combobox',{name:'Payment Document Type'}).selectOption('CHALLAN');
-  const refLabel=c.route==='Salary (Others)'?'Challan / Certificate Reference No.':'Challan/ Certificate Reference No.';
-  const totalLabel=c.route==='Salary (Others)'?'Challan / Certificate Amount':'Challan/ Certificate Amount';
+  const inlineSalary=c.route==='Salary (Others)' && await form.evaluate(el=>el.tagName==='TR');
+  const refLabel=c.route==='Salary (Others)' && !inlineSalary?'Challan / Certificate Reference No.':'Challan/ Certificate Reference No.';
+  const totalLabel=c.route==='Salary (Others)' && !inlineSalary?'Challan / Certificate Amount':'Challan/ Certificate Amount';
   await form.getByRole('textbox',{name:refLabel,exact:true}).fill(c.ref);
   await form.locator('input[type=date]').fill('2026-05-14');
   await form.getByRole('spinbutton',{name:totalLabel,exact:true}).fill('800');
@@ -64,7 +69,9 @@ async function fill(form,c){
  }
 }
 async function save(form,c){
- await form.getByRole('button',{name:c.route==='Salary (Others)'?'Save claim':'Save',exact:true}).click();
+ const inline=await form.evaluate(el=>el.tagName==='TR');
+ const label=c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'&&!inline?'Save claim':'Save';
+ await form.getByRole('button',{name:label,exact:true}).click();
  try {
   await form.waitFor({state:'detached'});
  } catch (error) {
@@ -104,7 +111,11 @@ async function testViewport(browser,width){
   await openRoute(page,c.route,width);
   const add=c.route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
   await page.getByRole('button',{name:add,exact:true}).click();
-  const form=page.getByRole('dialog'); await fill(form,c); await save(form,c);
+  const form=editorFor(page,c,width); await form.waitFor({state:'visible'});
+  if(width>=768 && (c.route==='Salary (Others)' || c.route==='Adjustment of Tax Refund'))
+    assert.equal(await form.locator('td').count(),c.route==='Salary (Others)'?8:9,
+      'Original PDF inline row must include each source cell and its Action cell');
+  await fill(form,c); await save(form,c);
   const saved=(await stored(page)).find(row=>row.referenceNo===c.ref);
   assert.ok(saved,'Native saved row missing '+c.ref);
   assert.equal(saved.taxDeducted,250);assert.equal(saved.status,'PENDING_VERIFICATION');
@@ -120,8 +131,9 @@ async function testViewport(browser,width){
 
   await page.getByRole('button',{name:'View details '+c.ref}).click();
    await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
-  await page.getByRole('dialog').getByRole('spinbutton',{name:c.claim,exact:true}).fill('110');
-  await page.getByRole('dialog').getByRole('button',{name:'Cancel',exact:true}).click();
+  const cancelEditor=editorFor(page,c,width);
+  await cancelEditor.getByRole('spinbutton',{name:c.claim,exact:true}).fill('110');
+  await cancelEditor.getByRole('button',{name:c.route==='Source Tax (LTU)' ? 'Close form' : 'Cancel',exact:true}).click();
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
   assert.equal((await stored(page)).find(row=>row.id===saved.id)?.taxDeducted,250);
@@ -129,7 +141,7 @@ async function testViewport(browser,width){
 
   await page.getByRole('button',{name:'View details '+c.ref}).click();
    await page.getByRole('dialog',{name:'Record Details'}).getByRole('button',{name:'Edit',exact:true}).click();
-  const edit=page.getByRole('dialog');
+  const edit=editorFor(page,c,width);
   await edit.getByRole('spinbutton',{name:c.claim,exact:true}).fill('300');await save(edit,c);
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
@@ -161,10 +173,11 @@ async function testViewport(browser,width){
   'Motor Vehicle Registration No','Transaction ID','Bank Name','Branch Name','Payment Date','Paid Amount','Action',
  ]);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
- const surchargeForm=page.getByRole('dialog',{name:'Add Entry'});
+ const surchargeForm=width>=768 ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog',{name:'Add Entry'});
+ await surchargeForm.waitFor({state:'visible'});
  await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
  await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
- await surchargeForm.getByRole('textbox',{name:'Bank Name'}).fill('Synthetic Source Bank');
+ await surchargeForm.locator('input[aria-label="Bank Name"]').fill('Synthetic Source Bank');
  await surchargeForm.getByRole('textbox',{name:'Branch Name'}).fill('E2E Local Branch');
  await surchargeForm.locator('input[type=date]').fill('2026-05-14');
  await surchargeForm.getByRole('spinbutton',{name:'Paid Amount'}).fill('250');
@@ -183,7 +196,7 @@ async function testViewport(browser,width){
  await surchargeRow.waitFor({state:'visible'});
  assert.match(await surchargeRow.innerText(),/Synthetic Source Bank/);
  await surchargeRow.getByRole('button',{name:'Edit'}).click();
- const editSurcharge=page.getByRole('dialog',{name:'Edit Entry'});
+ const editSurcharge=width>=768 ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog',{name:'Edit Entry'});
  await editSurcharge.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
  await editSurcharge.getByRole('button',{name:'Save',exact:true}).click();
  await editSurcharge.waitFor({state:'detached'});
@@ -204,7 +217,7 @@ async function testViewport(browser,width){
 
  await openRoute(page,'Salary (Others)',width);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
- const form=page.getByRole('dialog');
+ const form=editorFor(page,cases[0],width);
  await fill(form,{...cases[0],ref:'E2E-AY-ISOLATION'});await save(form,cases[0]);
  await page.getByRole('combobox',{name:'Assessment Year'}).selectOption('2025-2026');
  await page.locator('table tbody tr').filter({hasText:'E2E-AY-ISOLATION'}).waitFor({state:'detached'});
