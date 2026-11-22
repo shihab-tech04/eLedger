@@ -45,7 +45,7 @@ export const TaxPaymentStatusPage: React.FC = () => {
       caption={t('Recorded ledger amounts — not independently verified tax credits', 'লেজারের রেকর্ডকৃত অঙ্ক — স্বতন্ত্র যাচাইকৃত কর ক্রেডিট নয়')}/>
     <div className="eledger-panel eledger-status-page-panel">
       <div className="overflow-x-auto">
-        <table className="eledger-official-records eledger-status-page-table">
+        <table className="eledger-official-records eledger-status-page-table eledger-data-table">
           <thead><tr><th scope="col">{t('Particulars', 'বিবরণ')}</th><th scope="col">{t('Amount', 'অঙ্ক')}</th></tr></thead>
           <tbody>
             {expandable('Source Tax', sourceExpanded, setSourceExpanded, totals.sourceTaxTotal)}
