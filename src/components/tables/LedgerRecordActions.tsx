@@ -54,13 +54,14 @@ export function LedgerRecordActions({ reference, onView, onEdit, onDelete, disab
     const dismiss = () => close();
     document.addEventListener('pointerdown', onOutside);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', dismiss, true);
+    // Do not dismiss on captured scroll: focusing the portalled menu or Playwright's
+    // scroll-to-click legitimately scrolls an ancestor and made the menu vanish.
     window.addEventListener('resize', dismiss);
-    menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+    menu.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll:true });
     return () => {
       document.removeEventListener('pointerdown', onOutside);
       document.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', dismiss, true);
+
       window.removeEventListener('resize', dismiss);
     };
   }, [open]);
