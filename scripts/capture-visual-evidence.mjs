@@ -313,8 +313,8 @@ try {
  assert.equal(out.neir.length,2);
  assert.equal(out.dashboard.length,8);
  assert.equal(out.ibas.length,8);
- assert.equal(out.routes.length,72);
- assert.equal(out.forms.length,10);
+ assert.equal(out.routes.length,108);
+ assert.equal(out.forms.length,15);
  out.pass=true;
  console.log('VISUAL_EVIDENCE PASS '+out.dashboard.length+' dashboard captures, '+out.ibas.length+' iBAS EN/BN captures, '+out.routes.length+' route captures, '+out.forms.length+' form captures, 0 JS errors');
 }catch(e){console.error('VISUAL_EVIDENCE FAIL',e.stack||String(e));process.exitCode=1;}
