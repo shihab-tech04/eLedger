@@ -99,6 +99,9 @@ export const SurchargeTransferPanel: React.FC<{
       return;
     }
     if (!draft.date) { setError(t('Enter the payment date.', 'পরিশোধের তারিখ লিখুন।')); return; }
+    if (!draft.bankName || !bankNames.includes(draft.bankName)) {
+      setError(t('Choose a bank from the list.', 'তালিকা থেকে ব্যাংক নির্বাচন করুন।')); return;
+    }
     const details: LocalSurchargeDetails = {
       ...(draft.registrationNo.trim() && { registrationNo: draft.registrationNo.trim() }),
       ...(draft.bankName.trim() && { bankName: draft.bankName.trim() }),
@@ -166,12 +169,13 @@ export const SurchargeTransferPanel: React.FC<{
       ...changedExisting.map(({entry,draft}) => ({key:entry.id,entry,draft:draft!})),
       ...newGridRows.map((row) => ({key:row.key,entry:null as LedgerEntry|null,draft:row.draft})),
     ];
-    const ids = new Set(entries.map((entry) => entry.referenceNo.trim().toLowerCase()));
+    const changedIds = new Set(changedExisting.map(({entry}) => entry.id));
+    const ids = new Set(entries.filter((entry) => !changedIds.has(entry.id))
+      .map((entry) => entry.referenceNo.trim().toLowerCase()));
     for (const row of changes) {
       const issue = validGridDraft(row.draft);
       if (issue) { setError(issue); return; }
       const identifier = row.draft.reference.trim().toLowerCase();
-      if (row.entry) ids.delete(row.entry.referenceNo.trim().toLowerCase());
       if (ids.has(identifier)) { setError(t('Duplicate transaction ID in this ledger.', 'এই লেজারে একই লেনদেন আইডি একাধিকবার আছে।')); return; }
       ids.add(identifier);
     }
@@ -202,6 +206,11 @@ export const SurchargeTransferPanel: React.FC<{
           return;
         }
         saved += 1;
+        if (entry) setGridDrafts((rows) => {
+          const next = {...rows}; delete next[entry.id]; return next;
+        });
+        else setNewGridRows((rows) => rows.filter((row) => row.key !==
+          changes[saved - 1]?.key));
       }
       setGridDrafts({});
       setNewGridRows([]);
