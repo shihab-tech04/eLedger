@@ -94,6 +94,49 @@ async function testViewport(browser,width){
  assert.equal(response.status(),200);
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
+ if(width>=961){
+   const nav=page.locator('aside.eledger-sidebar');
+   const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
+   await collapse.click();
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
+   assert.ok(Math.abs((await nav.boundingBox()).width-72)<2,'Collapsed rail must be 72px');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
+   for(const item of ['Claim Source Tax','Claim AIT','Home / Guide','Tax Payment Status']){
+     const button=nav.getByRole('button',{name:item,exact:true});
+     assert.equal(await button.getAttribute('title'),item,'Collapsed route needs a tooltip and name');
+   }
+   for(const [name,icon] of [['Environmental Surcharge','lucide-leaf'],['Adjustment of Tax Refund','lucide-rotate-ccw'],
+     ['Adjustment of carry forward tax u/s 163','lucide-history']]){
+     assert.equal(await nav.getByRole('button',{name,exact:true}).locator('svg.'+icon).count(),1,
+       'Collapsed credit destinations require distinct pictograms: '+name);
+   }
+   await page.reload({waitUntil:'networkidle'});
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
+     'Desktop rail preference must survive reload');
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   assert.ok(Math.abs((await nav.boundingBox()).width-260)<2,'AIT group click must open full rail');
+   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'true',
+     'The FIRST click must expose AIT children');
+   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible());
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'false');
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+   await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+   assert.equal(await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).getAttribute('aria-expanded'),'true');
+   assert.ok(await nav.getByRole('button',{name:'Salary (Others)',exact:true}).isVisible());
+   await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+   await page.locator('.eledger-app[lang="bn"]').waitFor();
+   await nav.getByRole('button',{name:'নেভিগেশন সংকুচিত করুন'}).click();
+   assert.equal(await nav.getByRole('button',{name:'অগ্রিম কর দাবি'}).getAttribute('title'),'অগ্রিম কর দাবি');
+   await nav.getByRole('button',{name:'নেভিগেশন প্রসারিত করুন'}).click();
+   await page.getByRole('button',{name:'English',exact:true}).click();
+   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
+   await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'false');
+   report.push({width,check:'persistent sidebar width, first-click accordion, distinct tooltip/icons, bilingual and reload',pass:true});
+ }
  if(width<600){
    const tabs=page.locator('nav.eledger-mobile-bottom-nav');
    assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
