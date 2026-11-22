@@ -211,7 +211,7 @@ export const SurchargeTransferPanel: React.FC<{
             <X size={16}/>{t('Cancel', 'বাতিল')}
           </button>
           <button type="submit" className="eledger-button eledger-button-primary" disabled={busy}>
-            <Check size={16}/>{busy ? t('Saving…', 'সংরক্ষণ হচ্ছে…') : t('Save', 'সংরক্ষণ')}
+            <Check size={16}/>{busy ? t('Saving…', 'সংরক্ষণ হচ্ছে…') : t('Save Changes', 'পরিবর্তন সংরক্ষণ')}
           </button>
         </div>
       </form>);
