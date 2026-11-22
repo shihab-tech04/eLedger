@@ -294,7 +294,7 @@ export const SurchargeTransferPanel: React.FC<{
         'শুধু কর ও পরিশোধের রেফারেন্স। করহার গণনা, এনবিআর সেবা সংযোগ বা অর্থ পরিশোধ করা হয় না।')}
     </p>
     {feedback && <p role="status" className="eledger-claim-feedback">{feedback}</p>}
-    {entries.length === 0 && <p className="eledger-entry-empty">
+    {entries.length === 0 && newGridRows.length === 0 && !open && <p className="eledger-entry-empty">
       {t('No Environmental Surcharge Payable. Please set Environmental Surcharge in Tax Payment.',
         'পরিবেশ সারচার্জ পরিশোধযোগ্য নেই। ট্যাক্স পেমেন্টে পরিবেশ সারচার্জ নির্ধারণ করুন।')}
     </p>}
