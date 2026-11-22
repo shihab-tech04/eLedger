@@ -13,9 +13,11 @@ import { formatCurrencyBDT } from '../../domain/calculations.ts';
 import { getClaimEvidenceFields, normalizeClaimEvidence } from '../../domain/claimEvidence.ts';
 import { ClaimEvidenceFields, ClaimEvidenceSummary } from './ClaimEvidenceFields.tsx';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
-import { Plus, Check, X, Pencil, Trash2, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Check, X, ShieldCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { LedgerInput, LedgerTip } from '../ui/LedgerForm.tsx';
-import { LedgerFormGrid } from '../ui/LedgerPage.tsx';
+import { LedgerFormGrid, LedgerPageAction } from '../ui/LedgerPage.tsx';
+import { LedgerRecordActions } from './LedgerRecordActions.tsx';
+import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 import { LedgerFormModal } from '../ui/LedgerFormModal.tsx';
 
 interface InlineEditableTableProps {
@@ -191,6 +193,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
 
   // Edit existing row state
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editRowData, setEditRowData] = useState<{
     referenceNo: string;
     sourceEntity: string;
@@ -282,6 +285,7 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
 
   // Start editing existing row
   const handleStartEdit = (entry: LedgerEntry) => {
+    setSelectedId(entry.id);
     setEditingRowId(entry.id);
     setEditClaimEvidence({ ...entry.claimEvidence });
     setEditRowData({
@@ -399,16 +403,16 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
           </h2>
         </div>
 
-        {allowAdd && !isAddingRow && (
-          <button
+
+      </div>
+
+      {allowAdd && !isAddingRow && <LedgerPageAction><button
             onClick={handleStartAdd}
             className="eledger-button eledger-button-primary"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{t('Add Entry','রেকর্ড যোগ করুন')}</span>
-          </button>
-        )}
-      </div>
+          </button></LedgerPageAction>}
 
       {/* Delete errors remain visible even when no editor is open. */}
       {editRowError && !editingRowId && (
@@ -426,15 +430,29 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
           routeId={routeId} fieldLabels={fieldLabels} isEdit={false} error={newRowError}
         />
       </LedgerFormModal>}
-      {editingRowId && <LedgerFormModal title={t('Edit Entry','রেকর্ড সম্পাদনা')} onClose={handleCancelEdit}>
-        <LedgerEntryEditor
+
+
+      {selectedId && entries.find((entry)=>entry.id===selectedId) && (() => {
+        const entry=entries.find((row)=>row.id===selectedId)!;
+        return <NeirRecordDetailsDrawer
+          title={editingRowId===entry.id ? t('Edit Record','রেকর্ড সম্পাদনা') : t('Record Details','রেকর্ডের বিস্তারিত')}
+          subtitle={entry.referenceNo}
+          onClose={() => {setEditingRowId(null);setSelectedId(null);}}
+          fields={[
+            {label:fieldLabels.referenceNo,value:entry.referenceNo},
+            {label:fieldLabels.sourceEntity,value:entry.sourceEntity},
+            {label:t('Section','ধারা'),value:entry.sectionCode},
+            {label:fieldLabels.grossAmount,value:formatCurrencyBDT(entry.grossAmount)},
+            {label:fieldLabels.taxDeducted,value:formatCurrencyBDT(entry.taxDeducted)},
+            {label:fieldLabels.date,value:entry.date},
+          ]}
+          editor={editingRowId===entry.id ?         <LedgerEntryEditor
           values={editRowData} onFieldChange={(field, value) => setEditRowData((previous) => ({ ...previous, [field]: value }))}
-          onSave={() => handleSaveEdit(editingRowId)} onCancel={handleCancelEdit}
+          onSave={() => handleSaveEdit(entry.id)} onCancel={handleCancelEdit}
           evidence={editClaimEvidence} onEvidenceChange={setEditClaimEvidence}
           routeId={routeId} fieldLabels={fieldLabels} isEdit error={editRowError}
-        />
-      </LedgerFormModal>}
-
+        /> : undefined}/>
+      })()}
       {entries.length === 0 && !isAddingRow && <p className="eledger-entry-empty">
         {t('No ledger entries yet.','এখনো কোনো লেজার রেকর্ড নেই।')}
         {allowAdd && <span> {t('Use Add Entry to record a claim.','দাবি রেকর্ড করতে রেকর্ড যোগ করুন।')}</span>}
@@ -502,26 +520,11 @@ export const InlineEditableTable: React.FC<InlineEditableTableProps> = ({
                       {renderStatusBadge(entry.status)}
                     </td>
                     <td data-label={t('Actions','কাজ')} className="px-3 py-2.5 text-right whitespace-nowrap">
-                      {allowEditDelete && <div className="flex items-center justify-end space-x-1.5">
-                        <button disabled={editingRowId !== null || isAddingRow}
-                          onClick={() => handleStartEdit(entry)}
-                          aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
-                          className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                          title={t('Edit entry','রেকর্ড সম্পাদনা করুন')}
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                          <span className="sr-only">{t('Edit','সম্পাদনা')}</span>
-                        </button>
-                        <button disabled={editingRowId !== null || isAddingRow}
-                          onClick={() => handleDelete(entry.id, entry.referenceNo)}
-                          aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
-                          className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                          title={t('Delete row','সারি মুছুন')}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span className="sr-only">{t('Delete','মুছুন')}</span>
-                        </button>
-                      </div>}
+                      <LedgerRecordActions reference={entry.referenceNo}
+                        onView={() => setSelectedId(entry.id)}
+                        onEdit={allowEditDelete ? () => handleStartEdit(entry) : undefined}
+                        onDelete={allowEditDelete ? () => void handleDelete(entry.id,entry.referenceNo) : undefined}
+                        disabled={editingRowId !== null || isAddingRow}/>
                     </td>
                   </tr>
                 );
