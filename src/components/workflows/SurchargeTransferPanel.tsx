@@ -44,6 +44,7 @@ export const SurchargeTransferPanel: React.FC<{
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [search, setSearch] = useState('');
+  const [period, setPeriod] = useState('all');
   const headers = [
     t('Motor Vehicle Registration No', 'মোটরযানের নিবন্ধন নম্বর'),
     t('Transaction ID', 'লেনদেন আইডি'),
@@ -57,7 +58,8 @@ export const SurchargeTransferPanel: React.FC<{
   const listed = entries.filter((entry) =>
     [entry.referenceNo, entry.claimEvidence?.registrationNo, entry.claimEvidence?.bankName,
       entry.claimEvidence?.branchName, entry.date, String(entry.taxDeducted)]
-      .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
+      .join(' ').toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()) &&
+      (period === 'all' || entry.date.startsWith(period))
   );
   const change = (name: keyof Draft, value: string) => {
     setDraft((old) => ({ ...old, [name]: value }));
@@ -232,9 +234,18 @@ export const SurchargeTransferPanel: React.FC<{
           <input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder={t('Search records', 'রেকর্ড খুঁজুন')} aria-label={t('Search records', 'রেকর্ড খুঁজুন')}/>
         </label>
+        <label className="eledger-table-period">
+            <span className="sr-only">{t('Filter by year','বছর অনুযায়ী ছাঁকুন')}</span>
+            <select aria-label={t('Filter by year','বছর অনুযায়ী ছাঁকুন')} value={period}
+              onChange={(event)=>setPeriod(event.target.value)}>
+              <option value="all">{t('All years','সব বছর')}</option>
+              {Array.from(new Set(entries.map((entry)=>entry.date.slice(0,4)))).sort().reverse()
+                .map((year)=><option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>
         <div className="eledger-button-group">
           <button type="button" className="eledger-button eledger-button-secondary" disabled={!search}
-            onClick={() => setSearch('')}>{t('Reset', 'রিসেট')}</button>
+            onClick={() => { setSearch('');setPeriod('all'); }}>{t('Reset', 'রিসেট')}</button>
 
         </div>
       </div>
