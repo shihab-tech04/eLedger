@@ -9,6 +9,15 @@
   --el-blue: #01ADC1;
   --el-blue-soft: #E1F7FB;
   --el-green: #0A767E;
+  --el-primary: #0A767E;
+  --el-primary-hover: #075F65;
+  --el-action-ink: #0A767E;
+  --el-font-bn: 'Noto Sans Bengali Variable', 'Inter Variable', sans-serif;
+  --el-table-head-bg: #FBFCFE;
+  --el-table-head-color: #626981;
+  --el-table-row-hover: #F3FBFC;
+  --el-table-radius: 12px;
+  --el-touch-target: 44px;
   --el-control-radius: 4px;
   --el-control-height: 52px;
   --el-control-border: #C8CDD9;
@@ -21,7 +30,7 @@
   --el-space-3: 12px;
   --el-space-4: 16px;
   --el-space-6: 24px;
-  --el-font: 'Poppins', 'Noto Sans Bengali', sans-serif;
+  --el-font: 'Poppins', 'Inter Variable', 'Noto Sans Bengali Variable', sans-serif;
   --el-sidebar-width: 260px;
   --el-header-height: 68px;
   color: var(--el-text);
@@ -57,8 +66,8 @@ button, select, input, textarea { font: inherit; }
 .eledger-entry-error { padding: 9px 11px; margin-bottom: 12px; background: #fff2f3; border: 1px solid #f0c7cc; border-radius: 7px; color: #9d223e; font-size: 12px; }
 .eledger-entry-empty { padding: 19px 20px; color: var(--el-muted); font-size: 13px; }
 .eledger-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 8px 14px; border: 1px solid transparent; border-radius: var(--el-control-radius); font-size: 12px; font-weight: 650; cursor: pointer; }
-.eledger-button-primary { background: var(--el-blue); color: #fff; }
-.eledger-button-primary:hover { background: #075b94; }
+.eledger-button-primary { background: var(--el-primary); color: #fff; }
+.eledger-button-primary:hover { background: var(--el-primary-hover); }
 .eledger-button-secondary { background: #fff; border-color: var(--el-control-border); color: #40546e; }
 .eledger-button-secondary:hover { background: #eef5fa; }
 .eledger-button:disabled { opacity: .55; cursor: not-allowed; }
@@ -69,7 +78,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-workflow-disclosure[open] > summary { margin-bottom: 8px; }
 .eledger-workflow-disclosure[open] .eledger-workflow-chevron { transform: rotate(180deg); }
 .eledger-tip { position: relative; min-width: 0; color: #5f7188; font-size: 12px; font-weight: 400; }
-.eledger-tip summary { display: inline-flex; align-items: center; gap: 5px; color: var(--el-blue); cursor: pointer; list-style: none; font-weight: 600; }
+.eledger-tip summary { display: inline-flex; align-items: center; gap: 5px; color: var(--el-action-ink); cursor: pointer; list-style: none; font-weight: 600; }
 .eledger-tip summary::-webkit-details-marker { display: none; }
 .eledger-tip summary:focus-visible { outline: 2px solid var(--el-blue); outline-offset: 3px; border-radius: 3px; }
 .eledger-tip-content { max-width: 48ch; padding: 8px 0 2px; line-height: 1.55; }
@@ -151,7 +160,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-sidebar-mobile-heading,.eledger-mobile-nav,.eledger-sidebar-scrim { display: none; }
 .eledger-stage { min-width: 0; flex: 1; display: flex; flex-direction: column; }
 .eledger-main { padding: 28px 54px 30px; flex: 1; min-width: 0; }
-.eledger-footer { border-top: 1px solid #e0e8f0; background: #fff; color: #8a97aa; font-size: 11px; padding: 13px 26px; display: flex; justify-content: space-between; gap: 12px; }
+.eledger-footer { border-top: 1px solid #e0e8f0; background: #fff; color: var(--el-muted); font-size: 12px; padding: 13px 26px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; line-height: 1.6; }
 .eledger-load-error { margin: 16px 26px 0; background: #fff1f2; border: 1px solid #fecaca; color: #8a1a2b; padding: 12px; border-radius: 8px; font-size: 13px; }
 
 /* Restored September 20 dashboard — flat cards, composition and three-column categories. */
@@ -200,35 +209,35 @@ button, select, input, textarea { font: inherit; }
 .eledger-category-heading { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 15px; min-height: 76px; gap: 12px; }
 .eledger-category-heading-total { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; white-space: nowrap; }
 .eledger-category-heading-total strong { font-size: 12px; color: #1d2a42; font-weight: 800; }
-.eledger-category-heading-total small { font-size: 10px; color: #8190a5; }
+.eledger-category-heading-total small { font-size: 12px; color: var(--el-muted); }
 .eledger-category-list { border-top: 1px solid #dfe8f1; }
 .eledger-category-list button { display: flex; width: 100%; min-height: 41px; align-items: center; gap: 8px; padding: 10px 15px; border-bottom: 1px solid #e8eef4; font-size: 11.5px; color: #566780; text-align: left; cursor: pointer; }
 .eledger-category-list button:last-child { border-bottom: 0; }
 .eledger-category-list button:hover { background: #f5fafe; }
 .eledger-category-name { min-width: 0; flex: 1; }
-.eledger-category-name small { display: block; color: #8996a9; margin-top: 3px; font-size: 10px; }
+.eledger-category-name small { display: block; color: var(--el-muted); margin-top: 3px; font-size: 12px; }
 .eledger-category-list strong { font-size: 11px; color: #283853; font-weight: 750; white-space: nowrap; }
 .eledger-category-list strong.is-empty { color: #8e9aad; font-weight: 500; }
 .eledger-category-list svg { color: #90a9c9; flex-shrink: 0; }
 .eledger-dashboard-quick-actions { padding: 18px 19px 19px; }
 .eledger-dashboard-quick-actions header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
-.eledger-dashboard-quick-actions header span { font-size: 9px; color: #8491a4; letter-spacing: 1px; font-weight: 700; }
+.eledger-dashboard-quick-actions header span { font-size: 12px; color: var(--el-muted); letter-spacing: .25px; font-weight: 650; }
 .eledger-dashboard-action-list { display: grid; gap: 8px; }
 .eledger-dashboard-action-list button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 62px; text-align: left; padding: 11px 13px; color: #1d2c44; border: 1px solid #dbe4ef; border-radius: 8px; cursor: pointer; }
 .eledger-dashboard-action-list button:hover { background: #f4f9ff; }
 .eledger-dashboard-action-list button.is-featured { background: #f2f9ff; border-color: #c9e3f4; color: #076fb1; }
 .eledger-dashboard-action-list button > span:not(.eledger-action-with-icon) { display: flex; flex-direction: column; gap: 5px; }
 .eledger-dashboard-action-list strong { display: block; font-size: 11px; font-weight: 750; }
-.eledger-dashboard-action-list small { display: block; color: #8190a3; font-size: 10px; line-height: 1.25; }
+.eledger-dashboard-action-list small { display: block; color: var(--el-muted); font-size: 12px; line-height: 1.45; }
 .eledger-dashboard-action-list svg { flex-shrink: 0; color: #90a9c9; }
 .eledger-dashboard-action-list .is-featured svg { color: #0870b6; }
 .eledger-action-with-icon { display: flex; align-items: center; gap: 8px; }
 .eledger-action-with-icon svg { color: #096cb4; }
 .eledger-dashboard-next-step { padding: 17px 19px; background: #f4faf6; border: 1px solid #cce4d5; border-radius: 12px; }
-.eledger-dashboard-next-step > span { color: #678b79; font-size: 9px; font-weight: 800; letter-spacing: 1px; }
+.eledger-dashboard-next-step > span { color: #36634f; font-size: 12px; font-weight: 700; letter-spacing: .2px; }
 .eledger-dashboard-next-step p { color: #587362; font-size: 11px; margin-top: 10px; line-height: 1.6; }
 .eledger-dashboard-next-step button { display: flex; align-items: center; gap: 3px; color: #08714c; font-size: 11px; font-weight: 700; margin-top: 12px; cursor: pointer; }
-.eledger-dashboard-verification-note { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: #6a7a90; font-size: 10.5px; padding: 16px 2px 0; }
+.eledger-dashboard-verification-note { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: var(--el-muted); font-size: 12px; padding: 16px 2px 0; line-height: 1.5; }
 .eledger-dashboard-verification-note svg { color: #0773b9; }
 .eledger-dashboard-verification-note strong { color: #203655; }
 
@@ -284,7 +293,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-salary-editor-row input[type="number"] { text-align: right; }
 .eledger-salary-bank-fields { display: flex; flex-direction: column; gap: 7px; }
 .eledger-salary-empty { padding: 25px 14px !important; color: #7b8a9e !important; text-align: center; }
-.eledger-salary-disclaimer { font-size: 10px; color: #6e8095; padding: 10px 20px; border-top: 1px solid #eaf0f4; }
+.eledger-salary-disclaimer { font-size: 12px; color: var(--el-muted); padding: 10px 20px; border-top: 1px solid #eaf0f4; }
 .eledger-salary-mobile-hint { display: none; }
 .eledger-salary-editor { padding: 16px 20px 18px; border-bottom: 1px solid var(--el-border); background: #f5faff; }
 .eledger-salary-editor-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
@@ -315,7 +324,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-source-record-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 13px 20px; background: #fff; border: 1px solid #dce5ef; border-radius: 9px; }
 .eledger-source-record-summary span { font-size: 11px; color: #7c8899; }
 .eledger-source-record-summary strong { margin-left: 8px; color: #0773b6; font-size: 14px; }
-.eledger-source-record-summary small { color: #8190a5; font-size: 10px; }
+.eledger-source-record-summary small { color: var(--el-muted); font-size: 12px; }
 .eledger-source-record-list > div:last-child { box-shadow: none; border-color: #dce5ef; border-radius: 10px; }
 .eledger-source-record-list { min-width: 0; max-width: 100%; }
 .eledger-source-record-list thead { background: #f6f8fa; color: #5e6c80; }
@@ -558,7 +567,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-payment-footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; min-height: 73px; padding: 15px 26px; border-top: 1px solid #dfe6ee; background: #fff; }
 .eledger-payment-footer > div > strong { font-size: 13px; font-weight: 800; }
 .eledger-payment-footer p { color: #8797ab; font-size: 12px; margin-top: 4px; }
-.eledger-payment-footer small { display: block; color: #7d8ca1; font-size: 10px; margin-top: 5px; }
+.eledger-payment-footer small { display: block; color: var(--el-muted); font-size: 12px; margin-top: 5px; }
 .eledger-payment-total { color: #0873b4; font-size: 24px; font-weight: 800; letter-spacing: -.6px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .eledger-payment-return { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--el-border); background: var(--el-surface); }
 .eledger-payment-return > span { color: var(--el-muted); font-size: 13px; }
@@ -590,7 +599,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-app :where(h1,h2,h3,h4) { letter-spacing: normal; font-weight: 700; }
 .eledger-app :where(h2,h3,h4) { line-height: 1.45; }
 .eledger-app[lang="bn"] :where(h1,h2,h3,h4,button,label) { letter-spacing: normal; }
-.eledger-app[lang="bn"] { font-family: 'Noto Sans Bengali Variable','Inter Variable',sans-serif; font-synthesis: none; line-height: 1.75; }
+.eledger-app[lang="bn"] { font-family: var(--el-font-bn); font-synthesis: none; line-height: 1.75; }
 .eledger-app[lang="bn"] :where(input,select,textarea,button) { font-family: inherit; }
 .eledger-app[lang="bn"] :where(.eledger-side-link,.eledger-form-field,.eledger-summary-fact span) { line-height: 1.65; }
 .eledger-app[lang="bn"] :where(h1,h2,h3,h4) { font-weight: 600; }
@@ -631,15 +640,15 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-form-field { font-size: 13px; font-weight: 600; color: var(--el-control-label); gap: 6px; }
 .eledger-app main :where(label) { font-size: 13px; }
 .eledger-button, .eledger-salary-add, .eledger-dashboard-status-button { min-height: 40px; font-size: 13px; font-weight: 600; border-radius: var(--el-control-radius); }
-.eledger-app main .eledger-button-primary { background: var(--el-blue); color: var(--el-surface); }
-.eledger-app main .eledger-button-primary:hover { background: #075b94; }
+.eledger-app main .eledger-button-primary { background: var(--el-primary); color: #fff; }
+.eledger-app main .eledger-button-primary:hover { background: var(--el-primary-hover); }
 .eledger-app main .eledger-button-secondary { background: var(--el-surface); border-color: var(--el-control-border); color: var(--el-text); }
 .eledger-entry-editor, .eledger-salary-editor { background: #f5faff; padding: 18px 20px; border-bottom: 1px solid var(--el-border); }
 .eledger-entry-editor-heading, .eledger-salary-editor-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .eledger-entry-editor-heading strong, .eledger-salary-editor-heading strong { font-size: 16px; font-weight: 700; color: var(--el-text); }
 .eledger-form-actions { gap: var(--el-space-2); margin-top: var(--el-space-4); }
 .eledger-tip { font-size: 12px; }
-.eledger-tip summary { color: var(--el-blue); font-size: 12px; }
+.eledger-tip summary { color: var(--el-action-ink); font-size: 12px; }
 .eledger-tip-content { position: absolute; right: 0; top: calc(100% + 5px); z-index: 20; width: min(270px,80vw); max-width: unset; border: 1px solid var(--el-border); border-radius: var(--el-control-radius); background: var(--el-surface); box-shadow: 0 8px 24px #1d294024; padding: 12px; color: var(--el-text); }
 .eledger-app :where(.eledger-ledger-table,.eledger-salary-table) { overflow: visible; }
 .eledger-ledger-table thead, .eledger-salary-table thead, .eledger-stage thead { background: #f1f6fa; color: var(--el-control-label); }
@@ -758,7 +767,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-ledger-table tbody tr, .eledger-salary-table tbody tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 14px; padding: 8px 14px; border: 1px solid var(--el-border); border-radius: var(--el-control-radius); background: var(--el-surface); }
   .eledger-ledger-table tbody td, .eledger-salary-table tbody td { display: block; min-width: 0; height: auto; min-height: 0; padding: 7px 0; border: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; }
   .eledger-ledger-table tbody td::before, .eledger-salary-table tbody td::before { display: block; content: attr(data-label); margin-bottom: 2px; color: var(--el-muted); font-family: var(--el-font); font-weight: 500; font-size: 11px; line-height: 1.45; }
-  .eledger-app[lang="bn"] :where(.eledger-ledger-table tbody td::before,.eledger-salary-table tbody td::before) { font-family: 'Noto Sans Bengali Variable',sans-serif; }
+  .eledger-app[lang="bn"] :where(.eledger-ledger-table tbody td::before,.eledger-salary-table tbody td::before) { font-family: var(--el-font-bn); }
   .eledger-ledger-table tbody td:first-child, .eledger-ledger-table tbody td:last-child,
   .eledger-salary-table tbody td:nth-child(2), .eledger-salary-table tbody td:nth-child(4),
   .eledger-salary-table tbody td:last-child { grid-column: 1 / -1; }
@@ -940,14 +949,14 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
  * src/index.css, src/system/typography.css, DataTable.jsx, Modal.jsx, Drawer.jsx.
  * Scope: visual and interaction components, not tax legal or storage semantics. */
 .eledger-app { font-size: 14px; line-height: 1.55; }
-.eledger-app[lang="bn"] { font-family: 'Noto Sans Bengali','Poppins',sans-serif; }
+.eledger-app[lang="bn"] { font-family: var(--el-font-bn); }
 .eledger-app :where(.eledger-page-heading h1) { font-size: 22px; line-height: 1.3; font-weight: 700; letter-spacing: -.015em; }
 .eledger-app :where(.eledger-panel,.eledger-summary-strip) {
   border-color: #E2E5F0; background: #fff; border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
-.eledger-app :where(.eledger-button-primary) { background: #0A767E; color: #fff; }
-.eledger-app :where(.eledger-button-primary):hover { background: #075f65; }
+.eledger-app :where(.eledger-button-primary) { background: var(--el-primary); color: #fff; }
+.eledger-app :where(.eledger-button-primary):hover { background: var(--el-primary-hover); }
 .eledger-app :where(.eledger-button-secondary):hover { background: #E1F7FB; }
 .eledger-app :where(.eledger-button,.eledger-form-modal-close) {
   min-height: 44px; font-size: 14px;
@@ -963,7 +972,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 /* NEIR DataTable transfer: 14px cells, neutral table head, rounded surface,
  * row hover and focus. Existing mobile record-card transformation remains intact. */
 .eledger-app :where(.eledger-official-records,.eledger-salary-table table,.eledger-ledger-table table) {
-  font-family: 'Poppins','Noto Sans Bengali',sans-serif;
+  font-family: inherit;
   font-variant-numeric: tabular-nums;
 }
 .eledger-app :where(.eledger-official-records,.eledger-salary-table table,.eledger-ledger-table table) th {
@@ -1028,7 +1037,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   color: #626981; background: transparent; border: 0; border-radius: 8px;
 }
 .eledger-neir-drawer-close:hover { color: #0A767E; background: #E1F7FB; }
-.eledger-neir-drawer-content { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
+.eledger-neir-drawer-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-bottom: 48px; padding: 20px 20px 40px; }
 .eledger-neir-drawer-section { border: 1px solid #E2E5F0; border-radius: 4px; overflow: hidden; }
 .eledger-neir-drawer-section h3 { font-size: 16px; font-weight: 600; padding: 12px 16px; background: #FBFCFE; color: #202338; }
 .eledger-neir-drawer-fields > div {
@@ -1040,7 +1049,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-neir-drawer-caveat { font-size: 13px; line-height: 1.55; color: #626981; margin-top: 16px; }
 .eledger-neir-drawer-footer {
   display: flex; justify-content: flex-end; align-items: center;
-  gap: 8px; border-top: 1px solid #E2E5F0; padding: 14px 20px;
+  gap: 8px; border-top: 1px solid #E2E5F0; padding: 14px 20px; flex: 0 0 auto;
 }
 .eledger-neir-drawer-close:focus-visible,
 .eledger-neir-drawer-backdrop:focus-visible,
@@ -1062,7 +1071,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-app .eledger-form-modal-header { padding: 14px 16px; }
   .eledger-app .eledger-form-modal-body { padding: 16px; }
   .eledger-neir-drawer-header { padding: 14px 16px; }
-  .eledger-neir-drawer-content { padding: 16px; }
+  .eledger-neir-drawer-content { padding: 16px 16px max(44px,env(safe-area-inset-bottom,0px)); }
   .eledger-neir-drawer-footer { padding-inline: 16px; }
   .eledger-neir-drawer-footer button { width: 100%; }
   .eledger-neir-drawer-fields > div { flex-direction: column; gap: 4px; }
@@ -1244,21 +1253,21 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 @media (max-width: 767px) {
   .eledger-app { min-height: 100dvh; overflow-x: clip; }
   .eledger-workspace { min-width: 0; }
-  .eledger-stage { min-width: 0; padding-bottom: calc(82px + env(safe-area-inset-bottom,0px)); }
+  .eledger-stage { min-width: 0; padding-bottom: calc(96px + env(safe-area-inset-bottom,0px)); }
   .eledger-main { min-width: 0; padding: 16px 12px 24px; }
   .eledger-mobile-nav { min-height: 48px; padding: 8px 14px; }
   .eledger-mobile-nav button { min-height: 42px; padding: 6px 8px; border-radius: 8px; }
   .eledger-mobile-bottom-nav {
     position: fixed; z-index: 48; left: 0; right: 0; bottom: 0;
     display: grid; grid-template-columns: repeat(5,minmax(0,1fr));
-    min-height: 67px; padding: 5px 5px max(7px,env(safe-area-inset-bottom,0px));
+    min-height: 74px; padding: 6px 5px max(8px,env(safe-area-inset-bottom,0px));
     border-top: 1px solid var(--el-border); background: #fff;
     box-shadow: 0 -6px 20px rgba(24,51,82,.07);
   }
   .eledger-mobile-bottom-nav button {
     display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px;
-    min-width: 0; min-height: 56px; padding: 5px 2px;
-    border-radius: 10px; font-size: 10px; font-weight: 650; line-height: 1.15;
+    min-width: 0; min-height: 62px; padding: 5px 2px;
+    border-radius: 10px; font-size: 12px; font-weight: 650; line-height: 1.25;
     text-align: center; color: #63718a; overflow-wrap: anywhere;
   }
   .eledger-mobile-bottom-nav button svg { flex: 0 0 auto; }
@@ -1368,7 +1377,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-status-expand { min-height: 44px; width: 100%; }
   .eledger-status-next { display: flex; flex-direction: column; align-items: stretch; }
   .eledger-status-next .eledger-button { width: 100%; min-height: 48px; }
-  .eledger-footer { padding-bottom: 12px; font-size: 11px; }
+  .eledger-footer { padding-bottom: 12px; font-size: 12px; }
 }
 @media (max-width: 360px) {
   /* At 320px, place Assessment Year on its own header-control line so 2026-2027
@@ -1382,7 +1391,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-main { padding-inline: 10px; }
   .eledger-header-controls { gap: 6px; }
   .eledger-language-switch button { min-width: 41px; padding-inline: 5px; }
-  .eledger-mobile-bottom-nav button { font-size: 9px; padding-inline: 1px; }
+  .eledger-mobile-bottom-nav button { font-size: 12px; padding-inline: 1px; }
   .eledger-mobile-bottom-nav button svg { width: 18px; height: 18px; }
   .eledger-app .eledger-status-page-table :is(th,td) { padding: 9px 6px; font-size: 11px; }
 }
@@ -1453,3 +1462,32 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   overflow-wrap: anywhere;
 }
 .eledger-file-notice strong { color: var(--el-text); font-weight: 650; }
+
+
+/* Canonical presentation contract. Shared across existing table implementations
+   without altering route columns, permissions, amounts, actions or cell semantics. */
+.eledger-app :where(.eledger-data-table) {
+  width: 100%; font-family: inherit; font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+.eledger-app :where(.eledger-data-table) thead th {
+  background: var(--el-table-head-bg); color: var(--el-table-head-color);
+  font-weight: 600; border-bottom: 1px solid var(--el-border);
+}
+.eledger-app :where(.eledger-data-table) tbody tr:not(.eledger-source-inline-editor):hover {
+  background: var(--el-table-row-hover);
+}
+.eledger-app :where(.eledger-data-table) tbody td { overflow-wrap: anywhere; }
+.eledger-app :where(.eledger-data-table) :is(button,[role=button]):focus-visible {
+  outline: 2px solid var(--el-primary); outline-offset: 2px;
+}
+
+/* Consistent touch and text sizing in the mobile drawer, while preserving
+   the user's original route hierarchy and scrollbar. */
+@media (max-width: 960px) {
+  .eledger-sidebar .eledger-side-link,
+  .eledger-sidebar .eledger-group-toggle,
+  .eledger-sidebar .eledger-direct-credits .eledger-side-link {
+    min-height: var(--el-touch-target); padding-block: 10px;
+  }
+}
