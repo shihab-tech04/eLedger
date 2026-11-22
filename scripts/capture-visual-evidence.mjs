@@ -58,6 +58,12 @@ async function openNav(page,label,group,width){
  }
  await nav.getByRole('button',{name:label,exact:true}).click();
 }
+async function expandDesktopForReferenceScreens(page,width){
+ if(width<961)return;
+ const nav=page.locator('aside.eledger-sidebar');
+ await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+ await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2);
+}
 async function screenshot(page,rel,{fullPage=true}={}){
  const target=path.join(DEST,rel+'.png');
  await page.evaluate(()=>window.scrollTo(0,0));
