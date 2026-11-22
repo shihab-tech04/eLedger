@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Car, ChevronDown, ChevronRight, FileCheck2,
+  BookOpen, Car, ChevronDown, ChevronRight, FileCheck2,
   LayoutDashboard, Menu, PhoneCall, ReceiptText,
   ShieldCheck, X, PanelLeftClose, PanelLeftOpen, Leaf, RotateCcw, History,
 } from 'lucide-react';
@@ -54,6 +55,11 @@ export const Sidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileMenuOpener = useRef<HTMLButtonElement>(null);
   const mobileDrawer = useRef<HTMLElement>(null);
+  const flyoutRef = useRef<HTMLDivElement>(null);
+  const sourceGroupButton = useRef<HTMLButtonElement>(null);
+  const aitGroupButton = useRef<HTMLButtonElement>(null);
+  const [flyoutGroup, setFlyoutGroup] = useState<'source'|'ait'|null>(null);
+  const [flyoutPosition, setFlyoutPosition] = useState({top:12,left:112});
   const [collapsed, setCollapsed] = useState(() => {
     try { return typeof window !== 'undefined' && window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true'; }
     catch { return false; }
@@ -62,6 +68,49 @@ export const Sidebar: React.FC = () => {
     typeof window !== 'undefined' && window.matchMedia('(min-width: 961px)').matches);
   const [expanded, setExpanded] = useState({ source: true, ait: false });
   const railCollapsed = desktopViewport && collapsed;
+
+  // Flyouts belong to the compact desktop rail only. No mobile/expanded
+  // navigation change: preserve original accordions and mobile bottom tabs.
+  useEffect(() => {
+    if (!railCollapsed) setFlyoutGroup(null);
+  }, [railCollapsed]);
+  useEffect(() => {
+    if (flyoutGroup === null) return;
+    const groupButton = flyoutGroup === 'source' ? sourceGroupButton.current : aitGroupButton.current;
+    const onPointerDown = (event: PointerEvent) => {
+      const node = event.target as Node;
+      if (!flyoutRef.current?.contains(node) && !groupButton?.contains(node)) setFlyoutGroup(null);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setFlyoutGroup(null);
+        groupButton?.focus({preventScroll:true});
+      }
+      if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key) ||
+        !flyoutRef.current?.contains(document.activeElement)) return;
+      const items = Array.from(flyoutRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not([disabled])') ?? []);
+      if (items.length === 0) return;
+      event.preventDefault();
+      const index = items.indexOf(document.activeElement as HTMLButtonElement);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 :
+        event.key === 'ArrowDown' ? (index + 1) % items.length : (index - 1 + items.length) % items.length;
+      items[next]?.focus({preventScroll:true});
+    };
+    const onViewportChange = () => setFlyoutGroup(null);
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
+    const first = flyoutRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]');
+    first?.focus({preventScroll:true});
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('scroll', onViewportChange, true);
+    };
+  }, [flyoutGroup]);
 
   useEffect(() => {
     try { window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(collapsed)); }
@@ -111,6 +160,7 @@ export const Sidebar: React.FC = () => {
     if (routeId) setActiveRouteId(routeId);
     setActiveNavTab(tab);
     setMobileOpen(false);
+    setFlyoutGroup(null);
     if (window.matchMedia('(max-width: 960px)').matches) window.scrollTo(0, 0);
   };
 
@@ -120,8 +170,13 @@ export const Sidebar: React.FC = () => {
   };
   const toggleGroup = (group: 'source' | 'ait') => {
     if (railCollapsed) {
-      setCollapsed(false);
-      setExpanded((current) => ({...current, [group]: true}));
+      const button = group === 'source' ? sourceGroupButton.current : aitGroupButton.current;
+      const rect = button?.getBoundingClientRect();
+      if (rect) setFlyoutPosition({
+        left: Math.min(window.innerWidth - 300, rect.right + 8),
+        top: Math.max(12, Math.min(rect.top, window.innerHeight - 90)),
+      });
+      setFlyoutGroup((current) => current === group ? null : group);
       return;
     }
     setExpanded((current) => ({ ...current, [group]: !current[group] }));
@@ -143,12 +198,13 @@ export const Sidebar: React.FC = () => {
   const routeText = (route: ReturnType<typeof routesByGroup>[number]) =>
     bn ? route.bengaliTitle : ORIGINAL_LABELS[route.id] ?? route.title;
 
-  const renderRoute = (group: RouteGroup, route: ReturnType<typeof routesByGroup>[number], withDot = false) => {
+  const renderRoute = (group: RouteGroup, route: ReturnType<typeof routesByGroup>[number], withDot = false, flyout = false) => {
     const tab = GROUP_TABS[group];
     const selected = activeNavTab === tab && activeIdForGroup(group) === route.id;
     return <button key={route.id} type="button"
       title={routeText(route)} aria-label={routeText(route)}
-      className={'eledger-side-link eledger-route-link ' + (withDot ? 'source-route ' : '') + (selected ? 'is-active' : '')}
+      className={'eledger-side-link eledger-route-link ' + (withDot ? 'source-route ' : '') + (flyout ? 'eledger-flyout-route ' : '') + (selected ? 'is-active' : '')}
+      role={flyout ? 'menuitem' : undefined}
       aria-current={selected ? 'page' : undefined} onClick={() => navigate(tab, route.id)}>
       {withDot && <span className="eledger-source-dot" aria-hidden="true"/>}
       <span>{routeText(route)}</span>
@@ -205,16 +261,20 @@ export const Sidebar: React.FC = () => {
             className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
             aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined}
             onClick={() => navigate('ledger-guide')}>
-            <ReceiptText size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
+            <BookOpen size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
           </button>
           <div className="eledger-nav-group">
-            <button type="button" className="eledger-side-link eledger-group-toggle"
+            <button ref={sourceGroupButton} type="button"
+              className={'eledger-side-link eledger-group-toggle' + (railCollapsed && activeNavTab === 'source-tax' ? ' is-active is-active-parent' : '')}
               title={bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}
               aria-label={bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}
-              aria-controls="eledger-source-tax-subnav"
-              aria-expanded={!railCollapsed && expanded.source} onClick={() => toggleGroup('source')}>
+              aria-controls={railCollapsed ? 'eledger-compact-group-flyout' : 'eledger-source-tax-subnav'}
+              aria-haspopup={railCollapsed ? 'menu' : undefined}
+              aria-current={railCollapsed && activeNavTab === 'source-tax' ? 'true' : undefined}
+              aria-expanded={railCollapsed ? flyoutGroup === 'source' : expanded.source}
+              onClick={() => toggleGroup('source')}>
               <ReceiptText size={16}/><span>{bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}</span>
-              {expanded.source ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
+              {!railCollapsed && (expanded.source ? <ChevronDown size={15}/> : <ChevronRight size={15}/>)}
             </button>
             {expanded.source && <div id="eledger-source-tax-subnav" className="eledger-source-route-list">
               {routesByGroup('Source Tax').map((route) => renderRoute('Source Tax', route, true))}
@@ -222,13 +282,17 @@ export const Sidebar: React.FC = () => {
           </div>
 
           <div className="eledger-nav-group">
-            <button type="button" className="eledger-side-link eledger-group-toggle"
+            <button ref={aitGroupButton} type="button"
+              className={'eledger-side-link eledger-group-toggle' + (railCollapsed && activeNavTab === 'ait' ? ' is-active is-active-parent' : '')}
               title={bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}
               aria-label={bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}
-              aria-controls="eledger-ait-subnav"
-              aria-expanded={!railCollapsed && expanded.ait} onClick={() => toggleGroup('ait')}>
+              aria-controls={railCollapsed ? 'eledger-compact-group-flyout' : 'eledger-ait-subnav'}
+              aria-haspopup={railCollapsed ? 'menu' : undefined}
+              aria-current={railCollapsed && activeNavTab === 'ait' ? 'true' : undefined}
+              aria-expanded={railCollapsed ? flyoutGroup === 'ait' : expanded.ait}
+              onClick={() => toggleGroup('ait')}>
               <Car size={16}/><span>{bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}</span>
-              {expanded.ait ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
+              {!railCollapsed && (expanded.ait ? <ChevronDown size={15}/> : <ChevronRight size={15}/>)}
             </button>
             {expanded.ait && <div id="eledger-ait-subnav" className="eledger-source-route-list">
               {routesByGroup('AIT').map((route) => renderRoute('AIT', route, true))}
@@ -255,11 +319,30 @@ export const Sidebar: React.FC = () => {
           </button>
         </nav>
         <div className="eledger-sidebar-bottom">
-          <a className="eledger-helpline" href="tel:09643717171">
-            <PhoneCall size={16}/><span><strong>09643717171</strong><small>{bn ? 'কর সহায়তা' : 'Taxes Helpline'}</small></span>
+          <a className="eledger-helpline" href="tel:09643717171"
+            title={bn ? 'কর সহায়তা · 09643717171' : 'Taxes Helpline · 09643717171'}
+            aria-label={bn ? 'কর সহায়তা · 09643717171' : 'Taxes Helpline · 09643717171'}>
+            <PhoneCall size={18} aria-hidden="true"/><span><strong>09643717171</strong><small>{bn ? 'কর সহায়তা' : 'Taxes Helpline'}</small></span>
           </a>
         </div>
       </aside>
+      {railCollapsed && flyoutGroup && createPortal(
+        <div ref={flyoutRef} id="eledger-compact-group-flyout"
+          className="eledger-compact-group-flyout" role="menu"
+          aria-label={flyoutGroup === 'source'
+            ? (bn ? 'উৎস করের খাতসমূহ' : 'Source Tax categories')
+            : (bn ? 'অগ্রিম করের খাতসমূহ' : 'AIT categories')}
+          style={{ top:flyoutPosition.top, left:flyoutPosition.left }}>
+          <div className="eledger-compact-flyout-heading" aria-hidden="true">
+            {flyoutGroup === 'source' ? (bn ? 'উৎস কর দাবি' : 'Claim Source Tax')
+              : (bn ? 'অগ্রিম কর দাবি' : 'Claim AIT')}
+          </div>
+          <div className="eledger-compact-flyout-list">
+            {routesByGroup(flyoutGroup === 'source' ? 'Source Tax' : 'AIT')
+              .map(route => renderRoute(flyoutGroup === 'source' ? 'Source Tax' : 'AIT', route, false, true))}
+          </div>
+        </div>, document.body
+      )}
       <nav className="eledger-mobile-bottom-nav" aria-label={bn ? 'দ্রুত নেভিগেশন' : 'Quick navigation'}>
         <button type="button" className={activeNavTab === 'dashboard' ? 'is-active' : ''}
           aria-current={activeNavTab === 'dashboard' ? 'page' : undefined}
