@@ -145,7 +145,7 @@ export const OfficialReadOnlyTable: React.FC<{ routeId: ReadOnlyRoute; entries: 
   return <section className="eledger-panel eledger-official-manual-table eledger-neir-table-workspace" aria-label={t('Tax details','করের বিবরণ')}>
     {deleteError && <p role="alert" className="eledger-entry-error">{deleteError}</p>}
     <div className="overflow-x-auto">
-      <table className="eledger-official-records">
+      <table className="eledger-official-records eledger-data-table">
         <thead><tr>{columns.map((column, index) => <th scope="col" key={index}>{columnLabel(column)}</th>)}</tr></thead>
         <tbody>
           {entries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={columns.length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :

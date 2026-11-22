@@ -300,7 +300,7 @@ export const SurchargeTransferPanel: React.FC<{
     </p>}
     {error && !compactEditor && <p role="alert" className="eledger-entry-error">{error}</p>}
     <div className="overflow-x-auto">
-      <table className="eledger-official-records">
+      <table className="eledger-official-records eledger-data-table">
         <thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
         <tbody>{listed.length === 0 && (compactEditor || newGridRows.length === 0) ? <tr className="eledger-empty-records-row"><td colSpan={headers.length}>
           {t('No Data Found', 'কোনো তথ্য পাওয়া যায়নি')}</td></tr> :

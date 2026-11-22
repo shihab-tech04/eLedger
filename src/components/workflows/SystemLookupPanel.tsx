@@ -189,7 +189,7 @@ export const SystemLookupPanel: React.FC<SystemLookupPanelProps> = ({
         >
           <Search className="w-4 h-4" />
           <span>{isSearching ? t('Searching...','খোঁজা হচ্ছে...') :
-            isVehicle ? t('Search','অনুসন্ধান') : isChallan ? t('Save','সংরক্ষণ') :
+            isVehicle ? t('Search','অনুসন্ধান') : isChallan ? t('Search','অনুসন্ধান') :
               t('Find local reference','স্থানীয় রেফারেন্স খুঁজুন')}</span>
         </button>
       </form>

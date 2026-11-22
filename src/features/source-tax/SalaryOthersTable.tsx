@@ -251,7 +251,7 @@ export const SalaryOthersTable: React.FC<SalaryOthersTableProps> = ({
         </div>}
       />}
       <div className="eledger-salary-scroll">
-        <table>
+        <table className="eledger-data-table">
           <thead><tr>
             <th scope="col">{t('SL.','ক্রম')}</th><th scope="col">{t('Depositing Authority','জমাদানকারী কর্তৃপক্ষ')}</th>
             <th scope="col">{t('Payment Document Type','পরিশোধ দলিলের ধরন')}</th>

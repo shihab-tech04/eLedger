@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { observeUnsavedLedgerForms } from './services/unsavedNavigation.ts';
 import { LedgerProvider, useLedger } from './context/LedgerContext.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { Sidebar } from './components/navigation/Sidebar.tsx';
@@ -19,6 +20,7 @@ import { TaxPaymentStatusPage } from './features/payments/TaxPaymentStatusPage.t
 import { LanguageProvider, useLedgerCopy, useLedgerLanguage } from './context/LanguageContext.tsx';
 
 const AppContent: React.FC = () => {
+  React.useEffect(observeUnsavedLedgerForms, []);
   const t = useLedgerCopy();
   const { language } = useLedgerLanguage();
   const { activeNavTab, activeRouteId, taxpayer, assessmentYear, isStatusModalOpen, setIsStatusModalOpen, loadError } = useLedger();
@@ -61,6 +63,7 @@ const AppContent: React.FC = () => {
           <footer className="eledger-footer">
             <span>{t('National Board of Revenue • eReturn Ledger','জাতীয় রাজস্ব বোর্ড • ই-রিটার্ন লেজার')}</span>
             <span>{t('Assessment year:','করবর্ষ:')} {assessmentYear}</span>
+            <span className="eledger-footer-local-note">{t('Standalone local ledger · Not an official tax credit or submission','স্বতন্ত্র স্থানীয় লেজার · সরকারি যাচাইকৃত কর ক্রেডিট বা দাখিল নয়')}</span>
           </footer>
         </div>
       </div>

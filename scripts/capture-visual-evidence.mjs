@@ -300,6 +300,21 @@ try {
   assert.equal(await drawer.getAttribute('aria-modal'),'true');
   await checkOverflow(page);
   const shot=await screenshot(page,'neir/'+width+'-record-details');
+  const drawerScroll=await drawer.evaluate(panel=>{
+    const content=panel.querySelector('.eledger-neir-drawer-content');
+    const footer=panel.querySelector('.eledger-neir-drawer-footer');
+    const caveat=panel.querySelector('.eledger-neir-drawer-caveat');
+    content.scrollTop=content.scrollHeight;
+    const bottomPadding=parseFloat(getComputedStyle(content).paddingBottom);
+    return {bottomPadding,footerTop:footer.getBoundingClientRect().top,
+      contentBottom:content.getBoundingClientRect().bottom,
+      caveatBottom:caveat.getBoundingClientRect().bottom};
+  });
+  assert.ok(drawerScroll.bottomPadding>=39,'Record details must leave a generous scroll-end gap');
+  assert.ok(drawerScroll.contentBottom<=drawerScroll.footerTop+1,
+    'Details scroll content must not sit behind drawer footer');
+  assert.ok(drawerScroll.caveatBottom<=drawerScroll.footerTop+1,
+    'Local-only financial disclaimer must remain above the footer');
   await page.keyboard.press('Escape');
   await drawer.waitFor({state:'detached'});
   assert.equal(await page.evaluate(()=>document.body.style.overflow),'');
