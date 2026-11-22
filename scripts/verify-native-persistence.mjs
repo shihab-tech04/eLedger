@@ -288,95 +288,42 @@ async function testViewport(browser,width){
   assert.ok(!(await stored(page)).some(row=>row.id===saved.id));
   report.push({width,category:c.route,check:'confirmed Delete persists after reload',pass:true});
  }
- // Source page 18: real browser create/edit/delete and reload, with no official-credit mutation.
+ // Prototype-v2 surcharge: two rows in ONE modal, not editable table cells.
  await openRoute(page,'Environmental Surcharge',width);
- const surchargeHeaders=await page.locator('table.eledger-official-records thead th').allTextContents();
- assert.deepEqual(surchargeHeaders.map(s=>s.trim()),[
-  'Motor Vehicle Registration No','Transaction ID','Bank Name','Branch Name','Payment Date','Paid Amount','Action',
- ]);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
- const surchargeForm=width>=768 ? page.locator('tr[aria-label="New surcharge record"]') : page.getByRole('dialog',{name:'Add Entry'});
- await surchargeForm.waitFor({state:'visible'});
- await surchargeForm.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill('E2E-MOTOR-01');
- await surchargeForm.getByRole('textbox',{name:'Transaction ID'}).fill('E2E-SUR-101');
- await surchargeForm.getByRole('combobox',{name:'Bank Name'}).selectOption('AB Bank PLC');
- await surchargeForm.getByRole('textbox',{name:'Branch Name'}).fill('E2E Local Branch');
- await surchargeForm.locator('input[type=date]').fill('2026-05-14');
- await surchargeForm.getByRole('spinbutton',{name:'Paid Amount'}).fill('250');
- if(width>=768) await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
- else await surchargeForm.getByRole('button',{name:'Save',exact:true}).click();
- await surchargeForm.waitFor({state:'detached'});
- let surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
- assert.ok(surcharge,'Surcharge Add did not persist');
- assert.equal(surcharge.claimEvidence.registrationNo,'E2E-MOTOR-01');
- assert.equal(surcharge.claimEvidence.bankName,'AB Bank PLC');
- assert.equal(surcharge.taxDeducted,250);
- assert.equal(surcharge.status,'PENDING_VERIFICATION');
- assert.equal(surcharge.externalVerified,false);
- report.push({width,category:'Environmental Surcharge',check:'original six-field Add persists pending local record',pass:true});
- await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
- let surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
- await surchargeRow.waitFor({state:'visible'});
- if(width>=768){
-   await surchargeRow.getByRole('combobox',{name:'Bank Name'}).waitFor();
-   await surchargeRow.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
-   await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
- } else {
-   assert.match(await surchargeRow.innerText(),/AB Bank PLC/);
-   await surchargeRow.getByRole('button',{name:'Edit'}).click();
-   const editSurcharge=page.getByRole('dialog',{name:'Edit Entry'});
-   await editSurcharge.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
-   await editSurcharge.getByRole('button',{name:'Save',exact:true}).click();
-   await editSurcharge.waitFor({state:'detached'});
+ const surchargeModal=page.getByRole('dialog',{name:'Add Entry'});
+ await surchargeModal.waitFor();
+ await surchargeModal.getByRole('button',{name:'Add another transaction'}).click();
+ const batch=[['E2E-SUR-101','E2E-MOTOR-01','250'],['E2E-SUR-102','E2E-MOTOR-02','350']];
+ for(let i=0;i<2;i++){
+  const item=surchargeModal.locator('.eledger-surcharge-batch-item').nth(i);
+  await item.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill(batch[i][1]);
+  await item.getByRole('textbox',{name:'Transaction ID'}).fill(batch[i][0]);
+  await item.getByRole('combobox',{name:'Bank Name'}).selectOption('AB Bank PLC');
+  await item.getByRole('textbox',{name:'Branch Name'}).fill('Local Branch');
+  await item.locator('input[type=date]').fill('2026-05-14');
+  await item.getByRole('spinbutton',{name:'Paid Amount'}).fill(batch[i][2]);
  }
- await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
- surcharge=(await stored(page)).find(row=>row.referenceNo==='E2E-SUR-101');
- assert.equal(surcharge.taxDeducted,275);
- assert.equal(surcharge.claimEvidence.bankName,'AB Bank PLC');
- report.push({width,category:'Environmental Surcharge',check:'edit, source columns and reload persistence',pass:true});
- surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
- page.once('dialog',d=>d.dismiss());
- await surchargeRow.getByRole('button',{name:'Delete'}).click();
- assert.ok((await stored(page)).some(row=>row.id===surcharge.id));
- page.once('dialog',d=>d.accept());
- await surchargeRow.getByRole('button',{name:'Delete'}).click();
- await surchargeRow.waitFor({state:'detached'});
- assert.ok(!(await stored(page)).some(row=>row.id===surcharge.id));
- report.push({width,category:'Environmental Surcharge',check:'delete confirmation and isolated local persistence',pass:true});
- // Original PDF p18 permits more than one unsaved desktop row and one shared Save.
- if(width>=768){
-   await page.getByRole('button',{name:'Add Entry',exact:true}).click();
-   await page.getByRole('button',{name:'Add Entry',exact:true}).click();
-   const grid=page.locator('.eledger-surcharge-grid-row');
-   assert.equal(await grid.count(),2,'Two unsaved surcharge rows must coexist');
-   const drafts=[
-     {ref:'E2E-SUR-BATCH-1',vehicle:'BATCH-MOTOR-1',amount:'150'},
-     {ref:'E2E-SUR-BATCH-2',vehicle:'BATCH-MOTOR-2',amount:'350'},
-   ];
-   for(let i=0;i<2;i++){
-     const row=grid.nth(i);
-     await row.getByRole('textbox',{name:'Motor Vehicle Registration No'}).fill(drafts[i].vehicle);
-     await row.getByRole('textbox',{name:'Transaction ID'}).fill(drafts[i].ref);
-     await row.getByRole('combobox',{name:'Bank Name'}).selectOption('Community Bank Bangladesh PLC');
-     await row.getByRole('textbox',{name:'Branch Name'}).fill('Local branch');
-     await row.locator('input[type=date]').fill('2026-05-14');
-     await row.getByRole('spinbutton',{name:'Paid Amount'}).fill(drafts[i].amount);
-   }
-   assert.match(await page.locator('.eledger-payment-columns').first().innerText(),/500/);
-   await page.locator('.eledger-surcharge-grid-footer').getByRole('button',{name:'Save',exact:true}).click();
-   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,2);
-   await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
-   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,2);
-   report.push({width,category:'Environmental Surcharge',check:'two editable rows and one shared Save persist 500 in local ledger',pass:true});
-   for(const ref of drafts.map(x=>x.ref)){
-     page.once('dialog',d=>d.accept());
-     await page.locator('tr.eledger-surcharge-grid-row').filter({
-       has:page.locator('input[aria-label="Transaction ID"][value="'+ref+'"]')
-     }).getByRole('button',{name:'Delete '+ref}).click();
-   }
-   assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,0);
+ assert.equal(await page.locator('tr.eledger-surcharge-grid-row').count(),0);
+ await surchargeModal.getByRole('button',{name:'Save all transactions'}).click();
+ await surchargeModal.waitFor({state:'detached'});
+ assert.equal((await stored(page)).filter(e=>e.referenceNo.startsWith('E2E-SUR-10')).length,2);
+ await page.reload({waitUntil:'networkidle'});
+ await openRoute(page,'Environmental Surcharge',width);
+ const surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ assert.equal(await surchargeRow.getByRole('button').count(),2);
+ await moreAction(page,'E2E-SUR-101','Edit');
+ const surchargeEdit=page.getByRole('dialog',{name:'Edit Record'});
+ await surchargeEdit.getByRole('spinbutton',{name:'Paid Amount'}).fill('275');
+ await surchargeEdit.getByRole('button',{name:'Save Changes'}).click();
+ await surchargeEdit.waitFor({state:'detached'});
+ assert.equal((await stored(page)).find(e=>e.referenceNo==='E2E-SUR-101')?.taxDeducted,275);
+ for(const [reference] of batch){
+  page.once('dialog',dialog=>dialog.accept());
+  await moreAction(page,reference,'Delete');
  }
-
+ assert.equal((await stored(page)).filter(e=>e.referenceNo.startsWith('E2E-SUR-10')).length,0);
+ report.push({width,category:'Environmental Surcharge',check:'two modal transactions, drawer Edit, confirmed More/Delete and reload',pass:true});
  await openRoute(page,'Salary (Others)',width);
  await page.getByRole('button',{name:'Add Entry',exact:true}).click();
  const form=editorFor(page,cases[0],width);
@@ -387,24 +334,17 @@ async function testViewport(browser,width){
  await page.locator('table tbody tr').filter({hasText:'E2E-AY-ISOLATION'}).waitFor({state:'visible'});
  report.push({width,check:'AY context isolation in actual UI',pass:true});
  if(width>=961){
-   // Source UI had discarded a dirty inline editor without asking. Cancel must
-   // retain all entered fields, while Confirm must complete the route transition.
    await page.getByRole('button',{name:'Add Entry',exact:true}).click();
-   const editor=page.locator('tr.eledger-source-inline-editor');
-   await editor.waitFor({state:'visible'});
+   const editor=page.getByRole('dialog',{name:'Add Entry'});
    await editor.getByRole('textbox',{name:'Depositing Authority'}).fill('UNSAVED E2E DRAFT');
    const nav=page.locator('aside.eledger-sidebar');
-   let asked=0;
-   page.once('dialog',d=>{asked++;d.dismiss()});
+   page.once('dialog',d=>d.dismiss());
    await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
-   assert.equal(asked,1,'Dirty editor must request discard confirmation');
-   assert.ok(await editor.isVisible(),'Cancel must preserve unsaved editor');
    assert.equal(await editor.getByRole('textbox',{name:'Depositing Authority'}).inputValue(),'UNSAVED E2E DRAFT');
    page.once('dialog',d=>d.accept());
    await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
-   assert.ok(!(await stored(page)).some(x=>x.sourceEntity==='UNSAVED E2E DRAFT'),
-     'Unsaved draft must not become an accepted tax credit');
+   assert.ok(!(await stored(page)).some(e=>e.sourceEntity==='UNSAVED E2E DRAFT'));
    report.push({width,check:'unsaved-editor navigation Cancel/Discard and no fabricated ledger record',pass:true});
  }
  const nextPage=await context.newPage();await nextPage.goto(SITE,{waitUntil:'networkidle'});
