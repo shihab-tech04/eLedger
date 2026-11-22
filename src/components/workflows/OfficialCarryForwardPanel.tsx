@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { LedgerEntry } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
+import { LedgerRecordActions } from '../tables/LedgerRecordActions.tsx';
+import { NeirRecordDetailsDrawer } from '../neir/NeirRecordDetailsDrawer.tsx';
 
 /** Original PDF p20 carries a single claimed amount/status/delete surface.
  * The existing local simulation does not create an official prior-year credit.
@@ -12,6 +14,7 @@ export function OfficialCarryForwardPanel({ existingClaim, onDelete }: {
   const t = useLedgerCopy();
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const remove = async () => {
     if (!existingClaim || !onDelete || busy) return;
     if (!window.confirm(t('Remove this local carry-forward claim? No official record is changed.',
@@ -30,8 +33,9 @@ export function OfficialCarryForwardPanel({ existingClaim, onDelete }: {
       <span className="eledger-claim-feedback">{existingClaim ?
         t('Claimed (local; pending verification)', 'দাবিকৃত (স্থানীয়; যাচাই অপেক্ষমাণ)') :
         t('Pending', 'অপেক্ষমাণ')}</span>
-      {existingClaim ? <button type="button" className="eledger-button eledger-button-danger"
-        disabled={busy || !onDelete} onClick={() => void remove()}>{t('Delete', 'মুছুন')}</button> :
+      {existingClaim ? <LedgerRecordActions reference={existingClaim.referenceNo}
+        onView={() => setDetailsOpen(true)} onDelete={onDelete ? ()=>void remove() : undefined}
+        disabled={busy}/> :
         <button type="button" className="eledger-button eledger-button-primary" onClick={() =>
           setMessage(t('The official prior-year claim service is not connected. No claim was submitted or recorded.',
             'পূর্ববর্তী বছরের সরকারি দাবি সেবা সংযুক্ত নেই। কোনো দাবি দাখিল বা রেকর্ড করা হয়নি।'))}>
@@ -47,5 +51,14 @@ export function OfficialCarryForwardPanel({ existingClaim, onDelete }: {
         'শুধু স্থানীয় রেকর্ড; এটি এনবিআর অনুমোদিত কর ক্রেডিটের প্রমাণ নয়।')}</p>}
     </div>
     {message && <p className="eledger-entry-error" role="status">{message}</p>}
+    {detailsOpen && existingClaim && <NeirRecordDetailsDrawer
+      title={t('Record Details','রেকর্ডের বিস্তারিত')} subtitle={existingClaim.referenceNo}
+      onClose={()=>setDetailsOpen(false)}
+      fields={[
+        {label:t('Reference','রেফারেন্স'),value:existingClaim.referenceNo},
+        {label:t('Claimed Amount','দাবিকৃত অঙ্ক'),value:existingClaim.taxDeducted},
+        {label:t('Assessment Year','করবর্ষ'),value:existingClaim.assessmentYear},
+        {label:t('Status','অবস্থা'),value:t('Local pending verification','স্থানীয় যাচাই অপেক্ষমাণ')},
+      ]}/>}
   </section>;
 }
