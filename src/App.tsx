@@ -15,6 +15,7 @@ import { AitView } from './features/ait/AitView.tsx';
 import { PaymentsView } from './features/payments/PaymentsView.tsx';
 import { AdjustmentsView } from './features/adjustments/AdjustmentsView.tsx';
 import { TaxPaymentStatusModal } from './components/modals/TaxPaymentStatusModal.tsx';
+import { TaxPaymentStatusPage } from './features/payments/TaxPaymentStatusPage.tsx';
 import { LanguageProvider, useLedgerCopy, useLedgerLanguage } from './context/LanguageContext.tsx';
 
 const AppContent: React.FC = () => {
@@ -30,6 +31,8 @@ const AppContent: React.FC = () => {
         return <DashboardView />;
       case 'ledger-guide':
         return <LedgerGuideView />;
+      case 'status':
+        return <TaxPaymentStatusPage />;
       case 'source-tax':
         return <SourceTaxView key={workflowKey} />;
       case 'ait':
