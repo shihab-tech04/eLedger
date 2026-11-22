@@ -203,6 +203,13 @@ async function testViewport(browser,width){
    await sourceGroup.click();
    await page.getByRole('menu',{name:'Source Tax categories'})
      .getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
+   console.log('COMPACT_NAV_DEBUG',JSON.stringify({
+     headings:await page.locator('main h1').allTextContents(),
+     active:await nav.locator('.eledger-side-link.is-active').allTextContents(),
+     sourceExpanded:await sourceGroup.getAttribute('aria-expanded'),
+     menuCount:await page.getByRole('menu').count(),
+     location:page.url(),
+   }));
    await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
    assert.equal(await sourceGroup.getAttribute('aria-current'),'true',
      'Selected Source Tax child must highlight its compact parent');
