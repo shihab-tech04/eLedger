@@ -78,7 +78,8 @@ async function fill(form,c){
  }
 }
 async function save(form,c){
- const label=c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'?'Save claim':'Save';
+ const editing=(await form.getByRole('button',{name:'Save Changes',exact:true}).count())>0;
+ const label=editing?'Save Changes':c.route==='Source Tax (LTU)'?'Submit':c.route==='Salary (Others)'?'Save claim':'Save';
  await form.getByRole('button',{name:label,exact:true}).click();
  try {
   await form.waitFor({state:'detached'}); } catch (error) {
