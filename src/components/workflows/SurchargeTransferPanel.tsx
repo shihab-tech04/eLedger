@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Pencil, Trash2, Eye, Check, X } from 'lucide-react';
 import type { ClaimEvidence, LedgerEntry } from '../../domain/models.ts';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
@@ -31,6 +31,13 @@ export const SurchargeTransferPanel: React.FC<{
   const [editing, setEditing] = useState<LedgerEntry | null>(null);
   const [selected, setSelected] = useState<LedgerEntry | null>(null);
   const [open, setOpen] = useState(false);
+  const [compactEditor, setCompactEditor] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const refresh = () => setCompactEditor(mql.matches);
+    refresh(); mql.addEventListener('change', refresh);
+    return () => mql.removeEventListener('change', refresh);
+  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -69,8 +76,7 @@ export const SurchargeTransferPanel: React.FC<{
     setSelected(null); setEditing(entry); setError(''); setFeedback(''); setOpen(true);
   };
   const close = () => { if (!busy) { setOpen(false); setEditing(null); setError(''); } };
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const submit = async () => {
     if (busy) return;
     setError('');
     const reference = draft.reference.trim();
@@ -111,6 +117,30 @@ export const SurchargeTransferPanel: React.FC<{
     setFeedback(ok ? t('Entry deleted.', 'রেকর্ড মুছে ফেলা হয়েছে।') :
       t('Deletion failed. Your record is unchanged.', 'মুছতে ব্যর্থ হয়েছে। রেকর্ড অপরিবর্তিত রয়েছে।'));
   };
+  const bankNames = Array.from(new Set([
+    'Community Bank Bangladesh PLC', 'AB Bank PLC',
+    ...entries.map((entry) => entry.claimEvidence?.bankName || '').filter(Boolean),
+  ]));
+  const inlineInput = (field: keyof Draft, label: string, type: string = 'text') =>
+    <td data-label={label}><input className="eledger-control eledger-inline-input"
+      aria-label={label} type={type} required={field === 'reference' || field === 'date' || field === 'amount'}
+      min={field === 'amount' ? '0.01' : undefined} step={field === 'amount' ? '0.01' : undefined}
+      list={field === 'bankName' ? 'eledger-surcharge-bank-options' : undefined}
+      value={draft[field]} onChange={(event) => change(field, event.target.value)}/></td>;
+  const inlineRow = <tr key="surcharge-inline" className="eledger-row-being-edited eledger-source-inline-editor">
+    {inlineInput('registrationNo', headers[0])}
+    {inlineInput('reference', headers[1])}
+    {inlineInput('bankName', headers[2])}
+    {inlineInput('branchName', headers[3])}
+    {inlineInput('date', headers[4], 'date')}
+    {inlineInput('amount', headers[5], 'number')}
+    <td data-label={headers[6]}><div className="eledger-button-group">
+      <button type="button" className="eledger-button eledger-button-primary" disabled={busy}
+        onClick={() => void submit()}><Check size={16}/>{t('Save','সংরক্ষণ')}</button>
+      <button type="button" className="eledger-button eledger-button-secondary" disabled={busy}
+        onClick={close}><X size={16}/>{t('Cancel','বাতিল')}</button>
+    </div></td>
+  </tr>;
   const cells = (entry: LedgerEntry) => [
     entry.claimEvidence?.registrationNo || '—',
     entry.referenceNo,
@@ -146,6 +176,10 @@ export const SurchargeTransferPanel: React.FC<{
       {t('No Environmental Surcharge Payable. Please set Environmental Surcharge in Tax Payment.',
         'পরিবেশ সারচার্জ পরিশোধযোগ্য নেই। ট্যাক্স পেমেন্টে পরিবেশ সারচার্জ নির্ধারণ করুন।')}
     </p>}
+    {error && !compactEditor && <p role="alert" className="eledger-entry-error">{error}</p>}
+    <datalist id="eledger-surcharge-bank-options">
+      {bankNames.map((name) => <option key={name} value={name}/>)}
+    </datalist>
     <div className="overflow-x-auto">
       <table className="eledger-official-records">
         <thead><tr>{headers.map((header) => <th key={header} scope="col">{header}</th>)}</tr></thead>
@@ -167,6 +201,7 @@ export const SurchargeTransferPanel: React.FC<{
               </div>
             </td>
           </tr>)}
+          {open && !compactEditor && inlineRow}
         </tbody>
       </table>
     </div>
@@ -191,8 +226,8 @@ export const SurchargeTransferPanel: React.FC<{
         {onDelete && <button type="button" className="eledger-button eledger-button-danger"
           onClick={() => void remove(selected)}>{t('Delete', 'মুছুন')}</button>}
       </div>} showCaveat={false}/>}
-    {open && <LedgerFormModal title={editing ? t('Edit Entry', 'রেকর্ড সম্পাদনা') : t('Add Entry', 'রেকর্ড যোগ করুন')} onClose={close}>
-      <form noValidate aria-label={t('Environmental surcharge fields', 'পরিবেশ সারচার্জের তথ্য')} onSubmit={(e) => { void submit(e); }}>
+    {open && compactEditor && <LedgerFormModal title={editing ? t('Edit Entry', 'রেকর্ড সম্পাদনা') : t('Add Entry', 'রেকর্ড যোগ করুন')} onClose={close}>
+      <form noValidate aria-label={t('Environmental surcharge fields', 'পরিবেশ সারচার্জের তথ্য')} onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <LedgerFormGrid>
           <LedgerInput label={t('Motor Vehicle Registration No', 'মোটরযানের নিবন্ধন নম্বর')}
             value={draft.registrationNo} onValueChange={(value) => change('registrationNo', value)}/>
