@@ -193,7 +193,7 @@ async function testViewport(browser,width){
  assert.equal(surcharge.externalVerified,false);
  report.push({width,category:'Environmental Surcharge',check:'original six-field Add persists pending local record',pass:true});
  await page.reload({waitUntil:'networkidle'});await openRoute(page,'Environmental Surcharge',width);
- let surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ let surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
  await surchargeRow.waitFor({state:'visible'});
  if(width>=768){
    await surchargeRow.getByRole('combobox',{name:'Bank Name'}).waitFor();
@@ -212,7 +212,7 @@ async function testViewport(browser,width){
  assert.equal(surcharge.taxDeducted,275);
  assert.equal(surcharge.claimEvidence.bankName,'AB Bank PLC');
  report.push({width,category:'Environmental Surcharge',check:'edit, source columns and reload persistence',pass:true});
- surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
+ surchargeRow=width>=768 ? page.locator('tr.eledger-surcharge-grid-row').first() : page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
  page.once('dialog',d=>d.dismiss());
  await surchargeRow.getByRole('button',{name:'Delete'}).click();
  assert.ok((await stored(page)).some(row=>row.id===surcharge.id));
@@ -248,7 +248,9 @@ async function testViewport(browser,width){
    report.push({width,category:'Environmental Surcharge',check:'two editable rows and one shared Save persist 500 in local ledger',pass:true});
    for(const ref of drafts.map(x=>x.ref)){
      page.once('dialog',d=>d.accept());
-     await page.locator('table tbody tr').filter({hasText:ref}).getByRole('button',{name:'Delete '+ref}).click();
+     await page.locator('tr.eledger-surcharge-grid-row').filter({
+       has:page.locator('input[aria-label="Transaction ID"][value="'+ref+'"]')
+     }).getByRole('button',{name:'Delete '+ref}).click();
    }
    assert.equal((await stored(page)).filter(row=>row.referenceNo.startsWith('E2E-SUR-BATCH')).length,0);
  }
