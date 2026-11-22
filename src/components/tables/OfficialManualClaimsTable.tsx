@@ -373,10 +373,10 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
         {fieldSet()}
         <div className="eledger-form-actions">
           <button type="button" disabled={saving} className="eledger-button eledger-button-secondary"
-            onClick={() => routeId === 'source-ltu' ? (setDraft(blank(routeId, assessmentYear)), setFieldIssues({}), setError(null)) : cancel()}>
-            <X size={16}/>{routeId === 'source-ltu' ? t('Reset','রিসেট') : t('Cancel','বাতিল')}
+            onClick={() => active === 'new' && routeId === 'source-ltu' ? (setDraft(blank(routeId, assessmentYear)), setFieldIssues({}), setError(null)) : cancel()}>
+            <X size={16}/>{active === 'new' && routeId === 'source-ltu' ? t('Reset','রিসেট') : t('Cancel','বাতিল')}
           </button>
-          <button type="submit" disabled={saving} className="eledger-button eledger-button-primary"><Check size={16}/>{routeId === 'source-ltu' ? t('Submit','দাখিল করুন') : t('Save','সংরক্ষণ')}</button>
+          <button type="submit" disabled={saving} className="eledger-button eledger-button-primary"><Check size={16}/>{active !== 'new' ? t('Save Changes','পরিবর্তন সংরক্ষণ') : routeId === 'source-ltu' ? t('Submit','দাখিল করুন') : t('Save','সংরক্ষণ')}</button>
         </div>
       </form>);
 
