@@ -1916,9 +1916,10 @@ describe('eLedger — Phase 6 Final UI and System-Only Acceptance', () => {
       ...props, entries: INITIAL_LEDGER_ENTRIES.filter((entry) => entry.routeId === 'service-payment'),
       routeId: 'service-payment', allowAdd: true, allowEditDelete: true,
     }));
-    assert.match(manual, /title="Edit entry"/);
-    assert.match(manual, /title="Delete row"/);
-    assert.match(manual, />Add Entry</);
+    assert.match(manual, /aria-label="View SRV-ICT-2026-004"/);
+    assert.match(manual, /aria-label="More actions SRV-ICT-2026-004"/);
+    assert.doesNotMatch(manual, /title="Edit entry"/);
+    assert.doesNotMatch(manual, /title="Delete row"/);
   });
 
   it('blocks local modification and deletion of imported salary system records', async () => {
