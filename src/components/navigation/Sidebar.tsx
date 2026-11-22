@@ -101,14 +101,14 @@ export const Sidebar: React.FC = () => {
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', onViewportChange);
-    window.addEventListener('scroll', onViewportChange, true);
+    // The ten-route flyout is scrollable; scrolling inside must not close it.
     const first = flyoutRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]');
     first?.focus({preventScroll:true});
     return () => {
       document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('resize', onViewportChange);
-      window.removeEventListener('scroll', onViewportChange, true);
+
     };
   }, [flyoutGroup]);
 
@@ -174,7 +174,7 @@ export const Sidebar: React.FC = () => {
       const rect = button?.getBoundingClientRect();
       if (rect) setFlyoutPosition({
         left: Math.min(window.innerWidth - 300, rect.right + 8),
-        top: Math.max(12, Math.min(rect.top, window.innerHeight - 90)),
+        top: Math.max(12, Math.min(rect.top, window.innerHeight - (group === 'source' ? 530 : 240))),
       });
       setFlyoutGroup((current) => current === group ? null : group);
       return;
