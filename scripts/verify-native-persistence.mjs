@@ -393,7 +393,7 @@ async function conditionalLocalRows(browser,width){
  const panel=page.locator('section.eledger-carryforward-source');
  await panel.getByText('Claimed (local; pending verification)').waitFor();
  assert.match(await panel.innerText(),/400/);
- assert.ok(await panel.getByRole('button',{name:'Delete',exact:true}).isVisible());
+ assert.ok(await panel.getByRole('button',{name:'More actions E2E-CARRY-163',exact:true}).isVisible());
  page.once('dialog',d=>d.dismiss());
  await panel.getByRole('button',{name:'Delete',exact:true}).click();
  assert.equal((await stored(page)).length,2,'Dismissed carry-forward deletion preserves source');
