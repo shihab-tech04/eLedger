@@ -58,10 +58,10 @@ async function openNav(page,label,group,width){
  }
  await nav.getByRole('button',{name:label,exact:true}).click();
 }
-async function screenshot(page,rel){
+async function screenshot(page,rel,{fullPage=true}={}){
  const target=path.join(DEST,rel+'.png');
  await page.evaluate(()=>window.scrollTo(0,0));
- await page.screenshot({path:target,fullPage:true,animations:'disabled'});
+ await page.screenshot({path:target,fullPage,animations:'disabled'});
  return target;
 }
 async function checkOverflow(page){
@@ -103,7 +103,7 @@ try {
     await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
     await page.getByRole('menu',{name:'Source Tax categories'}).waitFor();
     await checkOverflow(page);
-    out.compact.push({state:'flyout',screenshot:await screenshot(page,'compact/1280-source-tax-flyout-en')});
+    out.compact.push({state:'flyout',screenshot:await screenshot(page,'compact/1280-source-tax-flyout-en',{fullPage:false})});
     // Playwright fullPage screenshots can temporarily resize the page,
     // legitimately closing the position-sensitive popover. Reopen if needed.
     if(await page.getByRole('menu',{name:'Source Tax categories'}).count()===0){
