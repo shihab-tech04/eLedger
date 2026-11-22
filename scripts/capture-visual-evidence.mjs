@@ -192,19 +192,23 @@ try {
   for(const [id,label,group] of routes){
    if(group==='status'){
     await openNav(page,label,group,width);
-    await page.getByRole('dialog',{name:'Tax Payment Status'}).waitFor();
+    await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
+    const statusTable=page.locator('main.eledger-main table.eledger-status-page-table');
+    assert.deepEqual((await statusTable.locator('thead th').allTextContents()).map(x=>x.trim()),['Particulars','Amount'],
+      'PDF p21 requires its two exact table headers');
+    assert.equal(await statusTable.locator('tbody tr').count(),7,'PDF p21 requires six primary buckets and a Total');
+    await statusTable.getByRole('button',{name:/Source Tax/}).click();
+    assert.ok((await statusTable.locator('tbody tr').count())>7,'Source Tax source-route drilldown must work');
     await checkOverflow(page);
     let shot=await screenshot(page,String(width)+'/'+id+'-en');
     out.routes.push({width,id,originalNavLabel:label,language:'en',visual:shot,pass:true});
-    await page.getByRole('button',{name:'Close Tax Payment Status'}).click();
     await page.getByRole('button',{name:'বাংলা',exact:true}).click();
-    if(width<600)await page.getByRole('button',{name:'লেজার মেনু খুলুন'}).click();
-    await page.locator('aside.eledger-sidebar').getByRole('button',{name:'কর পরিশোধের অবস্থা',exact:true}).click();
-    await page.getByRole('dialog',{name:'কর পরিশোধের অবস্থা'}).waitFor();
+    await page.getByRole('heading',{name:'কর পরিশোধের অবস্থা',exact:true}).waitFor();
+    assert.deepEqual((await statusTable.locator('thead th').allTextContents()).map(x=>x.trim()),['বিবরণ','অঙ্ক'],
+      'Bengali status headers must preserve meaning and order');
     await checkOverflow(page);
     shot=await screenshot(page,String(width)+'/'+id+'-bn');
     out.routes.push({width,id,originalNavLabel:label,language:'bn',visual:shot,pass:true});
-    await page.getByRole('button',{name:'কর পরিশোধের বিবরণ বন্ধ করুন'}).click();
     await page.getByRole('button',{name:'English',exact:true}).click();
     continue;
    }
@@ -236,9 +240,12 @@ try {
    await openNav(page,route,group,width);
    const add=route==='Source Tax (LTU)'?'Add Source Tax':'Add Entry';
    await page.getByRole('button',{name:add,exact:true}).click();
-   const dialog=page.getByRole('dialog');
-   await dialog.waitFor();
-   const inputs=dialog.locator('input,select,textarea');
+   const inline=width>=768 && (route==='Salary (Others)' || route==='Adjustment of Tax Refund');
+   const form=inline ? page.locator('tr.eledger-source-inline-editor') : page.getByRole('dialog');
+   await form.waitFor();
+   if(inline)assert.equal(await form.locator('td').count(),route==='Salary (Others)'?8:9,
+     'Inline PDF table editor must retain every original table cell');
+   const inputs=form.locator('input,select,textarea');
    const fieldCount=await inputs.count();
    const fields=await inputs.evaluateAll(nodes=>nodes.map(x=>({
     tag:x.tagName.toLowerCase(),type:x.getAttribute('type'),name:x.getAttribute('aria-label'),
@@ -249,7 +256,8 @@ try {
    await checkOverflow(page);
    const shot=await screenshot(page,String(width)+'/form-'+id+'-en');
    out.forms.push({width,route,expectedFields,fieldCount,fields,visual:shot,pass:true});
-   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+   if(route==='Source Tax (LTU)') await form.getByRole('button',{name:'Close form',exact:true}).click();
+   else await form.getByRole('button',{name:'Cancel',exact:true}).click();
   }
   assert.equal(out.javascriptExceptions.filter(e=>e.width===width).length,0);
   await context.close();
