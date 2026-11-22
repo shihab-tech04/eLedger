@@ -145,6 +145,12 @@ async function testViewport(browser,width){
  if(width>=961){
    const nav=page.locator('aside.eledger-sidebar');
    const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
+   const wordmark=nav.locator('.eledger-sidebar-brand-wordmark');
+   const logo=nav.locator('.eledger-sidebar-brand-mark');
+   assert.ok(await wordmark.isVisible(),'Logo row must contain eReturn wordmark when expanded');
+   const markBox=await logo.boundingBox(), toggleBox=await collapse.boundingBox();
+   assert.ok(markBox&&toggleBox&&Math.abs((markBox.y+markBox.height/2)-(toggleBox.y+toggleBox.height/2))<9,
+     'Collapse icon must be centered on the SAME row as the eReturn logo');
    await collapse.click();
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    await page.waitForFunction(() =>
