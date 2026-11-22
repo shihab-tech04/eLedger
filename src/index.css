@@ -1443,3 +1443,13 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   }
   .eledger-app .eledger-form-modal .eledger-form-field { gap: 7px; }
 }
+
+
+/* Keep original LTU File control while truthfully distinguishing a saved
+   filename from actual document persistence. Applies consistently in EN/BN. */
+.eledger-file-notice {
+  display: block; max-width: 64ch; padding: 6px 2px 0;
+  color: var(--el-muted); font-size: 12px; font-weight: 400; line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.eledger-file-notice strong { color: var(--el-text); font-weight: 650; }

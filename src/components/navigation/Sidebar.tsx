@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Car, ChevronDown, ChevronRight, FileCheck2,
   LayoutDashboard, Menu, PhoneCall, ReceiptText,
-  ShieldCheck, X, PanelLeftClose, PanelLeftOpen,
+  ShieldCheck, X, PanelLeftClose, PanelLeftOpen, Leaf, RotateCcw, History,
 } from 'lucide-react';
 import { useLedger } from '../../context/LedgerContext.tsx';
 import { useLedgerLanguage } from '../../context/LanguageContext.tsx';
@@ -36,6 +36,8 @@ const ORIGINAL_LABELS: Partial<Record<LedgerRouteId, string>> = {
   'carry-forward': 'Adjustment of carry forward tax u/s 163',
 };
 
+const SIDEBAR_COLLAPSE_KEY = 'eledger_sidebar_collapsed_v1';
+
 const CREDIT_ROUTES: Array<{ group: 'Payment' | 'Adjustment'; id: LedgerRouteId }> = [
   { group: 'Payment', id: 'sec-173' },
   { group: 'Payment', id: 'environmental-surcharge' },
@@ -52,8 +54,26 @@ export const Sidebar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobileMenuOpener = useRef<HTMLButtonElement>(null);
   const mobileDrawer = useRef<HTMLElement>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return typeof window !== 'undefined' && window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === 'true'; }
+    catch { return false; }
+  });
+  const [desktopViewport, setDesktopViewport] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 961px)').matches);
   const [expanded, setExpanded] = useState({ source: true, ait: false });
+  const railCollapsed = desktopViewport && collapsed;
+
+  useEffect(() => {
+    try { window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, String(collapsed)); }
+    catch { /* Optional UI preference must never block navigation in private mode. */ }
+  }, [collapsed]);
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 961px)');
+    const onChange = () => setDesktopViewport(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -98,6 +118,23 @@ export const Sidebar: React.FC = () => {
     setIsStatusModalOpen(false);
     navigate('status');
   };
+  const toggleGroup = (group: 'source' | 'ait') => {
+    if (railCollapsed) {
+      setCollapsed(false);
+      setExpanded((current) => ({...current, [group]: true}));
+      return;
+    }
+    setExpanded((current) => ({ ...current, [group]: !current[group] }));
+  };
+  const creditIcon = (id: LedgerRouteId) => {
+    switch (id) {
+      case 'sec-173': return <ReceiptText size={16} aria-hidden="true"/>;
+      case 'environmental-surcharge': return <Leaf size={16} aria-hidden="true"/>;
+      case 'refund': return <RotateCcw size={16} aria-hidden="true"/>;
+      case 'carry-forward': return <History size={16} aria-hidden="true"/>;
+      default: return <ShieldCheck size={16} aria-hidden="true"/>;
+    }
+  };
 
   const savedRouteIds = entries.map((entry) => entry.routeId);
   const routesByGroup = (group: RouteGroup) => getVisibleRoutesByGroup(group, savedRouteIds);
@@ -139,7 +176,7 @@ export const Sidebar: React.FC = () => {
       {mobileOpen && <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'}
         className="eledger-sidebar-scrim" onClick={() => setMobileOpen(false)}/>}
       <aside ref={mobileDrawer} id="eledger-mobile-sidebar"
-        className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (collapsed ? 'is-collapsed' : '')}
+        className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (railCollapsed ? 'is-collapsed' : '')}
         role={mobileOpen ? 'dialog' : undefined} aria-modal={mobileOpen ? true : undefined}
         aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
         <div className="eledger-sidebar-desktop-toggle">
@@ -160,29 +197,37 @@ export const Sidebar: React.FC = () => {
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </button>
-          <button type="button" className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
+          <button type="button" title={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
+            aria-label={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
+            className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
             aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined}
             onClick={() => navigate('ledger-guide')}>
             <ReceiptText size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
           </button>
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
-              aria-expanded={expanded.source} onClick={() => { if (collapsed) setCollapsed(false); else setExpanded((current) => ({ ...current, source: !current.source })); }}>
+              title={bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}
+              aria-label={bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}
+              aria-controls="eledger-source-tax-subnav"
+              aria-expanded={!railCollapsed && expanded.source} onClick={() => toggleGroup('source')}>
               <ReceiptText size={16}/><span>{bn ? 'উৎস কর দাবি' : 'Claim Source Tax'}</span>
               {expanded.source ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
             </button>
-            {expanded.source && <div className="eledger-source-route-list">
+            {expanded.source && <div id="eledger-source-tax-subnav" className="eledger-source-route-list">
               {routesByGroup('Source Tax').map((route) => renderRoute('Source Tax', route, true))}
             </div>}
           </div>
 
           <div className="eledger-nav-group">
             <button type="button" className="eledger-side-link eledger-group-toggle"
-              aria-expanded={expanded.ait} onClick={() => { if (collapsed) setCollapsed(false); else setExpanded((current) => ({ ...current, ait: !current.ait })); }}>
+              title={bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}
+              aria-label={bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}
+              aria-controls="eledger-ait-subnav"
+              aria-expanded={!railCollapsed && expanded.ait} onClick={() => toggleGroup('ait')}>
               <Car size={16}/><span>{bn ? 'অগ্রিম কর দাবি' : 'Claim AIT'}</span>
               {expanded.ait ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}
             </button>
-            {expanded.ait && <div className="eledger-source-route-list">
+            {expanded.ait && <div id="eledger-ait-subnav" className="eledger-source-route-list">
               {routesByGroup('AIT').map((route) => renderRoute('AIT', route, true))}
             </div>}
           </div>
@@ -194,12 +239,14 @@ export const Sidebar: React.FC = () => {
               return <button key={route.id} type="button"
                 className={'eledger-side-link ' + (selected ? 'is-active' : '')} title={routeText(route)} aria-label={routeText(route)}
                 aria-current={selected ? 'page' : undefined} onClick={() => navigate(tab, route.id)}>
-                <ShieldCheck size={16}/><span>{routeText(route)}</span>
+                {creditIcon(route.id)}<span>{routeText(route)}</span>
               </button>;
             })}
           </div>
 
-          <button type="button" className={'eledger-side-link eledger-status-link ' + (activeNavTab === 'status' ? 'is-active' : '')}
+          <button type="button" title={bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}
+            aria-label={bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}
+            className={'eledger-side-link eledger-status-link ' + (activeNavTab === 'status' ? 'is-active' : '')}
             aria-current={activeNavTab === 'status' ? 'page' : undefined} onClick={openStatus}>
             <FileCheck2 size={16}/><span>{bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}</span>
           </button>

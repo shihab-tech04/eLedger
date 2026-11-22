@@ -58,6 +58,12 @@ async function fill(form,c){
   await form.getByRole('spinbutton',{name:'Amount',exact:true}).fill('250');
   await form.getByRole('textbox',{name:'Challan No'}).fill(c.ref);
   await form.getByRole('textbox',{name:'Description'}).fill('Synthetic LTU');
+  await form.locator('input[type=file]').setInputFiles({
+    name:'local-ltu-evidence.pdf',mimeType:'application/pdf',
+    buffer:Buffer.from('%PDF-1.4\n% isolated browser-only fixture\n'),
+  });
+  assert.match(await form.locator('#eledger-ltu-file-note').innerText(),
+    /Only the file name is stored locally/,'Do not imply attachment bytes are retained');
  }else{
   await form.getByRole('textbox',{name:'Assessment Year'}).fill('2025-2026');
   await form.getByRole('textbox',{name:'Return Register No. / Reference No.'}).fill(c.ref);
@@ -94,6 +100,55 @@ async function testViewport(browser,width){
  assert.equal(response.status(),200);
  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
  assert.deepEqual(await stored(page),[],'Native storage on first visit must have no invented credits');
+ if(width>=961){
+   const nav=page.locator('aside.eledger-sidebar');
+   const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
+   await collapse.click();
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-72)<2,
+     null,{timeout:3000});
+   assert.ok(Math.abs((await nav.boundingBox()).width-72)<2,'Collapsed rail must settle at 72px');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
+   for(const item of ['Claim Source Tax','Claim AIT','Home / Guide','Tax Payment Status']){
+     const button=nav.getByRole('button',{name:item,exact:true});
+     assert.equal(await button.getAttribute('title'),item,'Collapsed route needs a tooltip and name');
+   }
+   for(const [name,icon] of [['Environmental Surcharge','lucide-leaf'],['Adjustment of Tax Refund','lucide-rotate-ccw'],
+     ['Adjustment of carry forward tax u/s 163','lucide-history']]){
+     assert.equal(await nav.getByRole('button',{name,exact:true}).locator('svg.'+icon).count(),1,
+       'Collapsed credit destinations require distinct pictograms: '+name);
+   }
+   await page.reload({waitUntil:'networkidle'});
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
+     'Desktop rail preference must survive reload');
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2,
+     null,{timeout:3000});
+   assert.ok(Math.abs((await nav.boundingBox()).width-260)<2,'AIT group click must open full rail');
+   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'true',
+     'The FIRST click must expose AIT children');
+   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible());
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'false');
+   await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+   await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+   assert.equal(await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).getAttribute('aria-expanded'),'true');
+   assert.ok(await nav.getByRole('button',{name:'Salary (Others)',exact:true}).isVisible());
+   await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+   await page.locator('.eledger-app[lang="bn"]').waitFor();
+   await nav.getByRole('button',{name:'নেভিগেশন সংকুচিত করুন'}).click();
+   assert.equal(await nav.getByRole('button',{name:'অগ্রিম কর দাবি'}).getAttribute('title'),'অগ্রিম কর দাবি');
+   await nav.getByRole('button',{name:'নেভিগেশন প্রসারিত করুন'}).click();
+   await page.getByRole('button',{name:'English',exact:true}).click();
+   await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
+   await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'false');
+   report.push({width,check:'persistent sidebar width, first-click accordion, distinct tooltip/icons, bilingual and reload',pass:true});
+ }
  if(width<600){
    const tabs=page.locator('nav.eledger-mobile-bottom-nav');
    assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
@@ -136,6 +191,12 @@ async function testViewport(browser,width){
   assert.equal(saved.externalVerified,false);
   const date=saved.date;
   report.push({width,category:c.route,check:'Add writes pending native record',pass:true});
+  if(c.route==='Source Tax (LTU)'){
+    const localClaim=(await stored(page)).find(row=>row.referenceNo===c.ref);
+    assert.equal(localClaim?.claimEvidence?.attachmentFileName,'local-ltu-evidence.pdf',
+      'Only the selected filename should be recorded, never document bytes');
+    report.push({width,category:c.route,check:'local filename retained and true upload disclaimer',pass:true});
+  }
 
   await page.reload({waitUntil:'networkidle'});
   await openRoute(page,c.route,width);
@@ -285,10 +346,69 @@ async function testViewport(browser,width){
  report.push({width,check:'zero uncaught JS errors',pass:true});
  await context.close();
 }
+async function conditionalLocalRows(browser,width){
+ const ctx=await browser.newContext({viewport:{width,height:width<600?844:900},
+   isMobile:width<600,hasTouch:width<600});
+ const page=await ctx.newPage();page.setDefaultTimeout(10000);
+ const errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.goto(SITE,{waitUntil:'networkidle'});
+ const when='2026-05-14T12:00:00Z';
+ const base={
+   taxpayerTin:'123456789012', assessmentYear:'2026-2027',
+   grossAmount:1000,taxDeducted:400,date:'2026-05-14',
+   status:'PENDING_VERIFICATION',isManual:false,externalVerified:false,
+   createdAt:when,updatedAt:when,
+ };
+ const synthetic=[
+   {...base,id:'e2e-local-carry-163',category:'ADJUSTMENT',
+     routeId:'carry-forward',referenceNo:'E2E-CARRY-163',
+     sourceEntity:'Synthetic prior return evidence',sectionCode:'Sec 163',
+     workflow:'SINGLE_CLAIM',remarks:'Local non-government fixture only'},
+   {...base,id:'e2e-local-dividend-117',category:'SOURCE_TAX',
+     routeId:'dividend',referenceNo:'E2E-DIVIDEND-117',
+     sourceEntity:'Synthetic dividend issuer',sectionCode:'Sec 117',
+     workflow:'SYNC_FROM_INCOME',grossAmount:1000,taxDeducted:175},
+ ];
+ await page.evaluate(([key,rows])=>localStorage.setItem(key,JSON.stringify(rows)),[STORE,synthetic]);
+ await page.reload({waitUntil:'networkidle'});
+ assert.equal((await stored(page)).length,2,'Synthetic fixture valid for local testing only');
+ await openRoute(page,'Adjustment of carry forward tax u/s 163',width);
+ const panel=page.locator('section.eledger-carryforward-source');
+ await panel.getByText('Claimed (local; pending verification)').waitFor();
+ assert.match(await panel.innerText(),/400/);
+ assert.ok(await panel.getByRole('button',{name:'Delete',exact:true}).isVisible());
+ page.once('dialog',d=>d.dismiss());
+ await panel.getByRole('button',{name:'Delete',exact:true}).click();
+ assert.equal((await stored(page)).length,2,'Dismissed carry-forward deletion preserves source');
+ page.once('dialog',d=>d.accept());
+ await panel.getByRole('button',{name:'Delete',exact:true}).click();
+ await panel.getByRole('button',{name:'Claim',exact:true}).waitFor();
+ assert.equal((await stored(page)).length,1);
+ report.push({width,category:'Carry Forward 163',
+   check:'populated local amount, cancellable Delete and true empty state',pass:true});
+ await openRoute(page,'Dividend',width);
+ const row=page.locator('.eledger-official-records tbody tr').filter({hasText:'E2E-DIVIDEND-117'});
+ await row.waitFor({state:'visible'});
+ assert.match(await row.innerText(),/175/);
+ const action=row.getByRole('button',{name:'Remove local claim: E2E-DIVIDEND-117'});
+ assert.equal(await action.count(),1,'Populated PDF Dividend Action exists');
+ page.once('dialog',d=>d.dismiss());
+ await action.click();
+ assert.equal((await stored(page)).length,1);
+ page.once('dialog',d=>d.accept());
+ await action.click();
+ await row.waitFor({state:'detached'});
+ assert.equal((await stored(page)).length,0);
+ report.push({width,category:'Dividend',
+   check:'populated read-only row Action, cancel/confirm local Delete, no external sync',pass:true});
+ assert.deepEqual(errors,[],'Conditional local forms must have no uncaught JS errors');
+ await ctx.close();
+}
 let proc,browser;
 try{
  proc=await startPreview();browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  for(const width of [1280,390,320])await testViewport(browser,width);
+ for(const width of [1280,390,320])await conditionalLocalRows(browser,width);
  console.log('NATIVE_BROWSER_ACCEPTANCE PASS '+report.length+'/'+report.length);
  console.log(JSON.stringify(report));
 }catch(e){console.error('NATIVE_BROWSER_ACCEPTANCE FAIL',e.stack||String(e));process.exitCode=1;}
