@@ -96,8 +96,8 @@ export const SourceTaxView: React.FC = () => {
       : isIbas ? (routeEntries.length > 0 ? 'স্থানীয়ভাবে রেকর্ডকৃত বেতনের তথ্য' : undefined)
       : isServicePayment
         ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
-        : undefined
-    : caption;
+        : currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
+    : caption ?? currentRoute.description;
 
   return (
     <div className="eledger-financial-page">
