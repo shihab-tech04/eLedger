@@ -105,7 +105,10 @@ async function testViewport(browser,width){
    const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
    await collapse.click();
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
-   assert.ok(Math.abs((await nav.boundingBox()).width-72)<2,'Collapsed rail must be 72px');
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-72)<2,
+     null,{timeout:3000});
+   assert.ok(Math.abs((await nav.boundingBox()).width-72)<2,'Collapsed rail must settle at 72px');
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
    for(const item of ['Claim Source Tax','Claim AIT','Home / Guide','Tax Payment Status']){
      const button=nav.getByRole('button',{name:item,exact:true});
@@ -120,6 +123,9 @@ async function testViewport(browser,width){
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
      'Desktop rail preference must survive reload');
    await nav.getByRole('button',{name:'Claim AIT',exact:true}).click();
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2,
+     null,{timeout:3000});
    assert.ok(Math.abs((await nav.boundingBox()).width-260)<2,'AIT group click must open full rail');
    assert.equal(await nav.getByRole('button',{name:'Claim AIT',exact:true}).getAttribute('aria-expanded'),'true',
      'The FIRST click must expose AIT children');
