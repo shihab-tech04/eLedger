@@ -250,6 +250,9 @@ export const SurchargeTransferPanel: React.FC<{
           <button type="button" className="eledger-action-icon" disabled={busy}
             aria-label={`${t('View details','বিস্তারিত দেখুন')} ${entry.referenceNo}`}
             onClick={() => setSelected(entry)}><Eye size={17}/></button>
+          {onUpdate && <button type="button" className="eledger-action-icon" disabled={busy}
+            aria-label={`${t('Edit','সম্পাদনা')} ${entry.referenceNo}`}
+            onClick={() => startEdit(entry)}><Pencil size={17}/></button>}
           {onDelete && <button type="button" className="eledger-action-icon is-danger" disabled={busy}
             aria-label={`${t('Delete','মুছুন')} ${entry.referenceNo}`}
             onClick={() => void remove(entry)}><Trash2 size={17}/></button>}
