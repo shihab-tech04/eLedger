@@ -259,11 +259,11 @@ async function testViewport(browser,width){
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2,
      null,{timeout:3000});
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'false');
+   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible(),
+     'Expanded original accordion must still show selected AIT route');
    await page.reload({waitUntil:'networkidle'});
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,
      'Explicitly expanded desktop layout must persist after reload');
-   assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible(),
-     'Expanded original accordion must still show selected AIT route');
    // Restore neutral Dashboard so the existing CRUD regression suite is independent.
    await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
