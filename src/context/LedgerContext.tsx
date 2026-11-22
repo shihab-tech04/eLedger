@@ -16,6 +16,7 @@ import { LEDGER_STORAGE_KEY, ledgerRepository } from '../services/ledgerReposito
 import { incomeSyncService } from '../services/incomeSyncService.ts';
 import { calculateCategoryTotals } from '../domain/calculations.ts';
 import { validateLedgerEntry, ValidationResult } from '../domain/validation.ts';
+import { allowLedgerContextSwitch } from '../services/unsavedNavigation.ts';
 
 interface LedgerContextType {
   taxpayer: TaxpayerContext;
@@ -52,8 +53,8 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadSequence = useRef(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeNavTab, setActiveNavTab] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status'>('dashboard');
-  const [activeRouteId, setActiveRouteId] = useState<LedgerRouteId>('salary-ibas');
+  const [activeNavTab, setActiveNavTabState] = useState<'dashboard' | 'ledger-guide' | 'source-tax' | 'ait' | 'payments' | 'adjustments' | 'status'>('dashboard');
+  const [activeRouteId, setActiveRouteIdState] = useState<LedgerRouteId>('salary-ibas');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
 
   // Filter synchronously on context switches, even before the next async load resolves.
@@ -95,11 +96,21 @@ export const LedgerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [loadEntries]);
 
   const setTaxpayer = (tp: TaxpayerContext) => {
+    if (tp.tin !== taxpayer.tin && !allowLedgerContextSwitch()) return;
     setTaxpayerState(tp);
   };
 
   const setAssessmentYear = (ay: AssessmentYear) => {
+    if (ay !== assessmentYear && !allowLedgerContextSwitch()) return;
     setAssessmentYearState(ay);
+  };
+  const setActiveNavTab = (tab: typeof activeNavTab) => {
+    if (tab !== activeNavTab && !allowLedgerContextSwitch()) return;
+    setActiveNavTabState(tab);
+  };
+  const setActiveRouteId = (id: LedgerRouteId) => {
+    if (id !== activeRouteId && !allowLedgerContextSwitch()) return;
+    setActiveRouteIdState(id);
   };
 
   // Purely dynamic totals derived directly from underlying entries
