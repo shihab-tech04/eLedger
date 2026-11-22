@@ -452,7 +452,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
       </div>}
     />}
     <div className="overflow-x-auto">
-      <table className="eledger-official-records">
+      <table className="eledger-official-records eledger-data-table">
         <thead><tr>{cols[routeId].map((col) => <th scope="col" key={col}>{colLabel(col)}</th>)}</tr></thead>
         <tbody>{filteredEntries.length === 0 ? <tr className="eledger-empty-records-row"><td colSpan={cols[routeId].length}>{t('No Data Found','কোনো তথ্য পাওয়া যায়নি')}</td></tr> :
           filteredEntries.map((entry, index) => routeId === 'refund' && active === entry.id && !compactEditor ?
