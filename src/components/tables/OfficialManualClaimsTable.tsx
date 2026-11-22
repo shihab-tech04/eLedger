@@ -302,7 +302,13 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
           onValueChange={(v) => change('description', v)}/>
         <label className="eledger-form-field"><span>{t('File','ফাইল')}</span>
           <input className="eledger-control" type="file" aria-label={t('File','ফাইল')}
+            aria-describedby="eledger-ltu-file-note"
             onChange={(event) => change('fileName', event.target.files?.[0]?.name ?? '')}/>
+          <small id="eledger-ltu-file-note" className="eledger-file-notice">
+            {draft.fileName && <><strong>{t('Selected file name','নির্বাচিত ফাইলের নাম')}:</strong> {draft.fileName}. </>}
+            {t('Only the file name is stored locally. The document is not uploaded or retained.',
+              'শুধু ফাইলের নাম স্থানীয়ভাবে সংরক্ষিত হয়। নথিটি আপলোড বা সংরক্ষণ করা হয় না।')}
+          </small>
         </label>
       </>}
       {routeId === 'refund' && <>
