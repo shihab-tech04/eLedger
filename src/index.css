@@ -1422,3 +1422,24 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-surcharge-grid-footer-actions { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: 100%; }
   .eledger-surcharge-grid-footer-actions .eledger-button { width: 100%; }
 }
+
+
+/* At phone widths, long official field labels must be readable in full:
+   replace decorative ellipsis-only floating labels with permanent clear labels. */
+@media (max-width: 767px) {
+  .eledger-app .eledger-form-modal .eledger-floating-field > .eledger-floating-label,
+  .eledger-app .eledger-form-modal .eledger-floating-field:is(:focus-within,.has-value,.is-date) > .eledger-floating-label {
+    position: static; inset: auto; padding: 0; max-width: 100%;
+    white-space: normal; overflow: visible; text-overflow: clip;
+    background: transparent; color: var(--el-control-label); font-size: 12px;
+    font-weight: 600; line-height: 1.45; pointer-events: none;
+    transition: none;
+  }
+  .eledger-app .eledger-form-modal .eledger-floating-field > .eledger-control {
+    min-height: 48px; padding: 11px 12px; font-size: 16px; line-height: 1.4;
+  }
+  .eledger-app .eledger-form-modal .eledger-floating-field:focus-within > .eledger-control {
+    padding-inline: 11px;
+  }
+  .eledger-app .eledger-form-modal .eledger-form-field { gap: 7px; }
+}
