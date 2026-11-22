@@ -96,6 +96,10 @@ async function save(form,c){
 async function stored(page){return page.evaluate(key=>JSON.parse(localStorage.getItem(key)??'null'),STORE);}
 async function testViewport(browser,width){
  const context=await browser.newContext({viewport:{width,height:width<600?844:900},isMobile:width<600,hasTouch:width<600});
+ if(width===1280){
+   // Old expanded preference is retained without preventing the new v2 default.
+   await context.addInitScript(()=>localStorage.setItem('eledger_sidebar_collapsed_v1','false'));
+ }
  const page=await context.newPage(); page.setDefaultTimeout(10000);
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
  const response=await page.goto(SITE,{waitUntil:'networkidle'});
@@ -145,6 +149,14 @@ async function testViewport(browser,width){
  report.push({width,check:'computed AA primary/footer contrast, EN/BN font contract and mobile label sizes',pass:true});
  if(width>=961){
    const nav=page.locator('aside.eledger-sidebar');
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
+     'New and returning desktop visitors must see the compact sidebar by default');
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
+   await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+   await page.waitForFunction(() =>
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2);
    const logo=nav.locator('.eledger-sidebar-brand-mark');
    const wordmark=nav.locator('.eledger-sidebar-brand-wordmark');
    const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
@@ -157,7 +169,7 @@ async function testViewport(browser,width){
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2,
      null,{timeout:3000});
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
-   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'true');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
    const expand=nav.getByRole('button',{name:'Expand navigation',exact:true});
    const logoBox=await logo.boundingBox(),toggleBox=await expand.boundingBox();
    assert.ok(logoBox&&toggleBox&&Math.abs(logoBox.y+logoBox.height/2-toggleBox.y-toggleBox.height/2)<9,
@@ -246,7 +258,10 @@ async function testViewport(browser,width){
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2,
      null,{timeout:3000});
-   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v1')),'false');
+   assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'false');
+   await page.reload({waitUntil:'networkidle'});
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,
+     'Explicitly expanded desktop layout must persist after reload');
    assert.ok(await nav.getByRole('button',{name:'AIT on Car',exact:true}).isVisible(),
      'Expanded original accordion must still show selected AIT route');
    // Restore neutral Dashboard so the existing CRUD regression suite is independent.
