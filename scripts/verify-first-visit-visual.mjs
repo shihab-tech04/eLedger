@@ -120,6 +120,36 @@ try{
     }
     await context.close();
   }
+  // Isolated synthetic populated-ledger check: the layout must also be correct
+  // when the user has nonzero claims, not just in a clean first-visit profile.
+  for(const width of [1280,1440]){
+    const ctx=await browser.newContext({viewport:{width,height:900},locale:'en-US'});
+    await ctx.addInitScript(()=>{
+      const base={taxpayerTin:'123456789012',assessmentYear:'2026-2027',
+        referenceNo:'SYNTHETIC-DASHBOARD-UI',sourceEntity:'Local browser fixture',
+        sectionCode:'Sec 86',grossAmount:100000,taxDeducted:85000,
+        date:'2026-06-30',status:'PENDING_VERIFICATION',workflow:'SYSTEM_CLAIM',
+        isManual:false,externalVerified:false,
+        createdAt:'2026-06-30T00:00:00Z',updatedAt:'2026-06-30T00:00:00Z'};
+      localStorage.setItem('nbr_eledger_entries_v1',JSON.stringify([
+        {...base,id:'ui-source-fixture',category:'SOURCE_TAX',routeId:'salary-ibas'},
+        {...base,id:'ui-ait-fixture',category:'AIT',routeId:'car-ait',taxDeducted:25000},
+        {...base,id:'ui-payment-fixture',category:'PAYMENT',routeId:'sec-173',taxDeducted:40000},
+      ]));
+    });
+    const page=await ctx.newPage();
+    const response=await page.goto(target,{waitUntil:'networkidle'});
+    assert.equal(response?.status(),200,'Populated fixture preview response '+width);
+    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+    await page.getByText('1,50,000',{exact:true}).first().waitFor();
+    const dashboard=await page.locator('.eledger-dashboard-columns').boundingBox();
+    const quick=await page.locator('.eledger-dashboard-quick-actions').boundingBox();
+    assert.ok(dashboard&&quick&&quick.width>=dashboard.width*.92,
+      'Quick Actions must fill row with populated saved claims at '+width);
+    assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(),1);
+    findings.cases.push({width,stage:'populated-synthetic-dashboard',shot:await screenshot(page,width+'-populated'),pass:true});
+    await ctx.close();
+  }
   assert.deepEqual(findings.errors,[],'Uncaught JS errors');
   findings.pass=true;
   console.log('FIRST_VISIT_ACCEPTANCE PASS '+findings.cases.length+' cases / 5 viewport widths');
