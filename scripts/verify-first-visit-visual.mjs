@@ -67,11 +67,12 @@ try{
           'Quick Actions occupies the third column at wide desktop '+width);
       }
     }
-    const guide=nav.locator('.eledger-sidebar-bottom').getByRole('button',{name:'Home / Guide',exact:true});
+    const guide=nav.locator('.eledger-sidebar-bottom button.eledger-footer-guide');
     assert.equal(await guide.count(),1,'Guide appears exactly once in sidebar bottom area at '+width);
-    assert.equal(await nav.locator('.eledger-sidebar-links').getByRole('button',{name:'Home / Guide',exact:true}).count(),0,
+    assert.equal(await guide.getAttribute('aria-label'),'Home / Guide','Guide remains accessible by its label at '+width);
+    assert.equal(await nav.locator('.eledger-sidebar-links button[aria-label="Home / Guide"]').count(),0,
       'Guide is removed from main menu at '+width);
-    const helpline=nav.locator('.eledger-sidebar-bottom').getByRole('link',{name:/Taxes Helpline/});
+    const helpline=nav.locator('.eledger-sidebar-bottom a.eledger-helpline');
     const guideRect=await guide.boundingBox(), helplineRect=await helpline.boundingBox();
     if(width>=961){
       assert.ok(guideRect&&helplineRect&&guideRect.y+guideRect.height<=helplineRect.y+2,
@@ -89,6 +90,11 @@ try{
       const rect=await toggle.boundingBox();
       assert.ok(rect&&rect.width>=44&&rect.height>=44,'Compact toggle target at '+width);
       assert.ok(await nav.getByRole('link',{name:/Taxes Helpline/}).isVisible());
+      const bottomGuide=nav.locator('.eledger-sidebar-bottom .eledger-footer-guide');
+      assert.ok(await bottomGuide.isVisible(),'Compact Guide icon is visible above helpline at '+width);
+      const guideBox=await bottomGuide.boundingBox(), phoneBox=await nav.locator('.eledger-helpline').boundingBox();
+      assert.ok(guideBox&&phoneBox&&guideBox.height>=44&&guideBox.y+guideBox.height<=phoneBox.y+2,
+        'Compact Guide is a full-size accessible icon above phone at '+width);
     }else{
       const opener=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
       assert.ok(await opener.isVisible(),'Mobile menu control belongs to masthead at '+width);
@@ -99,6 +105,17 @@ try{
       await page.keyboard.press('Escape');
       await nav.waitFor({state:'hidden'});
       assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes drawer at '+width);
+    }
+    if(width===1280){
+      if(compact){
+        // Verify a user can open the moved Guide without changing the current
+        // records, then navigate back using the original Dashboard button.
+        await nav.locator('.eledger-sidebar-bottom .eledger-footer-guide').click();
+        await page.getByRole('heading',{name:'How eReturn Ledger Works',exact:true}).waitFor();
+        assert.equal(await nav.locator('.eledger-footer-guide').getAttribute('aria-current'),'page');
+        await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+        await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+      }
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Horizontal overflow at '+width);
     findings.cases.push({width,stage:'first-load-en',compact,shot:await screenshot(page,width+'-first-en'),pass:true});
