@@ -138,6 +138,61 @@ try{
     }
     await context.close();
   }
+  // Regression for the actual reported defect: header and left rail must
+  // remain pinned when the central page scrolls. Check both desktop rail states
+  // and the mobile header without changing any financial records.
+  for(const width of [390,1280,1440,1920]){
+    const context=await browser.newContext({viewport:{width,height:520},isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+    const page=await context.newPage();page.setDefaultTimeout(12000);
+    page.on('pageerror',e=>findings.errors.push({width,stage:'scroll-pinning',error:String(e)}));
+    await page.goto(target,{waitUntil:'networkidle'});
+    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+    await page.evaluate(()=>window.scrollTo({top:document.documentElement.scrollHeight,behavior:'instant'}));
+    await page.waitForFunction(()=>window.scrollY>80);
+    const header=page.locator('header.eledger-header');
+    const masthead=await header.boundingBox();
+    assert.ok(masthead&&Math.abs(masthead.y)<2,
+      'Top header must stay fixed in viewport after full page scroll at '+width);
+    assert.ok(await page.locator('.eledger-header-nav-toggle button').first().isVisible(),
+      'Header navigation toggle remains available while scrolled at '+width);
+    if(width>=961){
+      const sidebar=page.locator('aside.eledger-sidebar');
+      let rail=await sidebar.boundingBox();
+      assert.ok(rail&&Math.abs(rail.y-masthead.height)<3&&Math.abs(rail.height-(520-masthead.height))<4,
+        'Compact left navigation must remain directly below pinned header at '+width);
+      await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true}).click();
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-260)<2);
+      rail=await sidebar.boundingBox();
+      const expandedHeader=await header.boundingBox();
+      assert.ok(rail&&expandedHeader&&Math.abs(rail.y-expandedHeader.height)<3,
+        'Expanded left navigation stays pinned under header at '+width);
+      const beforeScroll=await page.evaluate(()=>window.scrollY);
+      await sidebar.locator('.eledger-sidebar-links').evaluate(el=>{el.scrollTop=el.scrollHeight;});
+      assert.ok(Math.abs((await page.evaluate(()=>window.scrollY))-beforeScroll)<3,
+        'Scrolling nested sidebar entries must not move main dashboard at '+width);
+      assert.ok(await sidebar.getByRole('link',{name:/Taxes Helpline/}).isVisible(),
+        'Pinned rail keeps helpline visible at '+width);
+      await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Collapse navigation',exact:true}).click();
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-80)<2);
+      rail=await sidebar.boundingBox();
+      assert.ok(rail&&Math.abs(rail.y-(await header.boundingBox()).height)<3,
+        'Compact navigation remains anchored after toggle and scroll at '+width);
+    }else{
+      const menu=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
+      await menu.click();
+      await page.locator('aside.eledger-sidebar').waitFor({state:'visible'});
+      await page.keyboard.press('Escape');
+      await page.locator('aside.eledger-sidebar').waitFor({state:'hidden'});
+      const after=await header.boundingBox();
+      assert.ok(after&&Math.abs(after.y)<2,
+        'Mobile masthead stays pinned after opening and closing menu at scroll position');
+    }
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),
+      'Pinned navigation does not introduce horizontal overflow at '+width);
+    findings.cases.push({width,stage:'fixed-header-sidebar-while-scrolling',
+      shot:await screenshot(page,width+'-fixed-nav-scrolled'),pass:true});
+    await context.close();
+  }
   // Isolated synthetic populated-ledger check: the layout must also be correct
   // when the user has nonzero claims, not just in a clean first-visit profile.
   for(const width of [1280,1440]){
@@ -172,7 +227,7 @@ try{
   }
   assert.deepEqual(findings.errors,[],'Uncaught JS errors');
   findings.pass=true;
-  console.log('FIRST_VISIT_ACCEPTANCE PASS '+findings.cases.length+' cases / 5 viewport widths');
+  console.log('FIRST_VISIT_ACCEPTANCE PASS '+findings.cases.length+' cases / 6 baseline viewport widths + scrolling');
 }catch(error){
   console.error('FIRST_VISIT_ACCEPTANCE FAIL',error.stack||String(error));
   process.exitCode=1;
