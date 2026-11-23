@@ -107,7 +107,7 @@ try {
   if(width===1280){
     // Targeted post-fix visual proof of collapsed rail, source flyout and active child.
     const nav=page.locator('aside.eledger-sidebar');
-    await nav.getByRole('button',{name:'Collapse navigation',exact:true}).click();
+    await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Collapse navigation',exact:true}).click();
     await page.waitForFunction(() =>
       Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
     await checkOverflow(page);
@@ -127,7 +127,7 @@ try {
     await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
     assert.equal(await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).getAttribute('aria-current'),'true');
     out.compact.push({state:'active-source',screenshot:await screenshot(page,'compact/1280-active-source-en')});
-    await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+    await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true}).click();
     await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
     await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
   }
