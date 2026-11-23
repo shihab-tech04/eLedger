@@ -78,7 +78,6 @@ export const DashboardView: React.FC = () => {
     setActiveRouteId('car-ait');
     setActiveNavTab('ait');
   };
-  const reviewAllPayments = () => setIsStatusModalOpen(true);
 
   const cards = [
     { id: 'source', label: t('Source Tax','উৎস কর'), value: sourceTotal, count: `${sourceRoutes.length} ${t('categories','খাত')}`,
@@ -152,19 +151,16 @@ export const DashboardView: React.FC = () => {
         <p>{t('Recorded Ledger Total is a local record, not automatically an approved tax credit.','রেকর্ডকৃত লেজারের অঙ্ক যাচাইকৃত করের ক্রেডিট নয়। লেজারের মোট অঙ্ক স্বয়ংক্রিয়ভাবে অনুমোদিত নয়।')}</p>
       </section>
 
-      <section className="eledger-dashboard-primary-next" aria-label={t('Next action','পরবর্তী কাজ')}>
+      {!hasRecordedAmounts && <section className="eledger-dashboard-primary-next" aria-label={t('Next action','পরবর্তী কাজ')}>
         <div>
-          <strong>{hasRecordedAmounts ? t('Your next step','আপনার পরবর্তী কাজ') : t('Start recording your tax information','কর সংক্রান্ত তথ্য রেকর্ড করা শুরু করুন')}</strong>
-          <p>{hasRecordedAmounts
-            ? t('Review recorded claims and their verification status before returning to eReturn.','ই-রিটার্নে ফেরার আগে রেকর্ডকৃত দাবির যাচাই অবস্থা দেখুন।')
-            : t('Begin with an available manual-entry category. Government-source records are not created here.','ম্যানুয়াল এন্ট্রির জন্য উপলব্ধ খাত দিয়ে শুরু করুন। সরকারি উৎসের রেকর্ড এখানে তৈরি হয় না।')}</p>
+          <strong>{t('Start recording your tax information','কর সংক্রান্ত তথ্য রেকর্ড করা শুরু করুন')}</strong>
+          <p>{t('Begin with an available manual-entry category. Government-source records are not created here.','ম্যানুয়াল এন্ট্রির জন্য উপলব্ধ খাত দিয়ে শুরু করুন। সরকারি উৎসের রেকর্ড এখানে তৈরি হয় না।')}</p>
         </div>
-        <button type="button" className="eledger-button eledger-button-primary"
-          onClick={hasRecordedAmounts ? reviewAllPayments : startSourceTax}>
-          {hasRecordedAmounts ? t('Review payment status','কর পরিশোধের অবস্থা দেখুন') : t('Start with Salary (Others)','অন্যান্য বেতন দিয়ে শুরু করুন')}
+        <button type="button" className="eledger-button eledger-button-primary" onClick={startSourceTax}>
+          {t('Start with Salary (Others)','অন্যান্য বেতন দিয়ে শুরু করুন')}
           <ArrowRight size={16} aria-hidden="true"/>
         </button>
-      </section>
+      </section>}
 
       <section className="eledger-ledger-composition" aria-label={t('Ledger composition','লেজারের বিন্যাস')}>
         <div className="eledger-composition-heading">
