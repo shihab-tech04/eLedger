@@ -42,7 +42,10 @@ export function LedgerRecordActions({ reference, onView, onEdit, onDelete, disab
     };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') { event.preventDefault(); close(true); }
-      if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+      // Arrow keys belong to the open menu only. If focus has moved to a
+      // table filter or another control, preserve that control's native keys.
+      if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key) ||
+          !menu.current?.contains(document.activeElement)) return;
       const items = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? []);
       if (!items.length) return;
       event.preventDefault();
