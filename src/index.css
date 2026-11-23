@@ -416,7 +416,8 @@ button, select, input, textarea { font: inherit; }
   .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-agency span { display: none; }
 }
 @media (max-width: 960px) {
-  html, body { overflow-x: hidden; }
+  /* clip avoids creating an unintended scroll container that defeats sticky mastheads. */
+  html, body { overflow-x: clip; }
   .eledger-app { overflow-x: clip; }
   .eledger-header-main { height: auto; min-height: 70px; align-items: center; gap: 12px; padding: 11px 18px; }
   .eledger-brand { flex-basis: auto; flex-shrink: 0; padding: 0; border-right: 0; margin-right: auto; }
