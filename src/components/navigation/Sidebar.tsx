@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  BookOpen, Car, ChevronDown, ChevronRight, FileCheck2,
+  BookOpen, Car, ChevronDown, ChevronRight,
   LayoutDashboard, Menu, PhoneCall, ReceiptText,
   ShieldCheck, X, PanelLeftClose, PanelLeftOpen, Leaf, RotateCcw, History,
 } from 'lucide-react';
@@ -51,7 +51,7 @@ const CREDIT_ROUTES: Array<{ group: 'Payment' | 'Adjustment'; id: LedgerRouteId 
 /** Flat left navigation from the accepted September 2026 custom eLedger UI. */
 export const Sidebar: React.FC = () => {
   const { activeNavTab, setActiveNavTab, activeRouteId, setActiveRouteId,
-    entries, setIsStatusModalOpen } = useLedger();
+    entries } = useLedger();
   const { language } = useLedgerLanguage();
   const bn = language === 'bn';
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -169,10 +169,6 @@ export const Sidebar: React.FC = () => {
     if (window.matchMedia('(max-width: 960px)').matches) window.scrollTo(0, 0);
   };
 
-  const openStatus = () => {
-    setIsStatusModalOpen(false);
-    navigate('status');
-  };
   const toggleGroup = (group: 'source' | 'ait') => {
     if (railCollapsed) {
       const button = group === 'source' ? sourceGroupButton.current : aitGroupButton.current;
@@ -241,10 +237,6 @@ export const Sidebar: React.FC = () => {
         role={mobileOpen ? 'dialog' : undefined} aria-modal={mobileOpen ? true : undefined}
         aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
         <div className="eledger-sidebar-brand-row">
-          <div className="eledger-sidebar-brand" aria-label="eReturn Ledger">
-            <span className="eledger-sidebar-brand-mark" aria-hidden="true">eR</span>
-            {!railCollapsed && <span className="eledger-sidebar-brand-wordmark"><strong>eReturn</strong><small>LEDGER</small></span>}
-          </div>
           <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
             title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
             aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
@@ -316,12 +308,6 @@ export const Sidebar: React.FC = () => {
             })}
           </div>
 
-          <button type="button" title={bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}
-            aria-label={bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}
-            className={'eledger-side-link eledger-status-link ' + (activeNavTab === 'status' ? 'is-active' : '')}
-            aria-current={activeNavTab === 'status' ? 'page' : undefined} onClick={openStatus}>
-            <FileCheck2 size={16}/><span>{bn ? 'কর পরিশোধের অবস্থা' : 'Tax Payment Status'}</span>
-          </button>
         </nav>
         <div className="eledger-sidebar-bottom">
           <a className="eledger-helpline" href="tel:09643717171"
@@ -363,9 +349,6 @@ export const Sidebar: React.FC = () => {
           aria-current={activeNavTab === 'payments' || activeNavTab === 'adjustments' ? 'page' : undefined}
           onClick={() => navigate('payments', activeIdForGroup('Payment'))}>
           <ShieldCheck size={20} aria-hidden="true"/><span>{bn ? 'পরিশোধ' : 'Payments'}</span></button>
-        <button type="button" className={activeNavTab === 'status' ? 'is-active' : ''}
-          aria-current={activeNavTab === 'status' ? 'page' : undefined}
-          onClick={openStatus}><FileCheck2 size={20} aria-hidden="true"/><span>{bn ? 'অবস্থা' : 'Status'}</span></button>
       </nav>
     </>
   );
