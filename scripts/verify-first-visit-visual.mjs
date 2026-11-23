@@ -316,9 +316,13 @@ try{
       await review.getByRole('button',{name:'Table',exact:true}).click();
     }
     await review.getByRole('searchbox',{name:'Search records'}).fill('NO-MATCH-PAYROLL');
-    assert.ok(await review.getByText(/No matching records/).first().isVisible(),'Search empty result at '+width);
+    const visibleNoMatch=width<961 ? review.locator('.eledger-ibas-review-cardlist .eledger-ibas-review-no-records')
+      : review.locator('.eledger-ibas-review-tablewrap .eledger-ibas-review-no-records');
+    assert.ok(await visibleNoMatch.isVisible(),'Search empty result at '+width);
     await review.getByRole('button',{name:'Reset'}).click();
-    assert.ok(await review.getByText(reference).first().isVisible(),'Reset recovers record at '+width);
+    const visibleReference=width<961 ? review.locator('.eledger-ibas-review-record-card').first().getByText(reference)
+      : review.locator('.eledger-ibas-review-table tbody td').first().getByText(reference);
+    assert.ok(await visibleReference.isVisible(),'Reset recovers record at '+width);
     findings.cases.push({width,stage:'salary-ibas-approved-en',
       shot:await screenshot(page,width+'-salary-ibas-en'),pass:true});
     await page.getByRole('button',{name:'বাংলা',exact:true}).click();
