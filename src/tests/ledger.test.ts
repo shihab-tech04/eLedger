@@ -2156,7 +2156,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.match(markup, /Claim AIT/);
     assert.match(markup, /Environmental Surcharge/);
     assert.match(markup, /carry forward tax u\/s 163/);
-    assert.match(markup, /Tax Payment Status/);
+    assert.doesNotMatch(markup, /Tax Payment Status|eledger-status-link|eledger-sidebar-brand-mark/);
+    assert.match(markup, /eledger-brand-mark/);
     assert.doesNotMatch(markup, /Need Help/);
     assert.match(markup, /09643717171/);
     assert.doesNotMatch(markup, /bg-emerald-950/);
@@ -2187,7 +2188,8 @@ describe('eLedger — Historical UI restoration guardrails', () => {
     assert.doesNotMatch(markup, /17 categories have no amount/);
     assert.match(markup, /Salary \(iBAS\+\+\)/);
     assert.match(markup, /Quick actions/);
-    assert.match(markup, /Tax Payment Status/);
+    assert.equal((markup.match(/>Tax Payment Status<\/button>/g) ?? []).length, 1, 'One labeled dashboard status action');
+    assert.doesNotMatch(markup, /Review payment status/);
     assert.match(markup, /Independently authorized verified credit/);
     assert.doesNotMatch(markup, /eledger-welcome|eledger-progress-ring|Recent ledger activity/);
     assert.doesNotMatch(markup, /18 Functional Routes Directory/);
