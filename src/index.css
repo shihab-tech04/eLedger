@@ -438,9 +438,16 @@ button, select, input, textarea { font: inherit; }
   .eledger-taxpayer-button { gap: 4px; }
   .eledger-header-main { padding: 10px; }
 }
-@media (max-width: 1550px) {
+@media (min-width: 961px) and (max-width: 1550px) {
   .eledger-dashboard-columns { grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); }
-  .eledger-dashboard-aside { display: grid; grid-column: 1 / -1; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr); }
+  /* Quick actions fill the entire row instead of leaving the right side blank. */
+  .eledger-dashboard-aside { display: block; grid-column: 1 / -1; }
+  .eledger-dashboard-action-list { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .eledger-dashboard-action-list button { min-height: 80px; }
+}
+@media (min-width: 961px) and (max-width: 1100px) {
+  .eledger-dashboard-action-list { grid-template-columns: 1fr; }
+  .eledger-dashboard-action-list button { min-height: 62px; }
 }
 @media (max-width: 960px) {
   .eledger-dashboard-heading { align-items: flex-start; }
@@ -1492,38 +1499,23 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 }
 
 
-/* The global masthead owns the logo. Dashboard and the sidebar toggle share
-   the first navigation row; there must be no empty 71px brand placeholder. */
-.eledger-nav-top-row {
-  position: sticky; top: 0; z-index: 3;
-  display: flex; align-items: center; gap: 6px;
-  margin-bottom: 4px; padding: 0 0 4px;
-  background: #fff;
-}
-.eledger-nav-top-row > .eledger-side-link {
-  flex: 1 1 auto; width: auto; min-width: 0;
+/* The logo and sidebar toggle both belong to the global header.
+   The sidebar begins directly with Dashboard: no ghost logo rows or split controls. */
+.eledger-header-nav-toggle {
+  display: flex; flex: 0 0 44px; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin-right: 14px;
 }
 .eledger-sidebar-collapse-button {
-  display: grid; flex: 0 0 44px; place-items: center;
-  width: 44px; min-width: 44px; height: 44px;
+  display: grid; place-items: center; width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px;
   border: 1px solid var(--el-border); border-radius: 8px;
   color: #526989; background: #fff; cursor: pointer;
 }
 .eledger-sidebar-collapse-button:hover { color: var(--el-primary); border-color: #8bd4da; background: #eefafb; }
 .eledger-sidebar-collapse-button:focus-visible { outline: 3px solid var(--el-primary); outline-offset: 2px; }
-@media (min-width: 961px) {
-  .eledger-sidebar.is-collapsed .eledger-sidebar-links { padding-inline: 8px; }
-  .eledger-sidebar.is-collapsed .eledger-nav-top-row { gap: 0; }
-  .eledger-sidebar.is-collapsed .eledger-nav-top-row > .eledger-side-link {
-    flex: 0 0 44px; width: 44px; min-width: 44px; padding-inline: 8px;
-  }
-}
 @media (max-width: 960px) {
-  .eledger-sidebar-collapse-button { display: none; }
-  .eledger-nav-top-row { display: block; }
-  .eledger-nav-top-row > .eledger-side-link { width: 100%; }
+  .eledger-header-nav-toggle { display: none; }
 }
-
 
 /* Prototype v2: single reusable View / More action-cell pattern. The menu is
    portalled to the document so table/card clipping never hides Edit/Delete. */
