@@ -186,11 +186,8 @@ export const DashboardView: React.FC = () => {
       </section>
 
       <div className="eledger-dashboard-columns">
+        <div className="eledger-dashboard-source-stack">
         {categoryPanel(t('Source Tax categories','উৎস করের খাতসমূহ'), t('Current claimed amount for each source-tax category.','প্রতিটি উৎস কর খাতে বর্তমান দাবিকৃত অঙ্ক।'), sourceRoutes, sourceTotal, 'source')}
-        <div className="eledger-dashboard-middle">
-          {categoryPanel(t('AIT categories','অগ্রিম করের খাতসমূহ'), t('Current AIT amounts by available category.','প্রতিটি অগ্রিম কর খাতে বর্তমান অঙ্ক।'), aitRoutes, aitTotal, 'ait')}
-          {categoryPanel(t('Other tax & adjustments','অন্যান্য কর ও সমন্বয়'), t('Tax paid with return, surcharge and adjustments.','রিটার্নের সঙ্গে প্রদত্ত কর, সারচার্জ ও সমন্বয়।'), otherRoutes, otherTotal, 'other')}
-        </div>
         <aside className="eledger-dashboard-aside">
           <section className="eledger-dashboard-quick-actions">
             <header><h2>{t('Quick actions','দ্রুত কাজ')}</h2><span>LEDGER</span></header>
@@ -208,6 +205,11 @@ export const DashboardView: React.FC = () => {
           </section>
 
         </aside>
+        </div>
+        <div className="eledger-dashboard-middle">
+          {categoryPanel(t('AIT categories','অগ্রিম করের খাতসমূহ'), t('Current AIT amounts by available category.','প্রতিটি অগ্রিম কর খাতে বর্তমান অঙ্ক।'), aitRoutes, aitTotal, 'ait')}
+          {categoryPanel(t('Other tax & adjustments','অন্যান্য কর ও সমন্বয়'), t('Tax paid with return, surcharge and adjustments.','রিটার্নের সঙ্গে প্রদত্ত কর, সারচার্জ ও সমন্বয়।'), otherRoutes, otherTotal, 'other')}
+        </div>
       </div>
     </div>
   );
