@@ -246,13 +246,6 @@ export const Sidebar: React.FC = () => {
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
           </button>
-          <button type="button" title={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
-            aria-label={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
-            className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
-            aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined}
-            onClick={() => navigate('ledger-guide')}>
-            <BookOpen size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
-          </button>
           <div className="eledger-nav-group">
             <button ref={sourceGroupButton} type="button"
               className={'eledger-side-link eledger-group-toggle' + (railCollapsed && activeNavTab === 'source-tax' ? ' is-active is-active-parent' : '')}
@@ -303,6 +296,13 @@ export const Sidebar: React.FC = () => {
 
         </nav>
         <div className="eledger-sidebar-bottom">
+          <button type="button" title={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
+            aria-label={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
+            className={'eledger-side-link eledger-footer-guide ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
+            aria-current={activeNavTab === 'ledger-guide' ? 'page' : undefined}
+            onClick={() => navigate('ledger-guide')}>
+            <BookOpen size={16}/><span>{bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}</span>
+          </button>
           <a className="eledger-helpline" href="tel:09643717171"
             title={bn ? 'কর সহায়তা · 09643717171' : 'Taxes Helpline · 09643717171'}
             aria-label={bn ? 'কর সহায়তা · 09643717171' : 'Taxes Helpline · 09643717171'}>
