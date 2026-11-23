@@ -153,8 +153,11 @@ try{
     const masthead=await header.boundingBox();
     assert.ok(masthead&&Math.abs(masthead.y)<2,
       'Top header must stay fixed in viewport after full page scroll at '+width);
-    assert.ok(await page.locator('.eledger-header-nav-toggle button').first().isVisible(),
-      'Header navigation toggle remains available while scrolled at '+width);
+    const visibleHeaderToggle=width>=961
+      ? page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true})
+      : page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
+    assert.ok(await visibleHeaderToggle.isVisible(),
+      'Correct responsive header navigation toggle remains available while scrolled at '+width);
     if(width>=961){
       const sidebar=page.locator('aside.eledger-sidebar');
       let rail=await sidebar.boundingBox();
