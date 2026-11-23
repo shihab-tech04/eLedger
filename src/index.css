@@ -1853,6 +1853,9 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-ibas-review-table .is-numeric {
   text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;
 }
+.eledger-ibas-review-table :is(th,td):nth-child(6) {
+  min-width:116px; white-space:nowrap;
+}
 .eledger-ibas-review-table :is(th,td):first-child {
   position:sticky; left:0; min-width:194px; max-width:230px; z-index:2;
   background:#fff; box-shadow:1px 0 0 #e8eef5;
