@@ -251,7 +251,10 @@ try {
     await checkOverflow(page);
     let shot=await screenshot(page,String(width)+'/'+id+'-en');
     out.routes.push({width,id,originalNavLabel:label,language:'en',visual:shot,pass:true});
+    await statusDialog.getByRole('button',{name:'Close Tax Payment Status'}).click();
+    await statusDialog.waitFor({state:'detached'});
     await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+    await page.getByRole('button',{name:'কর পরিশোধের অবস্থা',exact:true}).click();
     const bnDialog=page.getByRole('dialog',{name:'কর পরিশোধের অবস্থা',exact:true});
     await bnDialog.waitFor();
     assert.ok(await bnDialog.getByText('বিবরণ',{exact:true}).isVisible());
@@ -259,9 +262,9 @@ try {
     await checkOverflow(page);
     shot=await screenshot(page,String(width)+'/'+id+'-bn');
     out.routes.push({width,id,originalNavLabel:label,language:'bn',visual:shot,pass:true});
+    await bnDialog.getByRole('button',{name:'কর পরিশোধের বিবরণ বন্ধ করুন',exact:true}).click();
+    await bnDialog.waitFor({state:'detached'});
     await page.getByRole('button',{name:'English',exact:true}).click();
-    await page.getByRole('dialog',{name:'Tax Payment Status',exact:true})
-      .getByRole('button',{name:'Close Tax Payment Status'}).click();
     continue;
    }
    await openNav(page,label,group,width);
