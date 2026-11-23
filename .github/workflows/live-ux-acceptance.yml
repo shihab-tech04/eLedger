@@ -1,0 +1,43 @@
+name: eLedger post-deploy live UX acceptance
+
+on:
+  workflow_run:
+    workflows: ['eLedger published Pages byte parity']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-ux:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'workflow_run')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked application dependencies
+        run: npm ci
+      - name: Install isolated native Chromium runner
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Verify actual published compact navigation, bilingual routes and breakpoints
+        env:
+          ELEDGER_URL: https://shihab-tech04.github.io/eLedger/
+        run: node scripts/verify-first-visit-visual.mjs
+      - name: Preserve production first-visit screenshots and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eLedger-live-first-visit-${{ github.run_id }}
+          path: artifacts/eledger-first-visit/
+          if-no-files-found: warn
+          retention-days: 30

@@ -5,9 +5,10 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
       - 'package.json'
       - 'package-lock.json'
-      - '.github/workflows/pre-release-offsite-backup.yml'
   workflow_dispatch:
 
 permissions:
