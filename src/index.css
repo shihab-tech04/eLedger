@@ -405,11 +405,15 @@ button, select, input, textarea { font: inherit; }
 /* Keep the government identity legible with expanded 260px navigation.
    Don't force the NBR masthead into three wrapped lines at 1280px. */
 @media (min-width: 1271px) and (max-width: 1400px) {
-  .eledger-header-controls { gap: 10px; padding: 0 12px 0 6px; }
-  .eledger-taxpayer-identity { max-width: 145px; }
-  .eledger-agency { padding-inline: 10px; }
-  .eledger-agency strong { white-space: nowrap; font-size: 11px; letter-spacing: .1px; }
-  .eledger-agency span { display: none; }
+  /* Only the wide *expanded* rail needs a condensed NBR title. The
+     80px compact rail keeps the full government subtitle unchanged. */
+  .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-header-controls { gap: 10px; padding: 0 12px 0 6px; }
+  .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-taxpayer-identity { max-width: 145px; }
+  .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-agency { padding-inline: 10px; }
+  .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-agency strong {
+    white-space: nowrap; font-size: 11px; letter-spacing: .1px;
+  }
+  .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-agency span { display: none; }
 }
 @media (max-width: 960px) {
   html, body { overflow-x: hidden; }
