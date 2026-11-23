@@ -50,14 +50,13 @@ try{
       const middle=await page.locator('.eledger-dashboard-middle').boundingBox();
       assert.ok(grid&&quick&&middle, 'Dashboard grid panels exist at '+width);
       if(width<=1550){
-        assert.ok(quick.width>=grid.width*0.92,
-          'Quick Actions must span full dashboard width at intermediate desktop '+width);
-        if(width>1100){
-          const cards=await page.locator('.eledger-dashboard-action-list > button').all();
-          const rects=await Promise.all(cards.map(card=>card.boundingBox()));
-          assert.ok(rects.length===3&&rects.every(box=>box&&Math.abs(box.y-rects[0].y)<5),
-            'Three Quick Actions tiles form one horizontal row at '+width);
-        }
+        const source=await page.locator('.eledger-category-source').boundingBox();
+        assert.ok(source&&Math.abs(quick.x-source.x)<3&&Math.abs(quick.width-source.width)<3,
+          'Quick Actions must stack directly under Source Tax at '+width);
+        assert.ok(quick.y>=source.y+source.height-1&&quick.y-source.y-source.height<28,
+          'No unused vertical gap between Source Tax and Quick Actions at '+width);
+        assert.ok(Math.abs(source.y-middle.y)<3,
+          'Source Tax and AIT stacks align at the top at '+width);
       }else{
         assert.ok(quick.x>=middle.x+middle.width-4,
           'Quick Actions occupies the third column at wide desktop '+width);
@@ -144,8 +143,10 @@ try{
     await page.getByText('1,50,000',{exact:true}).first().waitFor();
     const dashboard=await page.locator('.eledger-dashboard-columns').boundingBox();
     const quick=await page.locator('.eledger-dashboard-quick-actions').boundingBox();
-    assert.ok(dashboard&&quick&&quick.width>=dashboard.width*.92,
-      'Quick Actions must fill row with populated saved claims at '+width);
+    const source=await page.locator('.eledger-category-source').boundingBox();
+    assert.ok(dashboard&&quick&&source&&Math.abs(quick.x-source.x)<3&&Math.abs(quick.width-source.width)<3&&
+      quick.y>=source.y+source.height-1&&quick.y-source.y-source.height<28,
+      'Populated Source Tax and Quick Actions must form one contiguous column at '+width);
     assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(),1);
     findings.cases.push({width,stage:'populated-synthetic-dashboard',shot:await screenshot(page,width+'-populated'),pass:true});
     await ctx.close();
