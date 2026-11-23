@@ -236,23 +236,23 @@ export const Sidebar: React.FC = () => {
         className={'eledger-sidebar ' + (mobileOpen ? 'is-open ' : '') + (railCollapsed ? 'is-collapsed' : '')}
         role={mobileOpen ? 'dialog' : undefined} aria-modal={mobileOpen ? true : undefined}
         aria-label="eLedger navigation" lang={bn ? 'bn' : 'en'}>
-        <div className="eledger-sidebar-brand-row">
-          <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
-            title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
-            aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
-            aria-expanded={!railCollapsed}>
-            {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
-          </button>
-        </div>
         <div className="eledger-sidebar-mobile-heading">
           <span>eReturn Ledger</span>
           <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
-          <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
-            aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
-            <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
-          </button>
+          <div className="eledger-nav-top-row">
+            <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
+              aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
+              <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
+            </button>
+            <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
+              title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+              aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+              aria-expanded={!railCollapsed}>
+              {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
+            </button>
+          </div>
           <button type="button" title={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
             aria-label={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
             className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
