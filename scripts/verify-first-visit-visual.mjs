@@ -1,0 +1,98 @@
+// First-visit regression and published-site acceptance. Read-only: never write ledger data.
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {setTimeout as sleep} from 'node:timers/promises';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {chromium} from 'playwright';
+
+const target=process.env.ELEDGER_URL || 'http://127.0.0.1:4173/';
+const dir='artifacts/eledger-first-visit';
+const findings={url:target,commit:process.env.GITHUB_SHA||'local',capturedAt:new Date().toISOString(),cases:[],errors:[],pass:false};
+let preview,browser;
+async function screenshot(page,label){
+  const p=dir+'/'+label+'.png';
+  await page.screenshot({path:p,fullPage:false,animations:'disabled'});
+  return p;
+}
+try{
+  await mkdir(dir,{recursive:true});
+  if(!process.env.ELEDGER_URL){
+    preview=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--host','127.0.0.1','--port','4173','--strictPort'],{stdio:'ignore'});
+    let ready=false;
+    for(let i=0;i<80;i++){try{if((await fetch(target)).ok){ready=true;break;}}catch{}await sleep(200);}
+    assert.ok(ready,'Local preview did not start');
+  }
+  browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+  for(const width of [390,960,961,1280,1920]){
+    const context=await browser.newContext({viewport:{width,height:900},isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+    const page=await context.newPage();page.setDefaultTimeout(12000);
+    page.on('pageerror',e=>findings.errors.push({width,error:String(e)}));
+    const response=await page.goto(target,{waitUntil:'networkidle'});
+    assert.equal(response?.status(),200,'Site HTTP status at '+width);
+    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+    const nav=page.locator('aside.eledger-sidebar');
+    const compact=width>=961;
+    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),compact,'Compact breakpoint at '+width);
+    if(compact){
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-104)<2);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
+      const toggle=nav.getByRole('button',{name:'Expand navigation',exact:true});
+      const rect=await toggle.boundingBox();
+      assert.ok(rect&&rect.width>=44&&rect.height>=44,'Compact toggle target at '+width);
+      assert.ok(await nav.getByRole('link',{name:/Taxes Helpline/}).isVisible());
+    }else{
+      await page.locator('.eledger-mobile-nav').waitFor({state:'visible'});
+    }
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Horizontal overflow at '+width);
+    findings.cases.push({width,stage:'first-load-en',compact,shot:await screenshot(page,width+'-first-en'),pass:true});
+    if(compact){
+      const source=nav.getByRole('button',{name:'Claim Source Tax',exact:true});
+      await source.click();
+      const menu=page.getByRole('menu',{name:'Source Tax categories'});
+      await menu.waitFor({state:'visible'});
+      assert.equal(await menu.getByRole('menuitem').count(),10);
+      assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
+      findings.cases.push({width,stage:'source-flyout',items:10,shot:await screenshot(page,width+'-source-flyout'),pass:true});
+      if(await menu.count()===0){await source.click();await menu.waitFor({state:'visible'});}
+      await menu.getByRole('menuitem',{name:'Salary (Others)',exact:true}).click();
+      await page.getByRole('heading',{name:'Salary (Others)',exact:true}).waitFor();
+      assert.equal(await source.getAttribute('aria-current'),'true');
+      const ait=nav.getByRole('button',{name:'Claim AIT',exact:true});
+      await ait.click();
+      const aitMenu=page.getByRole('menu',{name:'AIT categories'});
+      await aitMenu.waitFor({state:'visible'});
+      assert.equal(await aitMenu.getByRole('menuitem').count(),3);
+      assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
+      await page.keyboard.press('Escape');
+      await aitMenu.waitFor({state:'detached'});
+    }
+    await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+    await page.locator('.eledger-app[lang="bn"]').waitFor();
+    findings.cases.push({width,stage:'bengali',shot:await screenshot(page,width+'-bn'),pass:true});
+    if(compact){
+      const bnAit=nav.getByRole('button',{name:'অগ্রিম কর দাবি',exact:true});
+      await bnAit.click();
+      const bnMenu=page.getByRole('menu',{name:'অগ্রিম করের খাতসমূহ'});
+      await bnMenu.waitFor({state:'visible'});
+      assert.equal(await bnMenu.getByRole('menuitem').count(),3);
+      await page.keyboard.press('Escape');
+      await bnMenu.waitFor({state:'detached'});
+      await nav.getByRole('button',{name:'নেভিগেশন প্রসারিত করুন',exact:true}).click();
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-260)<2);
+      await page.reload({waitUntil:'networkidle'});
+      assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,'Expanded preference after reload');
+      findings.cases.push({width,stage:'expanded-preference',pass:true});
+    }
+    await context.close();
+  }
+  assert.deepEqual(findings.errors,[],'Uncaught JS errors');
+  findings.pass=true;
+  console.log('FIRST_VISIT_ACCEPTANCE PASS '+findings.cases.length+' cases / 5 viewport widths');
+}catch(error){
+  console.error('FIRST_VISIT_ACCEPTANCE FAIL',error.stack||String(error));
+  process.exitCode=1;
+}finally{
+  await writeFile(dir+'/manifest.json',JSON.stringify(findings,null,2));
+  await browser?.close();
+  preview?.kill('SIGTERM');
+}
