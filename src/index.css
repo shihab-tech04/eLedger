@@ -1723,3 +1723,211 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-sidebar.is-collapsed .eledger-group-toggle.is-active-parent::after { background:var(--el-primary); }
 }
 @media (max-width:960px) { .eledger-compact-group-flyout { display:none; } }
+
+
+/* Approved Salary (iBAS++) review — scoped to populated payroll evidence only.
+   Preserve shared header, main/compact rail, all non-iBAS routes and EN/BN. */
+.eledger-ibas-review {
+  display:flex; flex-direction:column; gap:16px; width:100%; min-width:0;
+}
+.eledger-ibas-review-metrics {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px;
+}
+.eledger-ibas-review-metric,.eledger-ibas-review-panel {
+  background:#fff; border:1px solid var(--el-border,#dce4ed);
+  border-radius:12px; min-width:0; overflow:hidden;
+}
+.eledger-ibas-review-metric {
+  display:flex; justify-content:space-between; align-items:flex-start;
+  padding:18px; gap:9px;
+}
+.eledger-ibas-review-metric > div {min-width:0;}
+.eledger-ibas-review-metric span {
+  display:block; font-size:12px; color:var(--el-muted,#687992); line-height:1.45; margin-bottom:6px;
+}
+.eledger-ibas-review-metric strong {
+  display:block; font-size:25px; font-weight:750; letter-spacing:-.6px;
+  color:var(--el-text,#202a40); font-variant-numeric:tabular-nums; line-height:1.3;
+}
+.eledger-ibas-review-metric strong.is-year {font-size:20px; letter-spacing:-.2px;}
+.eledger-ibas-review-metric > svg {
+  flex:0 0 36px; width:36px; height:36px; padding:9px; color:var(--el-primary,#087b83);
+  background:#e7f7fa; border-radius:9px;
+}
+.eledger-ibas-review-panel-header {
+  padding:15px 18px; min-height:53px; border-bottom:1px solid #e8eef5;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+}
+.eledger-ibas-review-panel-header h2 {
+  margin:0; font-size:15px; line-height:1.4; font-weight:730;
+  color:var(--el-text,#202a40);
+}
+.eledger-ibas-review-chip {
+  display:inline-flex; gap:6px; align-items:center; max-width:100%;
+  padding:5px 9px; border-radius:7px; font-size:11px; font-weight:650;
+  color:#54657e; background:#f0f3f7;
+}
+.eledger-ibas-review-facts {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); margin:0;
+}
+.eledger-ibas-review-facts > div {padding:17px 18px; min-width:0; border-bottom:1px solid #ebeff5;}
+.eledger-ibas-review-facts > div:nth-child(odd) {border-right:1px solid #ebeff5;}
+.eledger-ibas-review-facts > div:nth-last-child(-n+2) {border-bottom:0;}
+.eledger-ibas-review-facts dt,.eledger-ibas-review-record-card dt {
+  margin:0 0 5px; font-size:11px; color:var(--el-muted,#687992);
+}
+.eledger-ibas-review-facts dd {
+  margin:0; font-size:13px; color:#25344c; font-weight:650;
+  line-height:1.5; overflow-wrap:anywhere;
+}
+.eledger-ibas-review-facts dd.is-missing {font-weight:500; color:#6f7e94;}
+.eledger-ibas-review-claim {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:19px; gap:22px; flex-wrap:wrap;
+}
+.eledger-ibas-review-claim > div > span {
+  display:block; font-size:12px; color:var(--el-muted,#687992); margin-bottom:5px;
+}
+.eledger-ibas-review-claim strong {
+  display:block; font-size:26px; font-weight:750; color:var(--el-text,#202a40);
+  letter-spacing:-.6px; font-variant-numeric:tabular-nums;
+}
+.eledger-ibas-review-claim p {font-size:11px; color:var(--el-muted,#687992); margin:7px 0 0; line-height:1.5;}
+.eledger-ibas-review-explanation {
+  margin:0 18px 17px; border:1px solid #d8e4ee; border-radius:8px;
+  background:#f6f9fc; color:#455c75; padding:13px 15px;
+  font-size:12px; line-height:1.6;
+}
+.eledger-ibas-review-notice {
+  display:flex; align-items:flex-start; gap:9px; margin:0; padding:12px 14px;
+  background:#eaf6ff; border:1px solid #cae0ef; border-radius:9px;
+  font-size:12px; line-height:1.5; color:#2b6188;
+}
+.eledger-ibas-review-notice svg {flex-shrink:0; margin-top:1px;}
+.eledger-ibas-review-controls {
+  display:flex; align-items:center; flex-wrap:wrap; gap:9px; padding:13px 16px;
+  border-bottom:1px solid #e9eef4;
+}
+.eledger-ibas-review-search {
+  display:flex; align-items:center; gap:8px;
+  flex:1 1 235px; max-width:380px; min-width:0;
+  min-height:44px; padding:0 12px; border-radius:8px;
+  border:1px solid var(--el-border,#dce4ed); color:#8091a5;
+}
+.eledger-ibas-review-search input {
+  border:0; outline:none; background:transparent; min-width:0; width:100%;
+  font-size:13px; color:#26344b;
+}
+.eledger-ibas-review-search:focus-within {outline:2px solid var(--el-primary,#087b83); outline-offset:2px;}
+.eledger-ibas-review-controls select {
+  border:1px solid var(--el-border,#dce4ed); background:#fff; border-radius:8px;
+  min-height:44px; padding:8px 10px; color:#344966; font-size:12px;
+}
+.eledger-ibas-review-views {
+  display:flex; padding:3px; gap:2px; background:#f1f5f9; border-radius:8px;
+  margin-left:auto;
+}
+.eledger-ibas-review-views button {
+  border:0; background:transparent; color:#657790; font-size:12px;
+  font-weight:650; padding:8px 12px; border-radius:6px; min-height:36px;
+}
+.eledger-ibas-review-views button.is-active {
+  background:#fff; color:var(--el-primary,#087b83); box-shadow:0 1px 4px #1a30471a;
+}
+.eledger-ibas-review-tablewrap {
+  overflow:auto; max-width:100%; scrollbar-width:thin;
+}
+.eledger-ibas-review-table {
+  width:100%; min-width:1080px; border-collapse:separate; border-spacing:0;
+  font-size:12px; line-height:1.5;
+}
+.eledger-ibas-review-table th,.eledger-ibas-review-table td {
+  padding:13px 12px; border-bottom:1px solid #e8eef5;
+  text-align:left; vertical-align:middle; white-space:normal; overflow-wrap:anywhere;
+}
+.eledger-ibas-review-table thead th {
+  color:#5f708c; background:#f8fafc; font-size:11px;
+  font-weight:700; white-space:nowrap;
+}
+.eledger-ibas-review-table tbody td {color:#293852; background:#fff;}
+.eledger-ibas-review-table .is-numeric {
+  text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.eledger-ibas-review-table :is(th,td):nth-child(6) {
+  min-width:116px; white-space:nowrap;
+}
+.eledger-ibas-review-table :is(th,td):first-child {
+  position:sticky; left:0; min-width:194px; max-width:230px; z-index:2;
+  background:#fff; box-shadow:1px 0 0 #e8eef5;
+}
+.eledger-ibas-review-table thead th:first-child {background:#f8fafc; z-index:3;}
+.eledger-ibas-review-table :is(th,td):last-child {
+  position:sticky; right:0; min-width:159px; z-index:2;
+  background:#fff; box-shadow:-1px 0 0 #e8eef5;
+}
+.eledger-ibas-review-table thead th:last-child {background:#f8fafc; z-index:3;}
+.eledger-ibas-review-table tfoot th,.eledger-ibas-review-table tfoot td {
+  color:#26344c; background:#f8fafc; font-weight:750;
+}
+.eledger-ibas-review-table tfoot th:first-child,
+.eledger-ibas-review-table tfoot td:last-child {background:#f8fafc;}
+.eledger-ibas-review-table .eledger-row-view-more {flex-wrap:nowrap; gap:6px;}
+.eledger-ibas-review-table .eledger-row-view-more button {padding:7px 9px; font-size:11px; min-height:40px;}
+.eledger-ibas-review-status {
+  display:inline-flex; align-items:center; border-radius:6px; padding:4px 8px;
+  font-size:11px; font-weight:650; line-height:1.4; white-space:nowrap;
+}
+.eledger-ibas-review-status.is-pending {color:#935600; background:#fff4d6; border:1px solid #f5ce7b;}
+.eledger-ibas-review-status.is-verified {color:#176b4b; background:#e7f8ef; border:1px solid #bde5ce;}
+.eledger-ibas-review-status.is-neutral {color:#54657b; background:#eff2f6; border:1px solid #dce4eb;}
+.eledger-ibas-review-no-records {padding:20px; color:#65758b; text-align:center; font-size:12px;}
+.eledger-ibas-review-cardlist {display:grid; gap:11px; padding:15px;}
+.eledger-ibas-review-cardlist.is-hidden-by-view,
+.eledger-ibas-review-tablewrap.is-hidden-by-view {display:none;}
+.eledger-ibas-review-record-card {border:1px solid #dce4ed; border-radius:9px; padding:14px; background:#fff;}
+.eledger-ibas-review-record-top {display:flex; justify-content:space-between; gap:12px; align-items:flex-start;}
+.eledger-ibas-review-record-top strong {font-size:12px; overflow-wrap:anywhere; color:#26344c;}
+.eledger-ibas-review-record-top p {font-size:11px; color:var(--el-muted,#687992); margin:5px 0 0;}
+.eledger-ibas-review-record-card dl {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px; margin:15px 0; padding:0;
+}
+.eledger-ibas-review-record-card dd {font-size:12px; color:#273550; font-weight:680; margin:0; overflow-wrap:anywhere;}
+.eledger-ibas-review-card-actions {display:flex; justify-content:flex-end; border-top:1px solid #edf1f5; padding-top:12px;}
+.eledger-ibas-review-footnote {padding:10px 15px; margin:0; font-size:11px; color:#708096; line-height:1.5;}
+.eledger-ibas-review-copy-status {
+  position:fixed; bottom:20px; right:20px; z-index:110;
+  display:flex; align-items:center; gap:12px; max-width:min(400px,calc(100vw - 30px));
+  padding:12px 15px; color:#fff; background:#273e52; border-radius:9px;
+  box-shadow:0 8px 26px #1a2a3b3d; font-size:12px;
+}
+.eledger-ibas-review-copy-status button {border:0; background:transparent; color:#fff; font-size:20px; cursor:pointer;}
+@media (max-width:1080px) {
+  .eledger-ibas-review-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .eledger-ibas-review-metric:last-child {grid-column:1 / -1;}
+}
+@media (max-width:767px) {
+  .eledger-ibas-review {gap:12px;}
+  .eledger-ibas-review-metrics {gap:9px;}
+  .eledger-ibas-review-metric {padding:12px;}
+  .eledger-ibas-review-metric strong {font-size:19px;}
+  .eledger-ibas-review-metric strong.is-year {font-size:18px;}
+  .eledger-ibas-review-metric > svg {width:30px;height:30px;padding:7px;flex-basis:30px;}
+  .eledger-ibas-review-panel-header {padding:13px;}
+  .eledger-ibas-review-facts {grid-template-columns:minmax(0,1fr);}
+  .eledger-ibas-review-facts > div,.eledger-ibas-review-facts > div:nth-child(odd) {
+    border-right:0; border-bottom:1px solid #ebeff5; padding:12px 14px;
+  }
+  .eledger-ibas-review-facts > div:last-child {border-bottom:0;}
+  .eledger-ibas-review-claim {align-items:flex-start; flex-direction:column; padding:15px; gap:12px;}
+  .eledger-ibas-review-claim .eledger-button {width:100%;}
+  .eledger-ibas-review-controls {padding:12px; gap:8px;}
+  .eledger-ibas-review-search {flex:1 1 100%;max-width:none;}
+  .eledger-ibas-review-controls select {flex:1 1 auto;}
+  .eledger-ibas-review-views {display:none;}
+  .eledger-ibas-review-tablewrap {display:none!important;}
+  .eledger-ibas-review-cardlist {display:grid!important;padding:12px;}
+  .eledger-ibas-review-record-top {flex-wrap:wrap;}
+  .eledger-ibas-review-card-actions .eledger-row-view-more {display:flex; width:100%; gap:9px;}
+  .eledger-ibas-review-card-actions .eledger-row-view-more .eledger-button {flex:1;justify-content:center;}
+}

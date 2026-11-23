@@ -255,6 +255,102 @@ try{
     findings.cases.push({width,stage:'populated-synthetic-dashboard',shot:await screenshot(page,width+'-populated'),pass:true});
     await ctx.close();
   }
+  // Approved populated iBAS++ journey: read-only data, desktop table/mobile cards,
+  // original record actions, accessible drawer and EN/BN; never modify stored claims.
+  for(const width of [390,1280,1440]){
+    const context=await browser.newContext({viewport:{width,height:900},isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+    // Fresh accounts legitimately have no payroll records. Populate this
+    // isolated Chromium context only; never modify production or demo defaults.
+    const payrollFixture={
+      id:'salary-ibas-visual-fixture',taxpayerTin:'123456789012',
+      assessmentYear:'2026-2027',category:'SOURCE_TAX',routeId:'salary-ibas',
+      referenceNo:'IBAS/GOV/2026/08821',sourceEntity:'Ministry of Finance / CGA Office',
+      sectionCode:'Sec 86',grossAmount:1440000,taxDeducted:85000,
+      date:'2026-06-30',status:'PENDING_VERIFICATION',workflow:'SYSTEM_CLAIM',
+      isManual:false,externalVerified:false,
+      createdAt:'2026-07-01T10:00:00Z',updatedAt:'2026-07-01T10:00:00Z'
+    };
+    await context.addInitScript(record=>{
+      if(localStorage.getItem('nbr_eledger_entries_v1')===null){
+        localStorage.setItem('nbr_eledger_entries_v1',JSON.stringify([record]));
+      }
+    },payrollFixture);
+    const page=await context.newPage();page.setDefaultTimeout(14000);
+    page.on('pageerror',e=>findings.errors.push({width,stage:'salary-ibas-review',error:String(e)}));
+    await page.goto(target,{waitUntil:'networkidle'});
+    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+    const before = await page.evaluate(()=>localStorage.getItem('nbr_eledger_entries_v1'));
+    const rail=page.locator('aside.eledger-sidebar');
+    if(width<961){
+      await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true}).click();
+      await rail.waitFor({state:'visible'});
+      const source=rail.getByRole('button',{name:'Claim Source Tax',exact:true});
+      if(await source.getAttribute('aria-expanded')==='false')await source.click();
+      await rail.getByRole('button',{name:'Salary (iBAS++)',exact:true}).click();
+    }else{
+      await rail.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
+      const flyout=page.getByRole('menu',{name:'Source Tax categories'});
+      await flyout.getByRole('menuitem',{name:'Salary (iBAS++)',exact:true}).click();
+    }
+    const review=page.getByTestId('salary-ibas-review');
+    await review.waitFor({state:'visible'});
+    assert.ok(await review.getByText('Payroll information').isVisible(),'Payroll facts at '+width);
+    assert.ok(await review.getByText('TDS claim information').isVisible(),'TDS read-only review at '+width);
+    assert.ok(await review.getByText('Read-only',{exact:true}).isVisible(),'Read-only state at '+width);
+    assert.equal(await review.getByRole('button',{name:'Save',exact:true}).count(),0,'No disabled Save at '+width);
+    assert.equal(await review.getByRole('button',{name:'Add Entry',exact:true}).count(),0,'No invented manual write at '+width);
+    assert.ok(await review.getByText('85,000',{exact:false}).first().isVisible(),'Actual payroll amount at '+width);
+    await review.getByRole('button',{name:'Why is this read-only?'}).click();
+    assert.ok(await review.getByText(/does not allow manual changes/).isVisible(),'Read-only guidance at '+width);
+    if(width>=961){
+      const firstCell=page.locator('.eledger-ibas-review-table tbody td').first();
+      const lastCell=page.locator('.eledger-ibas-review-table tbody td').last();
+      assert.equal(await firstCell.evaluate(el=>getComputedStyle(el).position),'sticky');
+      assert.equal(await lastCell.evaluate(el=>getComputedStyle(el).position),'sticky');
+    }else{
+      assert.ok(await page.locator('.eledger-ibas-review-record-card').first().isVisible(),'Mobile record cards at '+width);
+      assert.ok(!(await page.locator('.eledger-ibas-review-tablewrap').isVisible()),'Desktop table hidden on phone');
+    }
+    const reference='IBAS/GOV/2026/08821';
+    const more=page.getByRole('button',{name:'More actions '+reference,exact:true}).first();
+    await more.click();
+    const menu=page.getByRole('menu',{name:'More actions for: '+reference});
+    assert.ok(await menu.getByRole('menuitem',{name:'Copy reference number'}).isVisible());
+    await menu.getByRole('menuitem',{name:'Explain recorded status'}).click();
+    const explanation=page.getByRole('dialog',{name:'Recorded status explained'});
+    await explanation.waitFor({state:'visible'});
+    assert.ok(await explanation.getByText('No independently authorized verification is recorded').isVisible());
+    await explanation.getByRole('button',{name:'Close drawer'}).click();
+    await page.getByRole('button',{name:'View '+reference,exact:true}).first().click();
+    const details=page.getByRole('dialog',{name:'Payroll record details'});
+    await details.waitFor({state:'visible'});
+    assert.ok(await details.getByText(reference).first().isVisible());
+    await details.getByRole('button',{name:'Close drawer'}).click();
+    if(width>=961){
+      await review.getByRole('button',{name:'Cards',exact:true}).click();
+      assert.ok(await review.locator('.eledger-ibas-review-record-card').first().isVisible(),'Desktop card switch at '+width);
+      await review.getByRole('button',{name:'Table',exact:true}).click();
+    }
+    await review.getByRole('searchbox',{name:'Search records'}).fill('NO-MATCH-PAYROLL');
+    const visibleNoMatch=width<961 ? review.locator('.eledger-ibas-review-cardlist .eledger-ibas-review-no-records')
+      : review.locator('.eledger-ibas-review-tablewrap .eledger-ibas-review-no-records');
+    assert.ok(await visibleNoMatch.isVisible(),'Search empty result at '+width);
+    await review.getByRole('button',{name:'Reset'}).click();
+    const visibleReference=width<961 ? review.locator('.eledger-ibas-review-record-card').first().getByText(reference)
+      : review.locator('.eledger-ibas-review-table tbody td').first().getByText(reference);
+    assert.ok(await visibleReference.isVisible(),'Reset recovers record at '+width);
+    findings.cases.push({width,stage:'salary-ibas-approved-en',
+      shot:await screenshot(page,width+'-salary-ibas-en'),pass:true});
+    await page.getByRole('button',{name:'বাংলা',exact:true}).click();
+    await page.locator('.eledger-app[lang="bn"]').waitFor();
+    assert.ok(await review.getByText('পেরোল তথ্য',{exact:true}).isVisible(),'Bengali payroll header at '+width);
+    assert.ok(await review.getByText('উৎস কর দাবির তথ্য',{exact:true}).isVisible(),'Bengali claim header at '+width);
+    findings.cases.push({width,stage:'salary-ibas-approved-bn',
+      shot:await screenshot(page,width+'-salary-ibas-bn'),pass:true});
+    const after=await page.evaluate(()=>localStorage.getItem('nbr_eledger_entries_v1'));
+    assert.equal(after,before,'Read-only salary UI must not write ledger records at '+width);
+    await context.close();
+  }
   assert.deepEqual(findings.errors,[],'Uncaught JS errors');
   findings.pass=true;
   console.log('FIRST_VISIT_ACCEPTANCE PASS '+findings.cases.length+' cases / 6 baseline viewport widths + scrolling');

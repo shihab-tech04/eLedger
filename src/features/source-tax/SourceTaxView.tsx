@@ -6,6 +6,7 @@ import { getActiveVisibleRouteForGroup, getVisibleRoutesByGroup } from '../../do
 import type { LedgerEntry, ClaimEvidence, LedgerRouteId } from '../../domain/models.ts';
 import { InlineEditableTable } from '../../components/tables/InlineEditableTable.tsx';
 import { SalaryOthersTable } from './SalaryOthersTable.tsx';
+import { SalaryIbasReview } from './SalaryIbasReview.tsx';
 import { OfficialManualClaimsTable } from '../../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../../components/tables/OfficialReadOnlyTable.tsx';
 import { IncomeSyncPanel } from '../../components/workflows/IncomeSyncPanel.tsx';
@@ -41,7 +42,7 @@ export const hasReadOnlyIncomeSync = (id: LedgerRouteId): boolean =>
 
 export const SourceTaxView: React.FC = () => {
   const {
-    entries, activeRouteId, setActiveRouteId, setActiveNavTab,
+    entries, activeRouteId, setActiveRouteId, setActiveNavTab, setIsStatusModalOpen,
     addEntry, updateEntry, deleteEntry, assessmentYear, taxpayer,
   } = useLedger();
   const t = useLedgerCopy();
@@ -98,6 +99,25 @@ export const SourceTaxView: React.FC = () => {
         ? currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
         : currentRoute.statutorySection.replace(/^Sec /, 'ধারা ').replace('(ITA 2023)', '(আয়কর আইন ২০২৩)')
     : caption ?? currentRoute.description;
+
+  // iBAS++ recorded evidence has an approved read-only review layout. Preserve
+  // the separate empty state and every other Source Tax journey unchanged.
+  if (isIbas && routeEntries.length > 0) return (
+    <div className="eledger-financial-page eledger-ibas-review-page">
+      <LedgerPageHeader
+        title={language === 'bn' ? currentRoute.bengaliTitle : heading}
+        caption={t('Review locally recorded payroll tax deductions','স্থানীয়ভাবে রেকর্ডকৃত বেতন উৎস কর পর্যালোচনা করুন')}
+        action={<button type="button" className="eledger-button eledger-button-secondary"
+          onClick={() => setIsStatusModalOpen(true)}>
+          <ShieldCheck size={16} aria-hidden="true"/>
+          {t('Tax Payment Status','কর পরিশোধের অবস্থা')}
+        </button>}
+      />
+      <RouteMobileTabs routes={sourceTaxRoutes} activeId={currentRoute.id}
+        label={t('Source Tax categories','উৎস করের খাতসমূহ')} onSelect={setActiveRouteId}/>
+      <SalaryIbasReview entries={routeEntries} assessmentYear={assessmentYear}/>
+    </div>
+  );
 
   return (
     <div className="eledger-financial-page">

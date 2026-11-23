@@ -65,6 +65,7 @@ import { DashboardView } from '../features/dashboard/DashboardView.tsx';
 import { LedgerGuideView } from '../features/ledger-guide/LedgerGuideView.tsx';
 import { Sidebar } from '../components/navigation/Sidebar.tsx';
 import { SalaryOthersTable } from '../features/source-tax/SalaryOthersTable.tsx';
+import { SalaryIbasReview } from '../features/source-tax/SalaryIbasReview.tsx';
 import { OfficialManualClaimsTable, hasUnsupportedLegacyDocumentType, clearManualFieldIssueAfterEdit } from '../components/tables/OfficialManualClaimsTable.tsx';
 import { OfficialCarryForwardPanel } from '../components/workflows/OfficialCarryForwardPanel.tsx';
 import { OFFICIAL_READONLY_COLUMNS, OfficialReadOnlyTable, isOfficialReadOnlyRoute } from '../components/tables/OfficialReadOnlyTable.tsx';
@@ -82,6 +83,52 @@ import { LedgerPageHeader, LedgerSummary, LedgerFormGrid } from '../components/u
 import { LedgerFormModal } from '../components/ui/LedgerFormModal.tsx';
 import { NeirRecordDetailsDrawer } from '../components/neir/NeirRecordDetailsDrawer.tsx';
 import { RouteMobileTabs } from '../components/navigation/RouteMobileTabs.tsx';
+
+describe('Approved Salary (iBAS++) read-only review', () => {
+  const payroll = INITIAL_LEDGER_ENTRIES.find(entry => entry.routeId === 'salary-ibas');
+  it('shows real stored amounts, complete fields and no misleading Save or write action', () => {
+    assert.ok(payroll, 'Seed payroll record exists');
+    const markup = renderToStaticMarkup(React.createElement(SalaryIbasReview, {
+      entries: [payroll], assessmentYear: '2026-2027',
+    }));
+    for(const label of [
+      'Payroll information', 'TDS claim information', 'Read-only',
+      'Recorded ledger entries', 'Reference / Challan No', 'Deductor / Source Entity',
+      'Section', 'Gross Amount', 'Tax Deducted', 'Date', 'Status', 'Actions',
+      'Search records', 'Filter by record year', 'Why is this read-only?',
+    ]) assert.ok(markup.includes(label),label);
+    assert.match(markup, /85,000/);
+    assert.match(markup, /IBAS\/GOV\/2026\/08821/);
+    assert.match(markup, /14,40,000/);
+    assert.match(markup, /aria-label="View IBAS\/GOV\/2026\/08821"/);
+    assert.match(markup, /aria-label="More actions IBAS\/GOV\/2026\/08821"/);
+    assert.match(markup, /eledger-ibas-review-tablewrap/);
+    assert.match(markup, /eledger-ibas-review-cardlist/);
+    assert.doesNotMatch(markup, /disabled=""[^>]*>Save|>Save<\/button>|Add Entry|Delete row|Edit entry/);
+    assert.doesNotMatch(markup, /independently verified government tax credit/);
+  });
+  it('uses actual entry amounts and count, not fixed UI demo figures', () => {
+    assert.ok(payroll);
+    const newer = { ...payroll, id:'synthetic-extra-ibas',referenceNo:'ALT/IBAS/2026/01',
+      grossAmount: 10000,taxDeducted:1234,date:'2026-05-01' };
+    const markup = renderToStaticMarkup(React.createElement(SalaryIbasReview, {
+      entries:[payroll,newer],assessmentYear:'2026-2027',
+    }));
+    assert.match(markup,/86,234/);
+    assert.match(markup,/14,50,000/);
+    assert.match(markup,/ALT\/IBAS\/2026\/01/);
+    assert.match(markup,/Recorded ledger entries.*\(2\)/);
+  });
+  it('keeps record guidance and all eight table columns bilingual', () => {
+    assert.ok(payroll);
+    const markup = renderToStaticMarkup(React.createElement(LanguageProvider, {initialLanguage:'bn'},
+      React.createElement(SalaryIbasReview, { entries:[payroll], assessmentYear:'2026-2027'})));
+    for(const label of ['পেরোল তথ্য','উৎস কর দাবির তথ্য','শুধু দেখার জন্য','রেকর্ডকৃত লেজার এন্ট্রি',
+      'রেফারেন্স / চালান নম্বর','কর্তনকারী / উৎস প্রতিষ্ঠান','কেন এটি পরিবর্তন করা যায় না?'])
+      assert.ok(markup.includes(label),label);
+    assert.ok(!markup.includes('Add Entry'));
+  });
+});
 
 describe('NEIR design-transfer acceptance (source: uploaded NEIR-main.zip)', () => {
   it('provides one accessible read-only details drawer with original field names', () => {
