@@ -109,7 +109,7 @@ try {
     const nav=page.locator('aside.eledger-sidebar');
     await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Collapse navigation',exact:true}).click();
     await page.waitForFunction(() =>
-      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
+      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-80)<2);
     await checkOverflow(page);
     out.compact.push({state:'collapsed',screenshot:await screenshot(page,'compact/1280-rail-en')});
     await nav.getByRole('button',{name:'Claim Source Tax',exact:true}).click();
