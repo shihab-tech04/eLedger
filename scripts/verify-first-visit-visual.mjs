@@ -31,6 +31,12 @@ try{
     assert.equal(response?.status(),200,'Site HTTP status at '+width);
     await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
     const nav=page.locator('aside.eledger-sidebar');
+    // One branded masthead and one labeled dashboard status action at every width.
+    assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(), 'Header brand visible at '+width);
+    assert.equal(await nav.locator('.eledger-sidebar-brand').count(), 0, 'Sidebar logo removed at '+width);
+    assert.equal(await nav.locator('.eledger-status-link').count(), 0, 'Status removed from sidebar at '+width);
+    assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(), 1, 'Single status action at '+width);
+    assert.equal(await page.getByRole('button',{name:'Review payment status',exact:true}).count(), 0, 'No duplicate review CTA at '+width);
     const compact=width>=961;
     assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),compact,'Compact breakpoint at '+width);
     if(compact){
