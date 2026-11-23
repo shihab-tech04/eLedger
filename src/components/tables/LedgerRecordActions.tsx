@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Eye, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Eye, HelpCircle, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useLedgerCopy } from '../../context/LanguageContext.tsx';
 
 /** Shared action-cell contract: only View + More. All other actions live
@@ -8,11 +8,13 @@ import { useLedgerCopy } from '../../context/LanguageContext.tsx';
  * Callbacks preserve each route's existing validation, RLS-equivalent local
  * ownership checks, confirmation and persistence rules.
  */
-export function LedgerRecordActions({ reference, onView, onEdit, onDelete, disabled = false }: {
+export function LedgerRecordActions({ reference, onView, onEdit, onDelete, onCopy, onExplain, disabled = false }: {
   reference: string;
   onView: () => void;
   onEdit?: () => void;
   onDelete?: () => void | Promise<void>;
+  onCopy?: () => void | Promise<void>;
+  onExplain?: () => void;
   disabled?: boolean;
 }) {
   const t = useLedgerCopy();
@@ -82,14 +84,20 @@ export function LedgerRecordActions({ reference, onView, onEdit, onDelete, disab
     {open && createPortal(<div id={id} ref={menu} className="eledger-record-more-menu"
       role="menu" aria-label={`${t('More actions for','আরও কাজ')}: ${reference}`}
       style={{ position:'fixed', top:position.top, left:position.left, zIndex:100 }}>
-      {onEdit && <button type="button" role="menuitem" onClick={() => { close(); onEdit(); }}>
+      {onCopy && <button type="button" role="menuitem" onClick={() => { close(); void onCopy(); }}>
+        <Copy size={16} aria-hidden="true"/>{t('Copy reference number','রেফারেন্স নম্বর কপি করুন')}
+      </button>}
+      {onExplain && <button type="button" role="menuitem" onClick={() => { close(); onExplain(); }}>
+        <HelpCircle size={16} aria-hidden="true"/>{t('Explain recorded status','রেকর্ডের অবস্থার ব্যাখ্যা')}
+      </button>}
+      {onEdit && <button type="button" role="menuitem" onClick={() => { close(); onEdit(); }}> 
         <Pencil size={16} aria-hidden="true"/>{t('Edit','সম্পাদনা')}
       </button>}
       {onDelete && <button type="button" role="menuitem" className="is-danger"
         onClick={() => { close(); void onDelete(); }}>
         <Trash2 size={16} aria-hidden="true"/>{t('Delete','মুছুন')}
       </button>}
-      {!onEdit && !onDelete && <span className="eledger-menu-no-actions" role="status">
+      {!onEdit && !onDelete && !onCopy && !onExplain && <span className="eledger-menu-no-actions" role="status">
         {t('No additional actions available','অতিরিক্ত কোনো কাজ নেই')}
       </span>}
     </div>, document.body)}
