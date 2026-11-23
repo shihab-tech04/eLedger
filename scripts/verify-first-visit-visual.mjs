@@ -23,7 +23,7 @@ try{
     assert.ok(ready,'Local preview did not start');
   }
   browser=await chromium.launch({headless:true,args:['--no-sandbox']});
-  for(const width of [390,960,961,1280,1920]){
+  for(const width of [390,960,961,1280,1440,1920]){
     const context=await browser.newContext({viewport:{width,height:900},isMobile:width<600,hasTouch:width<600,locale:'en-US'});
     const page=await context.newPage();page.setDefaultTimeout(12000);
     page.on('pageerror',e=>findings.errors.push({width,error:String(e)}));
@@ -35,15 +35,33 @@ try{
     assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(), 'Header brand visible at '+width);
     assert.equal(await nav.locator('.eledger-sidebar-brand').count(), 0, 'Sidebar logo removed at '+width);
     assert.equal(await nav.locator('.eledger-sidebar-brand-row').count(), 0, 'Empty logo-row spacer removed at '+width);
-    assert.equal(await nav.locator('.eledger-nav-top-row').count(), 1, 'Dashboard/toggle top row present at '+width);
+    assert.equal(await nav.locator('.eledger-nav-top-row').count(), 0, 'Sidebar contains no second title/toggle row at '+width);
+    assert.equal(await nav.locator('.eledger-sidebar-collapse-button').count(), 0, 'No collapse control inside navigation at '+width);
     if(width>=961){
-      const navTop=await nav.locator('.eledger-nav-top-row').boundingBox();
       const dashboard=await nav.getByRole('button',{name:'Dashboard',exact:true}).boundingBox();
-      const toggle=await nav.locator('.eledger-sidebar-collapse-button').boundingBox();
+      const toggle=await page.locator('.eledger-header-nav-toggle').getByRole('button').boundingBox();
       const header=await page.locator('.eledger-header').boundingBox();
-      assert.ok(navTop&&dashboard&&toggle&&header, 'Navigation/header layout boxes available at '+width);
-      assert.ok(navTop.y-header.y-header.height<24, 'Dashboard starts immediately below the global header at '+width);
-      assert.ok(Math.abs(dashboard.y+dashboard.height/2-toggle.y-toggle.height/2)<8, 'Dashboard and toggle share one row at '+width);
+      assert.ok(dashboard&&toggle&&header, 'Navigation/header layout boxes available at '+width);
+      assert.ok(dashboard.y-header.y-header.height<24, 'Dashboard begins directly under header at '+width);
+      assert.ok(toggle.y>=header.y&&toggle.y+toggle.height<=header.y+header.height,
+        'Navigation toggle is inside the masthead at '+width);
+      const grid=await page.locator('.eledger-dashboard-columns').boundingBox();
+      const quick=await page.locator('.eledger-dashboard-quick-actions').boundingBox();
+      const middle=await page.locator('.eledger-dashboard-middle').boundingBox();
+      assert.ok(grid&&quick&&middle, 'Dashboard grid panels exist at '+width);
+      if(width<=1550){
+        assert.ok(quick.width>=grid.width*0.92,
+          'Quick Actions must span full dashboard width at intermediate desktop '+width);
+        if(width>1100){
+          const cards=await page.locator('.eledger-dashboard-action-list > button').all();
+          const rects=await Promise.all(cards.map(card=>card.boundingBox()));
+          assert.ok(rects.length===3&&rects.every(box=>box&&Math.abs(box.y-rects[0].y)<5),
+            'Three Quick Actions tiles form one horizontal row at '+width);
+        }
+      }else{
+        assert.ok(quick.x>=middle.x+middle.width-4,
+          'Quick Actions occupies the third column at wide desktop '+width);
+      }
     }
     assert.equal(await nav.locator('.eledger-status-link').count(), 0, 'Status removed from sidebar at '+width);
     assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(), 1, 'Single status action at '+width);
@@ -53,7 +71,7 @@ try{
     if(compact){
       await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-104)<2);
       assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
-      const toggle=nav.getByRole('button',{name:'Expand navigation',exact:true});
+      const toggle=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true});
       const rect=await toggle.boundingBox();
       assert.ok(rect&&rect.width>=44&&rect.height>=44,'Compact toggle target at '+width);
       assert.ok(await nav.getByRole('link',{name:/Taxes Helpline/}).isVisible());
@@ -94,7 +112,7 @@ try{
       assert.equal(await bnMenu.getByRole('menuitem').count(),3);
       await page.keyboard.press('Escape');
       await bnMenu.waitFor({state:'detached'});
-      await nav.getByRole('button',{name:'নেভিগেশন প্রসারিত করুন',exact:true}).click();
+      await page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'নেভিগেশন প্রসারিত করুন',exact:true}).click();
       await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-260)<2);
       await page.reload({waitUntil:'networkidle'});
       assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,'Expanded preference after reload');
