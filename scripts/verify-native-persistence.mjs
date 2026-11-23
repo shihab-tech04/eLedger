@@ -157,7 +157,7 @@ async function testViewport(browser,width){
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true,
      'New and returning desktop visitors must see the compact sidebar by default');
    await page.waitForFunction(() =>
-     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-80)<2);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
    const headerToggle=page.locator('.eledger-header-nav-toggle');
    assert.equal(await nav.locator('.eledger-sidebar-collapse-button').count(),0,
@@ -168,6 +168,12 @@ async function testViewport(browser,width){
    // The single approved eReturn Ledger logo belongs to the global header, not the sidebar.
    assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(),
      'Global eReturn Ledger brand remains visible on desktop');
+   const expandedLogo=await page.locator('.eledger-brand').boundingBox();
+   const expandedRail=await nav.boundingBox();
+   assert.ok(expandedLogo&&expandedRail&&Math.abs(expandedLogo.width-expandedRail.width)<2,
+     'Expanded masthead logo compartment aligns with sidebar');
+   assert.ok(await nav.locator('.eledger-sidebar-section-label').isVisible(),
+     'Expanded navigation shows its section heading');
    assert.equal(await nav.locator('.eledger-sidebar-brand').count(),0,
      'Expanded sidebar must not duplicate the global brand');
    const collapse=headerToggle.getByRole('button',{name:'Collapse navigation',exact:true});
@@ -182,7 +188,7 @@ async function testViewport(browser,width){
    assert.ok(dashboardButton.width>150, 'Expanded Dashboard item must use full sidebar width');
    await collapse.click();
    await page.waitForFunction(() =>
-     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2,
+     Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-80)<2,
      null,{timeout:3000});
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
@@ -198,6 +204,12 @@ async function testViewport(browser,width){
      'Collapsed sidebar must not duplicate the global brand');
    assert.equal(await nav.locator('.eledger-nav-top-row').count(),0,
      'No duplicate Dashboard row or wasted sidebar space');
+   const compactLogo=await page.locator('.eledger-brand').boundingBox();
+   const compactRail=await nav.boundingBox();
+   assert.ok(compactLogo&&compactRail&&Math.abs(compactLogo.width-80)<2&&Math.abs(compactLogo.width-compactRail.width)<2,
+     'Compact 80px logo area and navigation rail align');
+   assert.equal(await page.locator('.eledger-brand-words').isVisible(),false,
+     'Icon-only rail hides topbar wordmark but not logo');
    for(const [name,icon] of [['Home / Guide','lucide-book-open'],
      ['Environmental Surcharge','lucide-leaf'],
      ['Adjustment of Tax Refund','lucide-rotate-ccw'],
@@ -219,7 +231,7 @@ async function testViewport(browser,width){
    assert.equal(await sourceGroup.getAttribute('aria-expanded'),'true');
    assert.equal(await sourceMenu.getByRole('menuitem').count(),10,
      'Compact Source Tax must expose all ten destinations');
-   assert.ok(Math.abs((await nav.boundingBox()).width-104)<2,
+   assert.ok(Math.abs((await nav.boundingBox()).width-80)<2,
      'Opening a flyout must NOT expand the compact sidebar');
    const first=sourceMenu.getByRole('menuitem').first();
    assert.ok(await first.evaluate(el=>el===document.activeElement),
