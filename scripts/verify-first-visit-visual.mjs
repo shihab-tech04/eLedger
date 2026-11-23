@@ -34,6 +34,17 @@ try{
     // One branded masthead and one labeled dashboard status action at every width.
     assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(), 'Header brand visible at '+width);
     assert.equal(await nav.locator('.eledger-sidebar-brand').count(), 0, 'Sidebar logo removed at '+width);
+    assert.equal(await nav.locator('.eledger-sidebar-brand-row').count(), 0, 'Empty logo-row spacer removed at '+width);
+    assert.equal(await nav.locator('.eledger-nav-top-row').count(), 1, 'Dashboard/toggle top row present at '+width);
+    if(width>=961){
+      const navTop=await nav.locator('.eledger-nav-top-row').boundingBox();
+      const dashboard=await nav.getByRole('button',{name:'Dashboard',exact:true}).boundingBox();
+      const toggle=await nav.locator('.eledger-sidebar-collapse-button').boundingBox();
+      const header=await page.locator('.eledger-header').boundingBox();
+      assert.ok(navTop&&dashboard&&toggle&&header, 'Navigation/header layout boxes available at '+width);
+      assert.ok(navTop.y-header.y-header.height<24, 'Dashboard starts immediately below the global header at '+width);
+      assert.ok(Math.abs(dashboard.y+dashboard.height/2-toggle.y-toggle.height/2)<8, 'Dashboard and toggle share one row at '+width);
+    }
     assert.equal(await nav.locator('.eledger-status-link').count(), 0, 'Status removed from sidebar at '+width);
     assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(), 1, 'Single status action at '+width);
     assert.equal(await page.getByRole('button',{name:'Review payment status',exact:true}).count(), 0, 'No duplicate review CTA at '+width);
