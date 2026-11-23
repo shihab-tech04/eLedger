@@ -305,6 +305,14 @@ async function testViewport(browser,width){
    const tabs=page.locator('nav.eledger-mobile-bottom-nav');
    assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
    assert.equal(await tabs.locator('button').count(),4,'Exactly four mobile destinations, no duplicate Status tab');
+   const headerMenu=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
+   assert.ok(await headerMenu.isVisible(),'Responsive menu opener belongs to global masthead');
+   assert.equal(await page.locator('.eledger-mobile-nav').count(),0,'Secondary mobile bar must be removed');
+   await headerMenu.click();
+   assert.ok(await nav.getByRole('button',{name:'Dashboard',exact:true}).isVisible(),'Mobile drawer opens from masthead');
+   await page.keyboard.press('Escape');
+   assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes mobile drawer');
+   assert.ok(await headerMenu.evaluate(el=>el===document.activeElement),'Focus returns to header menu button');
    assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(),
      'Global eReturn Ledger logo visible on phone');
    assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(),1,
