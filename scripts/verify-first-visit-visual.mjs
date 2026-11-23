@@ -68,14 +68,20 @@ try{
     const compact=width>=961;
     assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),compact,'Compact breakpoint at '+width);
     if(compact){
-      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-104)<2);
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-80)<2);
       assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
       const toggle=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true});
       const rect=await toggle.boundingBox();
       assert.ok(rect&&rect.width>=44&&rect.height>=44,'Compact toggle target at '+width);
       assert.ok(await nav.getByRole('link',{name:/Taxes Helpline/}).isVisible());
     }else{
-      await page.locator('.eledger-mobile-nav').waitFor({state:'visible'});
+      const opener=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
+      assert.ok(await opener.isVisible(),'Mobile menu control belongs to masthead at '+width);
+      assert.equal(await page.locator('.eledger-mobile-nav').count(),0,'No secondary menu bar at '+width);
+      await opener.click();
+      assert.ok(await nav.getByRole('button',{name:'Dashboard',exact:true}).isVisible(),'Mobile drawer opens at '+width);
+      await page.keyboard.press('Escape');
+      assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes drawer at '+width);
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Horizontal overflow at '+width);
     findings.cases.push({width,stage:'first-load-en',compact,shot:await screenshot(page,width+'-first-en'),pass:true});
