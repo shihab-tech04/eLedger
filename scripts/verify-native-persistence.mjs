@@ -345,6 +345,28 @@ async function testViewport(browser,width){
   assert.equal(await row.getByRole('button').count(),2,'Row action surface must have View and More only');
   assert.equal(await row.getByRole('button',{name:'Edit',exact:true}).count(),0);
   assert.equal(await row.getByRole('button',{name:'Delete',exact:true}).count(),0);
+  if(c.route==='Salary (Others)'){
+    // The portalled More menu may stay open after keyboard focus leaves it.
+    // Its Arrow/Home/End handler must not steal native year-filter keys.
+    const moreTrigger=row.getByRole('button',{name:'More actions '+c.ref,exact:true});
+    await moreTrigger.click();
+    const actions=page.getByRole('menu',{name:'More actions for: '+c.ref});
+    await actions.waitFor({state:'visible'});
+    await page.keyboard.press('End');
+    assert.ok(await actions.getByRole('menuitem').last().evaluate(
+      node=>node===document.activeElement),
+      'End must still navigate within an active More menu');
+    const yearFilter=page.getByRole('combobox',{name:'Filter by year',exact:true});
+    await yearFilter.focus();
+    await page.keyboard.press('ArrowDown');
+    assert.ok(await yearFilter.evaluate(node=>node===document.activeElement),
+      'An open More menu must never steal ArrowDown from the focused year filter');
+    await yearFilter.selectOption('all');
+    await moreTrigger.click();
+    await actions.waitFor({state:'detached'});
+    report.push({width,category:c.route,
+      check:'More keyboard End stays inside menu; ArrowDown respects focused filter',pass:true});
+  }
   await moreAction(page,c.ref,'Edit');
   const cancelEditor=editorFor(page,c,width,'edit');
   await cancelEditor.waitFor({state:'visible'});
