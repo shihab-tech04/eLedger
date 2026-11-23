@@ -221,6 +221,13 @@ export const Sidebar: React.FC = () => {
       .map((route) => ({ group, route }))
   );
 
+  // Keep collapse state and keyboard behavior in one owner while placing its
+  // control in the global masthead, not beside Dashboard in the navigation.
+  const [headerToggleHost, setHeaderToggleHost] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHeaderToggleHost(document.getElementById('eledger-header-nav-toggle'));
+  }, []);
+
   return (
     <>
       <div className="eledger-mobile-nav">
@@ -241,18 +248,10 @@ export const Sidebar: React.FC = () => {
           <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
-          <div className="eledger-nav-top-row">
-            <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
-              aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
-              <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
-            </button>
-            <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
-              title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
-              aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
-              aria-expanded={!railCollapsed}>
-              {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
-            </button>
-          </div>
+          <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
+            aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
+            <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
+          </button>
           <button type="button" title={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
             aria-label={bn ? 'হোম ও নির্দেশিকা' : 'Home / Guide'}
             className={'eledger-side-link ' + (activeNavTab === 'ledger-guide' ? 'is-active' : '')}
@@ -317,6 +316,13 @@ export const Sidebar: React.FC = () => {
           </a>
         </div>
       </aside>
+      {headerToggleHost && createPortal(
+        <button type="button" className="eledger-sidebar-collapse-button" onClick={() => setCollapsed((value) => !value)}
+          title={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+          aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
+          aria-controls="eledger-mobile-sidebar" aria-expanded={!railCollapsed}>
+          {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
+        </button>, headerToggleHost)}
       {railCollapsed && flyoutGroup && createPortal(
         <div ref={flyoutRef} id="eledger-compact-group-flyout"
           className="eledger-compact-group-flyout" role="menu"
