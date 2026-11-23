@@ -52,6 +52,13 @@ async function boot(){
 async function openNav(page,label,group,width){
  if(width<600)await page.getByRole('button',{name:'Open ledger menu',exact:true}).click();
  const nav=page.locator('aside.eledger-sidebar');
+ if(group==='status'){
+  await nav.getByRole('button',{name:'Dashboard',exact:true}).click();
+  await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Tax Payment Status',exact:true}).click();
+  await page.getByRole('dialog',{name:'Tax Payment Status',exact:true}).waitFor();
+  return;
+ }
  if(group==='source'||group==='ait'){
   const g=nav.getByRole('button',{name:group==='source'?'Claim Source Tax':'Claim AIT',exact:true});
   if(await g.getAttribute('aria-expanded')==='false')await g.click();
@@ -224,32 +231,39 @@ try {
   for(const [id,label,group] of routes){
    if(group==='status'){
     await openNav(page,label,group,width);
-    await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
-    assert.match(await page.locator('.eledger-status-verified-amount').innerText(),/Authority-verified credits/,
-      'PDF p21 must label verified amounts rather than printing a bare zero');
+    const statusDialog=page.getByRole('dialog',{name:'Tax Payment Status',exact:true});
+    const breakdown=statusDialog.getByText('Payment breakdown',{exact:true});
+    assert.ok(await breakdown.isVisible(),'Status modal must show payment breakdown');
+    assert.ok(await statusDialog.getByText('Particulars',{exact:true}).isVisible());
+    assert.ok(await statusDialog.getByText('Amount',{exact:true}).isVisible());
+    assert.ok(await statusDialog.getByText('Separately authority-verified credit:',{exact:false}).isVisible(),
+      'The recorded total must be distinguished from independently verified credit');
+    assert.equal(await statusDialog.locator('.eledger-payment-row').count(),6,
+      'Six primary payment category rows must remain in reconciliation');
     if(width<600){
       const quick=page.locator('nav.eledger-mobile-bottom-nav');
-      assert.equal(await quick.locator('button').count(),5,'Mobile quick navigation must expose five targets');
+      assert.equal(await quick.locator('button').count(),4,'Four mobile quick-navigation targets after status deduplication');
       assert.ok(await quick.isVisible(),'Mobile quick navigation must be visible');
-      const viewportOverflow=await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+2);
-      assert.equal(viewportOverflow,false,'Mobile status must not overflow viewport');
     }
-    const statusTable=page.locator('main.eledger-main table.eledger-status-page-table');
-    assert.deepEqual((await statusTable.locator('thead th').allTextContents()).map(x=>x.trim()),['Particulars','Amount'],
-      'PDF p21 requires its two exact table headers');
-    assert.equal(await statusTable.locator('tbody tr').count(),7,'PDF p21 requires six primary buckets and a Total');
-    await statusTable.getByRole('button',{name:/Source Tax/}).click();
-    assert.ok((await statusTable.locator('tbody tr').count())>7,'Source Tax source-route drilldown must work');
+    await statusDialog.getByRole('button',{name:/Source Tax breakdown/}).click();
+    assert.ok((await statusDialog.locator('.eledger-payment-subrows').count())>0,
+      'Source Tax category-level breakdown must expand');
     await checkOverflow(page);
     let shot=await screenshot(page,String(width)+'/'+id+'-en');
     out.routes.push({width,id,originalNavLabel:label,language:'en',visual:shot,pass:true});
+    await statusDialog.getByRole('button',{name:'Close Tax Payment Status'}).click();
+    await statusDialog.waitFor({state:'detached'});
     await page.getByRole('button',{name:'বাংলা',exact:true}).click();
-    await page.getByRole('heading',{name:'কর পরিশোধের অবস্থা',exact:true}).waitFor();
-    assert.deepEqual((await statusTable.locator('thead th').allTextContents()).map(x=>x.trim()),['বিবরণ','অঙ্ক'],
-      'Bengali status headers must preserve meaning and order');
+    await page.getByRole('button',{name:'কর পরিশোধের অবস্থা',exact:true}).click();
+    const bnDialog=page.getByRole('dialog',{name:'কর পরিশোধের অবস্থা',exact:true});
+    await bnDialog.waitFor();
+    assert.ok(await bnDialog.getByText('বিবরণ',{exact:true}).isVisible());
+    assert.ok(await bnDialog.getByText('অঙ্ক',{exact:true}).isVisible());
     await checkOverflow(page);
     shot=await screenshot(page,String(width)+'/'+id+'-bn');
     out.routes.push({width,id,originalNavLabel:label,language:'bn',visual:shot,pass:true});
+    await bnDialog.getByRole('button',{name:'কর পরিশোধের বিবরণ বন্ধ করুন',exact:true}).click();
+    await bnDialog.waitFor({state:'detached'});
     await page.getByRole('button',{name:'English',exact:true}).click();
     continue;
    }

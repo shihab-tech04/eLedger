@@ -162,13 +162,17 @@ async function testViewport(browser,width){
    await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2);
-   const logo=nav.locator('.eledger-sidebar-brand-mark');
-   const wordmark=nav.locator('.eledger-sidebar-brand-wordmark');
+   // The single approved eReturn Ledger logo belongs to the global header, not the sidebar.
+   assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(),
+     'Global eReturn Ledger brand remains visible on desktop');
+   assert.equal(await nav.locator('.eledger-sidebar-brand').count(),0,
+     'Expanded sidebar must not duplicate the global brand');
    const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
-   assert.ok(await wordmark.isVisible(),'Expanded sidebar retains eReturn wordmark');
-   const before=await logo.boundingBox(),toggleBefore=await collapse.boundingBox();
-   assert.ok(before&&toggleBefore&&Math.abs(before.y+before.height/2-toggleBefore.y-toggleBefore.height/2)<9,
-     'Collapse control must be in same row as eReturn mark');
+   const toggleBefore=await collapse.boundingBox();
+   const rowBefore=await nav.locator('.eledger-sidebar-brand-row').boundingBox();
+   assert.ok(toggleBefore&&rowBefore&&
+     toggleBefore.y>=rowBefore.y&&toggleBefore.y+toggleBefore.height<=rowBefore.y+rowBefore.height,
+     'Expanded sidebar collapse control remains inside its navigation header row');
    await collapse.click();
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2,
@@ -176,13 +180,15 @@ async function testViewport(browser,width){
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
    const expand=nav.getByRole('button',{name:'Expand navigation',exact:true});
-   const logoBox=await logo.boundingBox(),toggleBox=await expand.boundingBox();
-   assert.ok(logoBox&&toggleBox&&Math.abs(logoBox.y+logoBox.height/2-toggleBox.y-toggleBox.height/2)<9,
-     'The logo and expand button must remain in SAME row when collapsed');
+   const toggleBox=await expand.boundingBox();
+   const collapsedRow=await nav.locator('.eledger-sidebar-brand-row').boundingBox();
+   assert.ok(toggleBox&&collapsedRow&&
+     toggleBox.y>=collapsedRow.y&&toggleBox.y+toggleBox.height<=collapsedRow.y+collapsedRow.height,
+     'Collapsed sidebar expand control remains inside its navigation header row');
    assert.ok(toggleBox.width>=44&&toggleBox.height>=44,
      'Collapsed expand button must meet 44x44 accessible target');
-   assert.equal(await logo.evaluate(el=>getComputedStyle(el).fontSize),'15px',
-     'Collapsed logo size cannot be crushed to unreadable type');
+   assert.equal(await nav.locator('.eledger-sidebar-brand').count(),0,
+     'Collapsed sidebar must not duplicate the global brand');
    for(const [name,icon] of [['Home / Guide','lucide-book-open'],
      ['Environmental Surcharge','lucide-leaf'],
      ['Adjustment of Tax Refund','lucide-rotate-ccw'],
@@ -277,16 +283,28 @@ async function testViewport(browser,width){
  if(width<600){
    const tabs=page.locator('nav.eledger-mobile-bottom-nav');
    assert.ok(await tabs.isVisible(),'Phone bottom navigation must be visible');
-   assert.equal(await tabs.locator('button').count(),5,'Five mobile destinations required');
-   await tabs.getByRole('button',{name:'Status',exact:true}).click();
-   await page.getByRole('heading',{name:'Tax Payment Status',exact:true}).waitFor();
-   assert.deepEqual((await page.locator('table.eledger-status-page-table thead th').allTextContents())
-     .map(s=>s.trim()),['Particulars','Amount']);
+   assert.equal(await tabs.locator('button').count(),4,'Exactly four mobile destinations, no duplicate Status tab');
+   assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(),
+     'Global eReturn Ledger logo visible on phone');
+   assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(),1,
+     'One dashboard status entry point on phone');
+   await page.getByRole('button',{name:'Tax Payment Status',exact:true}).click();
+   const statusDialog=page.getByRole('dialog',{name:'Tax Payment Status',exact:true});
+   await statusDialog.waitFor({state:'visible'});
+   assert.ok(await statusDialog.getByText('Payment breakdown',{exact:true}).isVisible());
+   assert.ok(await statusDialog.getByText('Particulars',{exact:true}).isVisible());
+   assert.ok(await statusDialog.getByText('Amount',{exact:true}).isVisible());
+   await statusDialog.getByRole('button',{name:'Close Tax Payment Status'}).click();
+   await statusDialog.waitFor({state:'detached'});
+   await tabs.getByRole('button',{name:'Source Tax',exact:true}).click();
+   assert.equal(await tabs.getByRole('button',{name:'Source Tax',exact:true}).getAttribute('aria-current'),'page',
+     'Mobile Source Tax destination must update the active navigation state');
+   await page.locator('main.eledger-main').waitFor({state:'visible'});
    await tabs.getByRole('button',{name:'Home',exact:true}).click();
    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
    assert.ok(overflow<=2,'Mobile page must not overflow viewport: '+overflow);
-   report.push({width,check:'five quick tabs and genuine two-column status on phone',pass:true});
+   report.push({width,check:'four quick tabs, single accessible status modal on phone',pass:true});
  }
  report.push({width,check:'fresh native storage',pass:true});
  // Source-evidenced Income Sync is a disclosure, not an invented manual Add form.

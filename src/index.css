@@ -1258,7 +1258,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
   .eledger-mobile-nav button { min-height: 42px; padding: 6px 8px; border-radius: 8px; }
   .eledger-mobile-bottom-nav {
     position: fixed; z-index: 48; left: 0; right: 0; bottom: 0;
-    display: grid; grid-template-columns: repeat(5,minmax(0,1fr));
+    display: grid; grid-template-columns: repeat(4,minmax(0,1fr));
     min-height: 74px; padding: 6px 5px max(8px,env(safe-area-inset-bottom,0px));
     border-top: 1px solid var(--el-border); background: #fff;
     box-shadow: 0 -6px 20px rgba(24,51,82,.07);
@@ -1492,21 +1492,13 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 }
 
 
-/* Approved prototype v2: sidebar identity and collapse toggle share one logo row.
-   Preserve original 260/72px sidebar widths and accessible named controls. */
+/* The single eReturn Ledger brand is in the global header.
+   Keep the sidebar collapse control and the original navigation dimensions. */
 .eledger-sidebar-brand-row {
-  display:flex; align-items:center; justify-content:space-between; gap:6px;
+  display:flex; align-items:center; justify-content:flex-end;
   height:71px; flex:0 0 71px; padding:10px 12px;
   border-bottom:1px solid var(--el-border); background:#fff;
 }
-.eledger-sidebar-brand { display:flex; min-width:0; align-items:center; gap:10px; overflow:hidden; }
-.eledger-sidebar-brand-mark {
-  display:grid; flex:0 0 40px; place-items:center; height:40px; width:40px;
-  background:#087c87; color:#fff; font-size:15px; font-weight:800; border-radius:9px;
-}
-.eledger-sidebar-brand-wordmark { display:flex; flex-direction:column; white-space:nowrap; line-height:1.2; color:#087c87; }
-.eledger-sidebar-brand-wordmark strong { font-size:16px; font-weight:750; }
-.eledger-sidebar-brand-wordmark small { margin-top:5px; font-size:9px; letter-spacing:2px; font-weight:700; color:#4c607b; }
 .eledger-sidebar-collapse-button {
   display:grid; flex:0 0 44px; place-items:center; width:44px; min-width:44px;
   height:44px; border:1px solid var(--el-border); border-radius:8px;
@@ -1515,17 +1507,7 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 .eledger-sidebar-collapse-button:hover { color:var(--el-primary); border-color:#8bd4da; background:#eefafb; }
 .eledger-sidebar-collapse-button:focus-visible { outline:3px solid var(--el-primary); outline-offset:2px; }
 .eledger-sidebar.is-collapsed .eledger-sidebar-brand-row {
-  padding:10px 6px; gap:8px; justify-content:space-between;
-}
-.eledger-sidebar.is-collapsed .eledger-sidebar-brand { flex:0 0 40px; }
-.eledger-sidebar.is-collapsed .eledger-sidebar-brand-mark {
-  flex:0 0 40px; width:40px; height:40px; font-size:15px; border-radius:9px;
-}
-.eledger-sidebar.is-collapsed .eledger-sidebar-collapse-button {
-  flex:0 0 44px; width:44px; min-width:44px; height:44px;
-}
-@media (min-width:961px) {
-  .eledger-header .eledger-brand { display:none; }
+  padding:10px 6px; justify-content:center;
 }
 @media (max-width:960px) {
   .eledger-sidebar-brand-row { display:none; }
