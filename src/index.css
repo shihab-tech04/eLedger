@@ -402,6 +402,15 @@ button, select, input, textarea { font: inherit; }
   .eledger-header-controls { margin-left: auto; }
   .eledger-summary-cards { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
+/* Keep the government identity legible with expanded 260px navigation.
+   Don't force the NBR masthead into three wrapped lines at 1280px. */
+@media (min-width: 1271px) and (max-width: 1400px) {
+  .eledger-header-controls { gap: 10px; padding: 0 12px 0 6px; }
+  .eledger-taxpayer-identity { max-width: 145px; }
+  .eledger-agency { padding-inline: 10px; }
+  .eledger-agency strong { white-space: nowrap; font-size: 11px; letter-spacing: .1px; }
+  .eledger-agency span { display: none; }
+}
 @media (max-width: 960px) {
   html, body { overflow-x: hidden; }
   .eledger-app { overflow-x: clip; }
