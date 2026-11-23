@@ -230,13 +230,6 @@ export const Sidebar: React.FC = () => {
 
   return (
     <>
-      <div className="eledger-mobile-nav">
-        <button type="button" ref={mobileMenuOpener} onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen}
-          aria-controls="eledger-mobile-sidebar" aria-label={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}>
-          <Menu size={19}/><span>{bn ? 'মেনু' : 'Menu'}</span>
-        </button>
-        <span>eReturn Ledger</span>
-      </div>
       {mobileOpen && <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'}
         className="eledger-sidebar-scrim" onClick={() => setMobileOpen(false)}/>}
       <aside ref={mobileDrawer} id="eledger-mobile-sidebar"
@@ -248,6 +241,7 @@ export const Sidebar: React.FC = () => {
           <button type="button" aria-label={bn ? 'লেজার মেনু বন্ধ করুন' : 'Close ledger menu'} onClick={() => setMobileOpen(false)}><X size={20}/></button>
         </div>
         <nav className="eledger-sidebar-links">
+          <div className="eledger-sidebar-section-label" aria-hidden="true">{bn ? 'মেনু' : 'MENU'}</div>
           <button type="button" title={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} aria-label={bn ? 'ড্যাশবোর্ড' : 'Dashboard'} className={'eledger-side-link ' + (activeNavTab === 'dashboard' ? 'is-active' : '')}
             aria-current={activeNavTab === 'dashboard' ? 'page' : undefined} onClick={() => navigate('dashboard')}>
             <LayoutDashboard size={16}/><span>{bn ? 'ড্যাশবোর্ড' : 'Dashboard'}</span>
@@ -322,6 +316,13 @@ export const Sidebar: React.FC = () => {
           aria-label={collapsed ? (bn ? 'নেভিগেশন প্রসারিত করুন' : 'Expand navigation') : (bn ? 'নেভিগেশন সংকুচিত করুন' : 'Collapse navigation')}
           aria-controls="eledger-mobile-sidebar" aria-expanded={!railCollapsed}>
           {railCollapsed ? <PanelLeftOpen size={18} aria-hidden="true"/> : <PanelLeftClose size={18} aria-hidden="true"/>}
+        </button>, headerToggleHost)}
+      {headerToggleHost && createPortal(
+        <button type="button" className="eledger-mobile-menu-button" ref={mobileMenuOpener}
+          onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen}
+          aria-controls="eledger-mobile-sidebar" title={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}
+          aria-label={bn ? 'লেজার মেনু খুলুন' : 'Open ledger menu'}>
+          <Menu size={20} aria-hidden="true"/>
         </button>, headerToggleHost)}
       {railCollapsed && flyoutGroup && createPortal(
         <div ref={flyoutRef} id="eledger-compact-group-flyout"

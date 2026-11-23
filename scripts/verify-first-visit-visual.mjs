@@ -42,7 +42,12 @@ try{
       const toggle=await page.locator('.eledger-header-nav-toggle').getByRole('button').boundingBox();
       const header=await page.locator('.eledger-header').boundingBox();
       assert.ok(dashboard&&toggle&&header, 'Navigation/header layout boxes available at '+width);
-      assert.ok(dashboard.y-header.y-header.height<24, 'Dashboard begins directly under header at '+width);
+      const section=await nav.locator('.eledger-sidebar-section-label').boundingBox();
+      assert.ok(section&&section.y-header.y-header.height<28,
+        'Menu marker appears directly under masthead at '+width);
+      assert.ok(dashboard.y>=section.y+section.height&&
+        dashboard.y-section.y-section.height<26,
+        'Dashboard follows the visible menu marker without an unused strip at '+width);
       assert.ok(toggle.y>=header.y&&toggle.y+toggle.height<=header.y+header.height,
         'Navigation toggle is inside the masthead at '+width);
       const grid=await page.locator('.eledger-dashboard-columns').boundingBox();
@@ -68,14 +73,22 @@ try{
     const compact=width>=961;
     assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),compact,'Compact breakpoint at '+width);
     if(compact){
-      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-104)<2);
+      await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-80)<2);
       assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
       const toggle=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Expand navigation',exact:true});
       const rect=await toggle.boundingBox();
       assert.ok(rect&&rect.width>=44&&rect.height>=44,'Compact toggle target at '+width);
       assert.ok(await nav.getByRole('link',{name:/Taxes Helpline/}).isVisible());
     }else{
-      await page.locator('.eledger-mobile-nav').waitFor({state:'visible'});
+      const opener=page.locator('.eledger-header-nav-toggle').getByRole('button',{name:'Open ledger menu',exact:true});
+      assert.ok(await opener.isVisible(),'Mobile menu control belongs to masthead at '+width);
+      assert.equal(await page.locator('.eledger-mobile-nav').count(),0,'No secondary menu bar at '+width);
+      await opener.click();
+      await nav.waitFor({state:'visible'});
+      await nav.getByRole('button',{name:'Dashboard',exact:true}).waitFor({state:'visible'});
+      await page.keyboard.press('Escape');
+      await nav.waitFor({state:'hidden'});
+      assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes drawer at '+width);
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Horizontal overflow at '+width);
     findings.cases.push({width,stage:'first-load-en',compact,shot:await screenshot(page,width+'-first-en'),pass:true});
@@ -115,7 +128,13 @@ try{
       await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-260)<2);
       await page.reload({waitUntil:'networkidle'});
       assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,'Expanded preference after reload');
-      findings.cases.push({width,stage:'expanded-preference',pass:true});
+      if(width===1280){
+        const mastheadTitle=page.locator('.eledger-agency strong');
+        const rect=await mastheadTitle.boundingBox();
+        assert.ok(rect&&rect.height<20,'Expanded 1280px NBR heading must remain on a single line');
+        assert.equal(await mastheadTitle.evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
+      }
+      findings.cases.push({width,stage:'expanded-preference',shot:await screenshot(page,width+'-expanded'),pass:true});
     }
     await context.close();
   }
