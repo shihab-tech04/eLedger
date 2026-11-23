@@ -259,6 +259,22 @@ try{
   // original record actions, accessible drawer and EN/BN; never modify stored claims.
   for(const width of [390,1280,1440]){
     const context=await browser.newContext({viewport:{width,height:900},isMobile:width<600,hasTouch:width<600,locale:'en-US'});
+    // Fresh accounts legitimately have no payroll records. Populate this
+    // isolated Chromium context only; never modify production or demo defaults.
+    const payrollFixture={
+      id:'salary-ibas-visual-fixture',taxpayerTin:'123456789012',
+      assessmentYear:'2026-2027',category:'SOURCE_TAX',routeId:'salary-ibas',
+      referenceNo:'IBAS/GOV/2026/08821',sourceEntity:'Ministry of Finance / CGA Office',
+      sectionCode:'Sec 86',grossAmount:1440000,taxDeducted:85000,
+      date:'2026-06-30',status:'PENDING_VERIFICATION',workflow:'SYSTEM_CLAIM',
+      isManual:false,externalVerified:false,
+      createdAt:'2026-07-01T10:00:00Z',updatedAt:'2026-07-01T10:00:00Z'
+    };
+    await context.addInitScript(record=>{
+      if(localStorage.getItem('nbr_eledger_entries_v1')===null){
+        localStorage.setItem('nbr_eledger_entries_v1',JSON.stringify([record]));
+      }
+    },payrollFixture);
     const page=await context.newPage();page.setDefaultTimeout(14000);
     page.on('pageerror',e=>findings.errors.push({width,stage:'salary-ibas-review',error:String(e)}));
     await page.goto(target,{waitUntil:'networkidle'});
