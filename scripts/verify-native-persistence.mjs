@@ -297,7 +297,9 @@ async function testViewport(browser,width){
    await statusDialog.getByRole('button',{name:'Close Tax Payment Status'}).click();
    await statusDialog.waitFor({state:'detached'});
    await tabs.getByRole('button',{name:'Source Tax',exact:true}).click();
-   await page.getByRole('heading',{name:/Source Tax/}).first().waitFor();
+   assert.equal(await tabs.getByRole('button',{name:'Source Tax',exact:true}).getAttribute('aria-current'),'page',
+     'Mobile Source Tax destination must update the active navigation state');
+   await page.locator('main.eledger-main').waitFor({state:'visible'});
    await tabs.getByRole('button',{name:'Home',exact:true}).click();
    await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-window.innerWidth);
