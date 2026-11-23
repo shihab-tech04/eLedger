@@ -148,6 +148,8 @@ button, select, input, textarea { font: inherit; }
 .eledger-return-link svg:last-child { margin-left: auto; }
 .eledger-return-link:hover { background: #e1f6eb; }
 .eledger-sidebar-bottom { flex: 0 0 auto; padding: 11px 15px 12px; border-top: 1px solid var(--el-border); background: #fbfcfd; }
+.eledger-sidebar-bottom .eledger-footer-guide { min-height: 44px; margin-bottom: 8px; font-weight: 600; }
+.eledger-sidebar-bottom .eledger-footer-guide:focus-visible { outline: 3px solid var(--el-primary); outline-offset: 2px; }
 .eledger-help-title,.eledger-guide-links { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #5b6d84; }
 .eledger-help-title { font-weight: 700; cursor: pointer; }
 .eledger-guide-links { margin: 9px 0 12px; font-size: 11px; }
@@ -1693,9 +1695,16 @@ main[lang="bn"] .eledger-guide-content h2 { font-size: 14px; }
 }
 @media (min-width:961px) {
   .eledger-sidebar.is-collapsed .eledger-sidebar-bottom {
-    display:flex; align-items:center; justify-content:center;
+    display:flex; flex-direction:column; gap:6px; align-items:center; justify-content:center;
     padding:8px 12px; border-top:1px solid var(--el-border);
   }
+  .eledger-sidebar.is-collapsed .eledger-footer-guide {
+    display:grid; place-items:center; flex:0 0 44px;
+    width:44px; min-width:44px; min-height:44px; height:44px;
+    padding:0; margin:0;
+  }
+  .eledger-sidebar.is-collapsed .eledger-footer-guide span { display:none; }
+  .eledger-sidebar.is-collapsed .eledger-footer-guide svg { width:20px; height:20px; }
   .eledger-sidebar.is-collapsed .eledger-helpline {
     min-height:44px; min-width:44px; width:44px; height:44px;
     display:grid; place-items:center; border-top:0;
