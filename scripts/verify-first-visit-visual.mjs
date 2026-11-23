@@ -128,7 +128,13 @@ try{
       await page.waitForFunction(()=>Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width||0)-260)<2);
       await page.reload({waitUntil:'networkidle'});
       assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),false,'Expanded preference after reload');
-      findings.cases.push({width,stage:'expanded-preference',pass:true});
+      if(width===1280){
+        const mastheadTitle=page.locator('.eledger-agency strong');
+        const rect=await mastheadTitle.boundingBox();
+        assert.ok(rect&&rect.height<20,'Expanded 1280px NBR heading must remain on a single line');
+        assert.equal(await mastheadTitle.evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
+      }
+      findings.cases.push({width,stage:'expanded-preference',shot:await screenshot(page,width+'-expanded'),pass:true});
     }
     await context.close();
   }
