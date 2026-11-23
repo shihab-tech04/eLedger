@@ -400,7 +400,7 @@ export const OfficialManualClaimsTable: React.FC<Props> = ({
             </select>
           </label>
         <div className="eledger-button-group">
-          <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery}
+          <button type="button" className="eledger-button eledger-button-secondary" disabled={!searchQuery && period === 'all'}
             onClick={() => { setSearchQuery('');setPeriod('all'); }}>{t('Reset','রিসেট')}</button>
 
         </div>
