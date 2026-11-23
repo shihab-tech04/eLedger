@@ -159,7 +159,10 @@ async function testViewport(browser,width){
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
-   await nav.getByRole('button',{name:'Expand navigation',exact:true}).click();
+   const headerToggle=page.locator('.eledger-header-nav-toggle');
+   assert.equal(await nav.locator('.eledger-sidebar-collapse-button').count(),0,
+     'Navigation rail must not own a second collapse button');
+   await headerToggle.getByRole('button',{name:'Expand navigation',exact:true}).click();
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-260)<2);
    // The single approved eReturn Ledger logo belongs to the global header, not the sidebar.
@@ -167,33 +170,34 @@ async function testViewport(browser,width){
      'Global eReturn Ledger brand remains visible on desktop');
    assert.equal(await nav.locator('.eledger-sidebar-brand').count(),0,
      'Expanded sidebar must not duplicate the global brand');
-   const collapse=nav.getByRole('button',{name:'Collapse navigation',exact:true});
+   const collapse=headerToggle.getByRole('button',{name:'Collapse navigation',exact:true});
    const toggleBefore=await collapse.boundingBox();
-   const rowBefore=await nav.locator('.eledger-nav-top-row').boundingBox();
+   const headerBefore=await page.locator('.eledger-header').boundingBox();
    const dashboardButton=await nav.getByRole('button',{name:'Dashboard',exact:true}).boundingBox();
-   assert.ok(toggleBefore&&rowBefore&&dashboardButton&&
-     toggleBefore.y>=rowBefore.y&&toggleBefore.y+toggleBefore.height<=rowBefore.y+rowBefore.height&&
-     Math.abs(toggleBefore.y+toggleBefore.height/2-dashboardButton.y-dashboardButton.height/2)<8,
-     'Dashboard and navigation toggle must align in the same compact top row');
+   assert.ok(toggleBefore&&headerBefore&&dashboardButton&&
+     toggleBefore.y>=headerBefore.y&&toggleBefore.y+toggleBefore.height<=headerBefore.y+headerBefore.height,
+     'Navigation toggle belongs to the global header');
+   assert.ok(dashboardButton.y>=headerBefore.y+headerBefore.height,
+     'Sidebar begins with Dashboard directly underneath global header');
+   assert.ok(dashboardButton.width>150, 'Expanded Dashboard item must use full sidebar width');
    await collapse.click();
    await page.waitForFunction(() =>
      Math.abs((document.querySelector('aside.eledger-sidebar')?.getBoundingClientRect().width??0)-104)<2,
      null,{timeout:3000});
    assert.equal(await nav.evaluate(el=>el.classList.contains('is-collapsed')),true);
    assert.equal(await page.evaluate(()=>localStorage.getItem('eledger_sidebar_collapsed_v2')),'true');
-   const expand=nav.getByRole('button',{name:'Expand navigation',exact:true});
+   const expand=headerToggle.getByRole('button',{name:'Expand navigation',exact:true});
    const toggleBox=await expand.boundingBox();
-   const collapsedRow=await nav.locator('.eledger-nav-top-row').boundingBox();
-   assert.ok(toggleBox&&collapsedRow&&
-     toggleBox.y>=collapsedRow.y&&toggleBox.y+toggleBox.height<=collapsedRow.y+collapsedRow.height,
-     'Collapsed sidebar expand control remains inside its navigation header row');
+   const headerAfter=await page.locator('.eledger-header').boundingBox();
+   assert.ok(toggleBox&&headerAfter&&
+     toggleBox.y>=headerAfter.y&&toggleBox.y+toggleBox.height<=headerAfter.y+headerAfter.height,
+     'Collapsed navigation toggle stays within the global masthead');
    assert.ok(toggleBox.width>=44&&toggleBox.height>=44,
-     'Collapsed expand button must meet 44x44 accessible target');
+     'Header expand button must meet 44x44 accessible target');
    assert.equal(await nav.locator('.eledger-sidebar-brand').count(),0,
      'Collapsed sidebar must not duplicate the global brand');
-   const collapsedDashboard=await nav.getByRole('button',{name:'Dashboard',exact:true}).boundingBox();
-   assert.ok(collapsedDashboard && toggleBox && Math.abs(collapsedDashboard.y+collapsedDashboard.height/2-toggleBox.y-toggleBox.height/2)<8,
-     'Collapsed dashboard icon and expand button remain on one row');
+   assert.equal(await nav.locator('.eledger-nav-top-row').count(),0,
+     'No duplicate Dashboard row or wasted sidebar space');
    for(const [name,icon] of [['Home / Guide','lucide-book-open'],
      ['Environmental Surcharge','lucide-leaf'],
      ['Adjustment of Tax Refund','lucide-rotate-ccw'],

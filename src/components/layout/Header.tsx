@@ -62,6 +62,7 @@ export const Header: React.FC = () => {
           <div className="eledger-brand-mark" aria-hidden="true">eR</div>
           <div className="eledger-brand-words"><strong>eReturn</strong><span>LEDGER</span></div>
         </div>
+        <div id="eledger-header-nav-toggle" className="eledger-header-nav-toggle"/>
         <div className="eledger-agency">
           <strong>NATIONAL BOARD OF REVENUE</strong>
           <span>Government of the People&apos;s Republic of Bangladesh</span>
