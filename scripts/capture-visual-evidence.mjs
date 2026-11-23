@@ -156,7 +156,7 @@ try {
   const sidebar=page.locator('aside.eledger-sidebar');
   if(width<=960)assert.ok(await sidebar.evaluate(el=>el.classList.contains('is-open')),
     'Mobile navigation did not open before return to Dashboard');
-  const dashboardNav=sidebar.locator('nav.eledger-sidebar-links > button').first();
+  const dashboardNav=sidebar.getByRole('button',{name:'Dashboard',exact:true});
   await dashboardNav.click();
   await page.getByRole('heading',{name:'Dashboard',exact:true}).waitFor();
   await page.locator('button.eledger-summary-card.other').click();
