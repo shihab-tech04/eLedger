@@ -309,9 +309,12 @@ async function testViewport(browser,width){
    assert.ok(await headerMenu.isVisible(),'Responsive menu opener belongs to global masthead');
    assert.equal(await page.locator('.eledger-mobile-nav').count(),0,'Secondary mobile bar must be removed');
    await headerMenu.click();
-   assert.ok(await nav.getByRole('button',{name:'Dashboard',exact:true}).isVisible(),'Mobile drawer opens from masthead');
+   const phoneDrawer=page.locator('aside.eledger-sidebar');
+   await phoneDrawer.waitFor({state:'visible'});
+   await phoneDrawer.getByRole('button',{name:'Dashboard',exact:true}).waitFor({state:'visible'});
    await page.keyboard.press('Escape');
-   assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes mobile drawer');
+   await phoneDrawer.waitFor({state:'hidden'});
+   assert.equal(await phoneDrawer.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes mobile drawer');
    assert.ok(await headerMenu.evaluate(el=>el===document.activeElement),'Focus returns to header menu button');
    assert.ok(await page.locator('.eledger-header .eledger-brand').isVisible(),
      'Global eReturn Ledger logo visible on phone');
