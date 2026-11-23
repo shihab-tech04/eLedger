@@ -244,7 +244,7 @@ export const SurchargeTransferPanel: React.FC<{
             </select>
           </label>
         <div className="eledger-button-group">
-          <button type="button" className="eledger-button eledger-button-secondary" disabled={!search}
+          <button type="button" className="eledger-button eledger-button-secondary" disabled={!search && period === 'all'}
             onClick={() => { setSearch('');setPeriod('all'); }}>{t('Reset', 'রিসেট')}</button>
 
         </div>
