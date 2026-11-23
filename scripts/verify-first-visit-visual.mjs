@@ -67,6 +67,16 @@ try{
           'Quick Actions occupies the third column at wide desktop '+width);
       }
     }
+    const guide=nav.locator('.eledger-sidebar-bottom').getByRole('button',{name:'Home / Guide',exact:true});
+    assert.equal(await guide.count(),1,'Guide appears exactly once in sidebar bottom area at '+width);
+    assert.equal(await nav.locator('.eledger-sidebar-links').getByRole('button',{name:'Home / Guide',exact:true}).count(),0,
+      'Guide is removed from main menu at '+width);
+    const helpline=nav.locator('.eledger-sidebar-bottom').getByRole('link',{name:/Taxes Helpline/});
+    const guideRect=await guide.boundingBox(), helplineRect=await helpline.boundingBox();
+    if(width>=961){
+      assert.ok(guideRect&&helplineRect&&guideRect.y+guideRect.height<=helplineRect.y+2,
+        'Guide sits directly above helpline in desktop footer at '+width);
+    }
     assert.equal(await nav.locator('.eledger-status-link').count(), 0, 'Status removed from sidebar at '+width);
     assert.equal(await page.getByRole('button',{name:'Tax Payment Status',exact:true}).count(), 1, 'Single status action at '+width);
     assert.equal(await page.getByRole('button',{name:'Review payment status',exact:true}).count(), 0, 'No duplicate review CTA at '+width);
