@@ -42,7 +42,12 @@ try{
       const toggle=await page.locator('.eledger-header-nav-toggle').getByRole('button').boundingBox();
       const header=await page.locator('.eledger-header').boundingBox();
       assert.ok(dashboard&&toggle&&header, 'Navigation/header layout boxes available at '+width);
-      assert.ok(dashboard.y-header.y-header.height<24, 'Dashboard begins directly under header at '+width);
+      const section=await nav.locator('.eledger-sidebar-section-label').boundingBox();
+      assert.ok(section&&section.y-header.y-header.height<28,
+        'Menu marker appears directly under masthead at '+width);
+      assert.ok(dashboard.y>=section.y+section.height&&
+        dashboard.y-section.y-section.height<26,
+        'Dashboard follows the visible menu marker without an unused strip at '+width);
       assert.ok(toggle.y>=header.y&&toggle.y+toggle.height<=header.y+header.height,
         'Navigation toggle is inside the masthead at '+width);
       const grid=await page.locator('.eledger-dashboard-columns').boundingBox();
