@@ -317,6 +317,16 @@ async function testViewport(browser,width){
   assert.equal(saved.externalVerified,false);
   const date=saved.date;
   report.push({width,category:c.route,check:'Add writes pending native record',pass:true});
+  // Regression: year-only table filters must be clearable even when search is empty.
+  // Use an actual saved record, not a synthetic empty-state assertion.
+  const rowFilter=page.getByRole('combobox',{name:'Filter by year',exact:true});
+  const rowReset=page.locator('.eledger-table-controls').getByRole('button',{name:'Reset',exact:true});
+  assert.equal(await rowReset.isDisabled(),true,'Untouched '+c.route+' Reset must stay inactive');
+  await rowFilter.selectOption('2026');
+  assert.equal(await rowReset.isEnabled(),true,'Year-only filter must enable Reset in '+c.route);
+  await rowReset.click();
+  assert.equal(await rowFilter.inputValue(),'all','Reset must restore All years in '+c.route);
+  report.push({width,category:c.route,check:'year-only filter Reset clears year without search text',pass:true});
   if(c.route==='Source Tax (LTU)'){
     const localClaim=(await stored(page)).find(row=>row.referenceNo===c.ref);
     assert.equal(localClaim?.claimEvidence?.attachmentFileName,'local-ltu-evidence.pdf',
@@ -393,6 +403,15 @@ async function testViewport(browser,width){
  assert.equal((await stored(page)).filter(e=>e.referenceNo.startsWith('E2E-SUR-10')).length,2);
  await page.reload({waitUntil:'networkidle'});
  await openRoute(page,'Environmental Surcharge',width);
+ // Surcharge shares the year-filter contract but uses its own table component.
+ const surchargeYear=page.getByRole('combobox',{name:'Filter by year',exact:true});
+ const surchargeReset=page.locator('.eledger-table-controls').getByRole('button',{name:'Reset',exact:true});
+ assert.equal(await surchargeReset.isDisabled(),true,'Untouched Surcharge Reset remains inactive');
+ await surchargeYear.selectOption('2026');
+ assert.equal(await surchargeReset.isEnabled(),true,'Year-only Surcharge filter must enable Reset');
+ await surchargeReset.click();
+ assert.equal(await surchargeYear.inputValue(),'all','Reset clears Surcharge year');
+ report.push({width,category:'Environmental Surcharge',check:'year-only filter Reset without search',pass:true});
  const surchargeRow=page.locator('table tbody tr').filter({hasText:'E2E-SUR-101'});
  assert.equal(await surchargeRow.getByRole('button').count(),2);
  await moreAction(page,'E2E-SUR-101','Edit');
