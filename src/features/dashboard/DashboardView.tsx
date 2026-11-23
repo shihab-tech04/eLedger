@@ -78,6 +78,7 @@ export const DashboardView: React.FC = () => {
     setActiveRouteId('car-ait');
     setActiveNavTab('ait');
   };
+  const reviewAllPayments = () => setIsStatusModalOpen(true);
 
   const cards = [
     { id: 'source', label: t('Source Tax','উৎস কর'), value: sourceTotal, count: `${sourceRoutes.length} ${t('categories','খাত')}`,
