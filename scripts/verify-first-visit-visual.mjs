@@ -79,8 +79,10 @@ try{
       assert.ok(await opener.isVisible(),'Mobile menu control belongs to masthead at '+width);
       assert.equal(await page.locator('.eledger-mobile-nav').count(),0,'No secondary menu bar at '+width);
       await opener.click();
-      assert.ok(await nav.getByRole('button',{name:'Dashboard',exact:true}).isVisible(),'Mobile drawer opens at '+width);
+      await nav.waitFor({state:'visible'});
+      await nav.getByRole('button',{name:'Dashboard',exact:true}).waitFor({state:'visible'});
       await page.keyboard.press('Escape');
+      await nav.waitFor({state:'hidden'});
       assert.equal(await nav.evaluate(el=>el.classList.contains('is-open')),false,'Escape closes drawer at '+width);
     }
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Horizontal overflow at '+width);
