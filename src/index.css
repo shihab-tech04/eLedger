@@ -87,7 +87,7 @@ button, select, input, textarea { font: inherit; }
   .eledger-app *, .eledger-app *::before, .eledger-app *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
 .eledger-app { min-height: 100vh; background: var(--el-bg); color: var(--el-text); }
-.eledger-header { position: relative; z-index: 40; background: #fff; border-bottom: 1px solid var(--el-border); }
+.eledger-header { position: sticky; top: 0; z-index: 40; background: #fff; border-bottom: 1px solid var(--el-border); }
 .eledger-header-main { height: var(--el-header-height); display: flex; align-items: center; gap: 0; padding: 0 18px 0 0; }
 .eledger-brand { display: flex; align-items: center; gap: 11px; flex: 0 0 var(--el-sidebar-width); align-self: stretch; min-width: 0; padding: 0 20px; border-right: 1px solid var(--el-border); overflow: hidden; white-space: nowrap; }
 .eledger-brand-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9px; background: var(--el-green); color: #fff; font-size: 17px; font-weight: 800; letter-spacing: -.06em; }
@@ -124,7 +124,7 @@ button, select, input, textarea { font: inherit; }
 .eledger-profile-backup { justify-content: flex-start; color: var(--el-blue); border-top: 1px solid var(--el-border); border-radius: 0; margin-top: 5px; padding-top: 13px; font-weight: 650; }
 .eledger-backup-error { color: #9d223e; background: #fff2f3; font-size: 12px; padding: 8px 25px; }
 .eledger-workspace { display: flex; align-items: stretch; min-height: calc(100vh - var(--el-header-height)); }
-.eledger-sidebar { background: #fff; border-right: 1px solid var(--el-border); width: var(--el-sidebar-width); flex: 0 0 var(--el-sidebar-width); display: flex; flex-direction: column; position: sticky; top: 0; height: calc(100vh - var(--el-header-height)); overflow: hidden; }
+.eledger-sidebar { background: #fff; border-right: 1px solid var(--el-border); width: var(--el-sidebar-width); flex: 0 0 var(--el-sidebar-width); display: flex; flex-direction: column; position: sticky; top: var(--el-header-height); height: calc(100vh - var(--el-header-height)); height: calc(100dvh - var(--el-header-height)); align-self: flex-start; overflow: hidden; }
 .eledger-sidebar-links { padding: 16px 12px 12px; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #cbd2dc transparent; }
 .eledger-side-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 40px; border-radius: 9px; padding: 9px 12px; color: #526078; font-size: 12px; font-weight: 550; line-height: 1.5; text-align: left; transition: background .15s,color .15s; cursor: pointer; }
 .eledger-side-link > span:not(.eledger-source-dot) { flex: 1; }
@@ -416,7 +416,8 @@ button, select, input, textarea { font: inherit; }
   .eledger-app:not(:has(.eledger-sidebar.is-collapsed)) .eledger-agency span { display: none; }
 }
 @media (max-width: 960px) {
-  html, body { overflow-x: hidden; }
+  /* clip avoids creating an unintended scroll container that defeats sticky mastheads. */
+  html, body { overflow-x: clip; }
   .eledger-app { overflow-x: clip; }
   .eledger-header-main { height: auto; min-height: 70px; align-items: center; gap: 12px; padding: 11px 18px; }
   .eledger-brand { flex-basis: auto; flex-shrink: 0; padding: 0; border-right: 0; margin-right: auto; }
